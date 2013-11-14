@@ -2,7 +2,7 @@ package uk.gov.gds.io
 
 import scalax.io._
 
-object FileLoader {
+object ProcessAddressBaseFiles {
 
   implicit val code: Codec = Codec("UTF-8")
 
