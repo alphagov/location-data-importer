@@ -18,7 +18,10 @@ case class BLPU(
                  endDate: Option[DateTime],
                  lastUpdated: DateTime,
                  postcode: String
-                 )
+                 )  {
+
+  def isExpired = endDate.isDefined
+}
 
 object BLPU {
   val recordIdentifier = 21
