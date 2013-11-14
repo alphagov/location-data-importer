@@ -1,0 +1,84 @@
+mongodb/mongodb-*.tgz
+target/
+target/*
+*.ipr
+*.iml
+*.iml.bak
+*.iws
+.idea/
+logs/
+node_modules/
+node_modules/*
+.DS_Store
+.DS_Store
+version.conf
+RUNNING_PID
+*.swp
+places/
+places/*
+testdata/dwp-feeds/*
+testdata/migration/*
+.idea_modules/
+*.pydevproject
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+.target
+*.class
+.cache
+
+# Vagrant VM
+env_vagrant_dev/.vagrant
+env_vagrant_dev/*.deb
+env_vagrant_dev/ertp-environments/*
+/vagrant_log/*
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+
+renfrewshire_sample.csv
+sunderland_sample.txt
+manchester_sample.csv
+powys_sample.csv
+powys_sample_with_dodgy_commas.csv
+ems-data-parse.log
+renfrewshire_sample.csv
+edinburgh_sample.txt
+ems-data-parse.log
+renfrewshire_sample.csv
+edinburgh_sample.txt
+
+ems-data-parser/parse-assembly/.history
+ertp-database-redactor/bin/ertp_dump_tmp/*
+ertp-ems-csv/output/*
