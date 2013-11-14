@@ -6,6 +6,14 @@ import scalax.io.{Resource, Codec}
 
 package object io {
 
+  sealed abstract class Outcome(r: Boolean)
+
+  case object Success extends Outcome(true)
+
+  case object Failure extends Outcome(false)
+
+  case class Result(outcome: Outcome, message: String)
+
   implicit val code: Codec = Codec("UTF-8")
 
   def loadFile(fileName: String) = Resource.fromFile(fileName)

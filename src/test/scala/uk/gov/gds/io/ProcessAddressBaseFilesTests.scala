@@ -2,7 +2,6 @@ package uk.gov.gds.io
 
 import org.specs2.mutable.Specification
 import java.io.File
-import uk.gov.gds.model.{Failure, Success, Result}
 
 class ProcessAddressBaseFilesTests extends Specification  {
 

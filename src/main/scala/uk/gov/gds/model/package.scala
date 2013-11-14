@@ -5,13 +5,7 @@ import org.joda.time.format.DateTimeFormat
 
 package object model {
 
-  sealed abstract class Outcome(r: Boolean)
 
-  case object Success extends Outcome(true)
-
-  case object Failure extends Outcome(false)
-
-  case class Result(outcome: Outcome, message: String)
 
   implicit def stringToInt(s: String) = java.lang.Integer.parseInt(s)
 
