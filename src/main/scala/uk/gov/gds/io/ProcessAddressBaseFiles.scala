@@ -1,14 +1,7 @@
 package uk.gov.gds.io
 
 import scalax.io._
-
-sealed abstract class Outcome(r: Boolean)
-
-case object Success extends Outcome(true)
-
-case object Failure extends Outcome(false)
-
-case class Result(outcome: Outcome, message: String)
+import uk.gov.gds.model.{Failure, Success, Result}
 
 object ProcessAddressBaseFiles {
 

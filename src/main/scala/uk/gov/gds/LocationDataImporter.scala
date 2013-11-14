@@ -3,8 +3,7 @@ package uk.gov.gds
 import scopt.OptionParser
 import uk.gov.gds.io.ProcessAddressBaseFiles
 import uk.gov.gds.logging.Logging
-import uk.gov.gds.io.Success
-import uk.gov.gds.io.Failure
+import uk.gov.gds.model.{Failure, Success}
 
 object LocationDataImporter extends Logging {
 
