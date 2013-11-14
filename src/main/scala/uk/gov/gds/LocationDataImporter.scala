@@ -1,8 +1,10 @@
 package uk.gov.gds
 
 import scopt.OptionParser
-import uk.gov.gds.io.FileLoader
+import uk.gov.gds.io.ProcessAddressBaseFiles
 import uk.gov.gds.logging.Logging
+import uk.gov.gds.io.Success
+import uk.gov.gds.io.Failure
 
 object LocationDataImporter extends Logging {
 
@@ -26,7 +28,12 @@ object LocationDataImporter extends Logging {
       config => {
         if (config.dir.isDefined) {
           logger.info("Processing: " + config.dir.get);
-          FileLoader.loadFile(config.dir.get)
+          val result = ProcessAddressBaseFiles.process(config.dir.get)
+
+          result.outcome match {
+            case Success => logger.info("Completed processing")
+            case Failure => logger.info("Failed processing error [ " + result.message + " ]")
+          }
         }
       }
     }
