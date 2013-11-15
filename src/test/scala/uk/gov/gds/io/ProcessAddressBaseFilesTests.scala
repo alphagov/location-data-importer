@@ -35,7 +35,7 @@ class ProcessAddressBaseFilesTests extends Specification  {
     new File("/tmp/testdir/tmp.txt").createNewFile()
 
     ProcessAddressBaseFiles.process("/tmp/testdir/").outcome must beEqualTo(Success)
-    ProcessAddressBaseFiles.process("/tmp/testdir/").message must beEqualTo("Processed [0] BLPUs")
+    ProcessAddressBaseFiles.process("/tmp/testdir/").message must beEqualTo("Processed [0] rows")
 
     new File("/tmp/testdir/tmp.txt").delete()
     new File("/tmp/testdir").delete()

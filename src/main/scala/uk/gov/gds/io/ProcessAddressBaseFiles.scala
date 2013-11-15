@@ -1,8 +1,8 @@
 package uk.gov.gds.io
 
-import uk.gov.gds.model.BLPU
 import uk.gov.gds.logging.Logging
-import scalax.io.LongTraversable
+
+import uk.gov.gds.model.Transformers.processRows
 
 object ProcessAddressBaseFiles extends Logging {
 
@@ -14,15 +14,9 @@ object ProcessAddressBaseFiles extends Logging {
   }
 
   private def processFiles(filePath: String) = {
-
-    def process(lines: LongTraversable[String]) = lines.flatMap(line => {
-      if (line.startsWith(BLPU.recordIdentifier)) Some(BLPU.fromCsvLine(parseCsvLine(line)))
-      else None
-    }).toList
-
-    val blpus = directoryContents(filePath).flatMap(f => process(loadFile(f).lines()))
-
-    Result(Success, "Processed [" + blpus.size + "] BLPUs")
+    val rows = directoryContents(filePath).par.flatMap(f => processRows(loadFile(f).lines()))
+    println(rows)
+    Result(Success, "Processed [" + rows.size + "] rows")
   }
 
   private def filePathHasErrors(filePath: String) = {

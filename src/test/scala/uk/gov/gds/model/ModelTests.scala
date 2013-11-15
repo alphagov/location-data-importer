@@ -98,6 +98,35 @@ class ModelTests extends Specification {
       lpi(validLine).officialAddress.get must beTrue
 
     }
+
+    "be able to be constructed from a minimum populated csv line" in {
+      val validLine = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","",,"",,"","",7803241,"1","","","""""
+      lpi(validLine).uprn must beEqualTo("9059082524")
+      lpi(validLine).usrn must beEqualTo("7803241")
+      lpi(validLine).logicalState.get must beEqualTo(approved)
+      lpi(validLine).startDate must beEqualTo(new DateTime(2005, 4, 5, 0, 0))
+      lpi(validLine).endDate must beEqualTo(None)
+      lpi(validLine).lastUpdated must beEqualTo(new DateTime(2005, 4, 5, 0, 0))
+      lpi(validLine).paoStartNumber must beEqualTo(None)
+      lpi(validLine).paoStartSuffix must beEqualTo(None)
+      lpi(validLine).paoEndNumber must beEqualTo(None)
+      lpi(validLine).paoEndSuffix must beEqualTo(None)
+      lpi(validLine).paoText must beEqualTo(None)
+      lpi(validLine).saoStartNumber must beEqualTo(None)
+      lpi(validLine).saoStartSuffix must beEqualTo(None)
+      lpi(validLine).saoEndNumber must beEqualTo(None)
+      lpi(validLine).saoEndSuffix must beEqualTo(None)
+      lpi(validLine).saoText must beEqualTo(None)
+      lpi(validLine).areaName must beEqualTo(None)
+      lpi(validLine).officialAddress must beEqualTo(None)
+
+    }
+
+    "be able to be made into correct type" in {
+      val validLine = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,2006-04-01,2005-04-05,2005-04-05,99,"SAO Start Suffix",100,"SAO End Suffix","Sao Text",1,"PAO Start Suffix",2,"PAO End Suffix","PAO Text",7803241,"1","Area 51","level","Y""""
+      lpi(validLine).isInstanceOf[AddressBase] must beTrue
+      lpi(validLine).isInstanceOf[LPI] must beTrue
+    }
   }
 
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))

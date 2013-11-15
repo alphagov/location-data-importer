@@ -5,16 +5,18 @@ import uk.gov.gds.model.CodeLists.{LogicalStatusCode, BlpuStateCode}
 import uk.gov.gds.model.CodeLists.BlpuStateCode.BlpuStateCode
 import uk.gov.gds.model.CodeLists.LogicalStatusCode.LogicalStatusCode
 
+
+case class AddressBaseWrapper(blpu: BLPU, lpis: List[LPI]) {
+  lazy val uprn = blpu.uprn
+}
+
 trait AddressBase
 
 trait AddressBaseHelpers[T <: AddressBase] {
   val recordIdentifier: String
   val requiredCsvColumns: Int
 
-  def isValidCsvLine(csvLine: List[String]) = {
-    println(csvLine(0) + " " + requiredCsvColumns + " " + csvLine.size)
-    csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns
-  }
+  def isValidCsvLine(csvLine: List[String]) = csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns
 
   def fromCsvLine(line: List[String]): T
 
