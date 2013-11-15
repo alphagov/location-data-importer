@@ -26,8 +26,8 @@ object LocationDataImporter extends Logging {
           val result = ProcessAddressBaseFiles.process(config.dir)
 
           result.outcome match {
-            case Success => logger.info("Completed processing")
-            case Failure => logger.info("Failed processing error [ " + result.message + " ]")
+            case Success => logger.info("Completed processing: [" + result.message + "]")
+            case Failure => logger.info("Failed processing: Error [ " + result.message + " ]")
           }
       }
     }

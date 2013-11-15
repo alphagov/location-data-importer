@@ -7,6 +7,8 @@ class ProcessAddressBaseFilesTests extends Specification  {
 
   sequential
 
+  // TODO: ensure clean slate at start of tests
+
   "The supplied file path" should {
     "be checked for existence" in {
       ProcessAddressBaseFiles.process("/tmp/shouldnotbehere").outcome must beEqualTo(Failure)
@@ -33,7 +35,7 @@ class ProcessAddressBaseFilesTests extends Specification  {
     new File("/tmp/testdir/tmp.txt").createNewFile()
 
     ProcessAddressBaseFiles.process("/tmp/testdir/").outcome must beEqualTo(Success)
-    ProcessAddressBaseFiles.process("/tmp/testdir/").message must beEqualTo("Processed files")
+    ProcessAddressBaseFiles.process("/tmp/testdir/").message must beEqualTo("Processed [0] BLPUs")
 
     new File("/tmp/testdir/tmp.txt").delete()
     new File("/tmp/testdir").delete()

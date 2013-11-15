@@ -1,8 +1,10 @@
 package uk.gov.gds.io
 
-import scalax.io._
+import uk.gov.gds.model.BLPU
+import uk.gov.gds.logging.Logging
+import scalax.io.LongTraversable
 
-object ProcessAddressBaseFiles {
+object ProcessAddressBaseFiles extends Logging {
 
   def process(filePath: String): Result = {
     filePathHasErrors(filePath) match {
@@ -12,7 +14,15 @@ object ProcessAddressBaseFiles {
   }
 
   private def processFiles(filePath: String) = {
-    Result(Success, "Processed files")
+
+    def process(lines: LongTraversable[String]) = lines.flatMap(line => {
+      if (line.startsWith(BLPU.recordIdentifier)) Some(BLPU.fromCsvLine(parseCsvLine(line)))
+      else None
+    }).toList
+
+    val blpus = directoryContents(filePath).flatMap(f => process(loadFile(f).lines()))
+
+    Result(Success, "Processed [" + blpus.size + "] BLPUs")
   }
 
   private def filePathHasErrors(filePath: String) = {
@@ -22,9 +32,5 @@ object ProcessAddressBaseFiles {
     else None
   }
 
-  def loadFile(fileName: String) {
-    val input: Input = Resource.fromFile(fileName)
-    println(input.lines().mkString(":"))
-  }
 
 }
