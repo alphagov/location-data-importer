@@ -9,6 +9,8 @@ object Transformers {
   def processRows(lines: LongTraversable[String]) = lines.flatMap(line => {
     if (line.startsWith(BLPU.recordIdentifier)) Some(BLPU.fromCsvLine(parseCsvLine(line)))
     else if (line.startsWith(LPI.recordIdentifier)) Some(LPI.fromCsvLine(parseCsvLine(line)))
+    else if (line.startsWith(Street.recordIdentifier)) Some(Street.fromCsvLine(parseCsvLine(line)))
+    else if (line.startsWith(StreetDescriptor.recordIdentifier)) Some(StreetDescriptor.fromCsvLine(parseCsvLine(line)))
     else None
   }).toList
 

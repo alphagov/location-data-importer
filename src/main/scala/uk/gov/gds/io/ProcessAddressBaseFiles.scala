@@ -15,7 +15,6 @@ object ProcessAddressBaseFiles extends Logging {
 
   private def processFiles(filePath: String) = {
     val rows = directoryContents(filePath).par.flatMap(f => processRows(loadFile(f).lines()))
-    println(rows)
     Result(Success, "Processed [" + rows.size + "] rows")
   }
 

@@ -1,0 +1,20 @@
+- reporting on upload
+    - files
+    - rows per file
+    - total BLPU
+    - errors
+    - anomalies
+
+- better upload checking
+    - file name check
+    - directory read status
+
+- better row checking
+    - columns
+    - mandatory
+    - report
+
+- validation scripts
+    - number of BLPUs
+    - etc
+
