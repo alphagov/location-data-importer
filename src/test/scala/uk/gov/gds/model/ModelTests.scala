@@ -182,75 +182,46 @@ class ModelTests extends Specification {
   }
 
 
-//  "LPI" should {
-//
-//    "be able to identify a valid line" in {
-//      val validLine = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","UNIT 1",,"",,"","WEST PITKERRO",7803241,"1","","","Y""""
-//      LPI.isValidCsvLine(parseCsvLine(validLine)) must beTrue
-//    }
-//
-//    "be able to identify an invalid line due to wrong type" in {
-//      val wrongRecordIdentifier = """1,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","UNIT 1",,"",,"","WEST PITKERRO",7803241,"1","","","Y""""
-//      LPI.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
-//    }
-//
-//    "be able to identify an invalid line due to wrong number of columns" in {
-//      val wrongNumberOfColumns = """24,92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","UNIT 1",,"",,"","WEST PITKERRO",7803241,"1","","","Y""""
-//      LPI.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
-//    }
-//
-//    "be able to be constructed from a fully populated csv line" in {
-//      val validLine = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,2006-04-01,2005-04-05,2005-04-05,99,"SAO Start Suffix",100,"SAO End Suffix","Sao Text",1,"PAO Start Suffix",2,"PAO End Suffix","PAO Text",7803241,"1","Area 51","level","Y""""
-//      lpi(validLine).uprn must beEqualTo("9059082524")
-//      lpi(validLine).usrn must beEqualTo("7803241")
-//      lpi(validLine).logicalState.get must beEqualTo(approved)
-//      lpi(validLine).startDate must beEqualTo(new DateTime(2005, 4, 5, 0, 0))
-//      lpi(validLine).endDate.get must beEqualTo(new DateTime(2006, 4, 1, 0, 0))
-//      lpi(validLine).lastUpdated must beEqualTo(new DateTime(2005, 4, 5, 0, 0))
-//      lpi(validLine).paoStartNumber.get must beEqualTo("1")
-//      lpi(validLine).paoStartSuffix.get must beEqualTo("PAO Start Suffix")
-//      lpi(validLine).paoEndNumber.get must beEqualTo("2")
-//      lpi(validLine).paoEndSuffix.get must beEqualTo("PAO End Suffix")
-//      lpi(validLine).paoText.get must beEqualTo("PAO Text")
-//      lpi(validLine).saoStartNumber.get must beEqualTo("99")
-//      lpi(validLine).saoStartSuffix.get must beEqualTo("SAO Start Suffix")
-//      lpi(validLine).saoEndNumber.get must beEqualTo("100")
-//      lpi(validLine).saoEndSuffix.get must beEqualTo("SAO End Suffix")
-//      lpi(validLine).saoText.get must beEqualTo("Sao Text")
-//      lpi(validLine).areaName.get must beEqualTo("Area 51")
-//      lpi(validLine).officialAddress.get must beTrue
-//
-//    }
-//
-//    "be able to be constructed from a minimum populated csv line" in {
-//      val validLine = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","",,"",,"","",7803241,"1","","","""""
-//      lpi(validLine).uprn must beEqualTo("9059082524")
-//      lpi(validLine).usrn must beEqualTo("7803241")
-//      lpi(validLine).logicalState.get must beEqualTo(approved)
-//      lpi(validLine).startDate must beEqualTo(new DateTime(2005, 4, 5, 0, 0))
-//      lpi(validLine).endDate must beEqualTo(None)
-//      lpi(validLine).lastUpdated must beEqualTo(new DateTime(2005, 4, 5, 0, 0))
-//      lpi(validLine).paoStartNumber must beEqualTo(None)
-//      lpi(validLine).paoStartSuffix must beEqualTo(None)
-//      lpi(validLine).paoEndNumber must beEqualTo(None)
-//      lpi(validLine).paoEndSuffix must beEqualTo(None)
-//      lpi(validLine).paoText must beEqualTo(None)
-//      lpi(validLine).saoStartNumber must beEqualTo(None)
-//      lpi(validLine).saoStartSuffix must beEqualTo(None)
-//      lpi(validLine).saoEndNumber must beEqualTo(None)
-//      lpi(validLine).saoEndSuffix must beEqualTo(None)
-//      lpi(validLine).saoText must beEqualTo(None)
-//      lpi(validLine).areaName must beEqualTo(None)
-//      lpi(validLine).officialAddress must beEqualTo(None)
-//
-//    }
-//
-//    "be able to be made into correct type" in {
-//      val validLine = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,2006-04-01,2005-04-05,2005-04-05,99,"SAO Start Suffix",100,"SAO End Suffix","Sao Text",1,"PAO Start Suffix",2,"PAO End Suffix","PAO Text",7803241,"1","Area 51","level","Y""""
-//      lpi(validLine).isInstanceOf[AddressBase] must beTrue
-//      lpi(validLine).isInstanceOf[LPI] must beTrue
-//    }
-//  }
+  "Street Descriptor " should {
+
+    val completeValidLine = """15,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
+    val incompleteValidLine = """15,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","","","ENG""""
+
+    "be able to identify a valid line" in {
+      StreetDescriptor.isValidCsvLine(parseCsvLine(completeValidLine)) must beTrue
+    }
+
+    "be able to identify an invalid line due to wrong type" in {
+      val wrongRecordIdentifier = """16,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
+      StreetDescriptor.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
+    }
+
+    "be able to identify an invalid line due to wrong number of columns" in {
+      val wrongNumberOfColumns = """16,1,2,1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
+      StreetDescriptor.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to be constructed from a fully populated csv line" in {
+      streetDescriptor(completeValidLine).usrn must beEqualTo("705576")
+      streetDescriptor(completeValidLine).streetDescription must beEqualTo("ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES")
+      streetDescriptor(completeValidLine).localityName must beEqualTo("WESTHALL")
+      streetDescriptor(completeValidLine).townName.get must beEqualTo("KELLAS")
+      streetDescriptor(completeValidLine).administrativeArea.get must beEqualTo("ANGUS")
+    }
+
+    "be able to be constructed from a minimum populated csv line" in {
+      streetDescriptor(incompleteValidLine).usrn must beEqualTo("705576")
+      streetDescriptor(incompleteValidLine).streetDescription must beEqualTo("ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES")
+      streetDescriptor(incompleteValidLine).localityName must beEqualTo("WESTHALL")
+      streetDescriptor(incompleteValidLine).townName must beEqualTo(None)
+      streetDescriptor(incompleteValidLine).administrativeArea must beEqualTo(None)
+    }
+
+    "be able to be made into correct type" in {
+      streetDescriptor(completeValidLine).isInstanceOf[AddressBase] must beTrue
+      streetDescriptor(completeValidLine).isInstanceOf[StreetDescriptor] must beTrue
+    }
+  }
 
 
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))

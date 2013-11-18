@@ -188,8 +188,8 @@ case class StreetDescriptor(
                              usrn: String,
                              streetDescription: String,
                              localityName: String,
-                             townName: String,
-                             administrativeArea: String
+                             townName: Option[String],
+                             administrativeArea: Option[String]
                              ) extends AddressBase
 
 object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
