@@ -18,3 +18,4 @@
     - number of BLPUs
     - etc
 
+- generate mongo inserts on fly NOT build object list up.
