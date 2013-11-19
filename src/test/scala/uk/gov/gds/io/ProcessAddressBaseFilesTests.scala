@@ -40,17 +40,17 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample {
     new File("/tmp/testdir/tmp.csv").createNewFile()
 
     ProcessAddressBaseFiles.process("/tmp/testdir/").outcome must beEqualTo(Some(Success))
-    ProcessAddressBaseFiles.process("/tmp/testdir/").messages(0) must beEqualTo("Processed [0] rows")
+    ProcessAddressBaseFiles.process("/tmp/testdir/").messages(0) must beEqualTo("Processed [0] addressable objects")
   }
 
   "correctly process a 'good' file returning count of processed rows" in {
     ProcessAddressBaseFiles.process("testdata/single-good-file").outcome must beEqualTo(Some(Success))
-    ProcessAddressBaseFiles.process("testdata/single-good-file").messages(0) must beEqualTo("Processed [4] rows")
+    ProcessAddressBaseFiles.process("testdata/single-good-file").messages(0) must beEqualTo("Processed [1] addressable objects")
   }
 
   "correctly process a number 'good' files returning count of processed rows in all files" in {
     ProcessAddressBaseFiles.process("testdata/multiple-good-files").outcome must beEqualTo(Some(Success))
-    ProcessAddressBaseFiles.process("testdata/multiple-good-files").messages(0) must beEqualTo("Processed [8] rows")
+    ProcessAddressBaseFiles.process("testdata/multiple-good-files").messages(0) must beEqualTo("Processed [2] addressable objects")
   }
 
   "correctly process a 'bad' file returning error message against file name" in {

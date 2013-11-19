@@ -4,6 +4,7 @@ import uk.gov.gds.logging.Logging
 
 import uk.gov.gds.model.Transformers.processRows
 import scala.collection._
+import uk.gov.gds.model.BLPU
 
 
 object ProcessAddressBaseFiles extends Logging {
@@ -19,7 +20,7 @@ object ProcessAddressBaseFiles extends Logging {
     val errors = mutable.MutableList.empty[String]
     val rows = directoryContents(filePath).flatMap(f => processRows(loadFile(f).lines())(errors, f.getName))
     if (errors.isEmpty) {
-      Result(Success, "Processed [" + rows.size + "] rows")
+      Result(Success, "Processed [" + rows.filter(row => row.isInstanceOf[BLPU]).size + "] addressable objects")
     } else {
       Result(Some(Failure), errors.toList)
     }
