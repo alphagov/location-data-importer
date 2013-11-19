@@ -16,3 +16,8 @@ Basic usage
     java -jar target/scala-2.10/location-data-importer.jar
 
 
+Contents
+
+(1) Documentation
+
+    docs/ contains an example csv file [example.csv] and all the address base premium pdf documentation.

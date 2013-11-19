@@ -4,6 +4,8 @@ import org.specs2.mutable.Specification
 import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable, LongTraversable}
 import scalax.io.Line.Terminators.NewLine
 import Transformers._
+import uk.gov.gds.io.Result
+import scala.collection.mutable
 
 class TransformersTests extends Specification {
 
@@ -19,7 +21,7 @@ class TransformersTests extends Specification {
     """24,"I",92423,9059007612,"9059L000069680","ENG",1,2005-04-05,2006-04-01,2005-04-05,2005-04-05,99,"SAO Start Suffix",100,"SAO End Suffix","Sao Text",1,"PAO Start Suffix",2,"PAO End Suffix","PAO Text",7803243,"1","Area 51","level","Y""""
   )
 
-  private def processStringLists(input: List[String]) = processRows(new LineTraversable(CloseableIterator(input.mkString("\n").toCharArray.iterator), NewLine, false, DefaultResourceContext))
+  private def processStringLists(input: List[String], errors: mutable.MutableList[String] = mutable.MutableList.empty[String], fileName: String = "filename") = processRows(new LineTraversable(CloseableIterator(input.mkString("\n").toCharArray.iterator), NewLine, false, DefaultResourceContext))(errors, fileName)
 
   "Transformer" should {
 

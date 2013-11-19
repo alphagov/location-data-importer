@@ -5,6 +5,8 @@
     - errors
     - anomalies
 
+ - skip whole file with an error?
+
 - better upload checking
     - file name check
     - directory read status

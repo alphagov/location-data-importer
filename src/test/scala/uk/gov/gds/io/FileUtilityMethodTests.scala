@@ -14,19 +14,19 @@ class FileUtilityMethodTests extends Specification  {
 
     "be able to be identify a directory" in {
       isDirectory("testdata") must beEqualTo(true)
-      isDirectory("testdata/NO4530.csv") must beEqualTo(false)
+      isDirectory("testdata/single-good-file/good-file.csv") must beEqualTo(false)
     }
 
     "be able to create a list of all files in a directory" in {
       directoryContents("testdata").size must beEqualTo(5)
       directoryContents("testdata").map {
         _.getName
-      } must contain("NO4530.csv", "NO4530.txt", "10_good_rows.txt", "9_good_rows_1_bad.txt", "9_good_rows_1_duplicate_uprn.txt").exactly
+      } must contain("single-good-file", "multiple-good-files", "single-bad-file", "multiple-bad-files", "README.md").exactly
     }
 
     "be able to filter the list of files in a directory" in {
-      filteredDirectoryContents("testdata", (file: File) => file.getName.endsWith(".csv")).size must beEqualTo(1)
-      filteredDirectoryContents("testdata", (file: File) => file.getName.endsWith(".csv")).head.getName must beEqualTo("NO4530.csv")
+      filteredDirectoryContents("testdata/single-good-file", (file: File) => file.getName.endsWith(".csv")).size must beEqualTo(1)
+      filteredDirectoryContents("testdata/single-good-file", (file: File) => file.getName.endsWith(".csv")).head.getName must beEqualTo("good-file.csv")
     }
   }
 
