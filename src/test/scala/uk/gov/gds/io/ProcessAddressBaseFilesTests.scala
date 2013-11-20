@@ -55,13 +55,13 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample {
 
   "correctly process a 'bad' file returning error message against file name" in {
     ProcessAddressBaseFiles.process("testdata/single-bad-file").outcome must beEqualTo(Some(Failure))
-    ProcessAddressBaseFiles.process("testdata/single-bad-file").messages(0) must beEqualTo("ROW Error filename [bad-file.csv] row [11, BADROW]")
+    ProcessAddressBaseFiles.process("testdata/single-bad-file").messages(0) must beEqualTo("Row error for filename=[bad-file.csv] row data=[11, BADROW]")
   }
 
   "correctly process a set of 'bad' files returning errors by file name" in {
     ProcessAddressBaseFiles.process("testdata/multiple-bad-files").outcome must beEqualTo(Some(Failure))
-    ProcessAddressBaseFiles.process("testdata/multiple-bad-files").messages must contain("ROW Error filename [bad-file-1.csv] row [11, BADROW-1]")
-    ProcessAddressBaseFiles.process("testdata/multiple-bad-files").messages must contain("ROW Error filename [bad-file-2.csv] row [11, BADROW-2]")
+    ProcessAddressBaseFiles.process("testdata/multiple-bad-files").messages must contain("Row error for filename=[bad-file-1.csv] row data=[11, BADROW-1]")
+    ProcessAddressBaseFiles.process("testdata/multiple-bad-files").messages must contain("Row error for filename=[bad-file-2.csv] row data=[11, BADROW-2]")
   }
 
   def after {

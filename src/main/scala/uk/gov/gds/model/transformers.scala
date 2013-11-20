@@ -8,10 +8,7 @@ import uk.gov.gds.logging.Logging
 
 object Transformers extends Logging {
 
-  def processRows(lines: LongTraversable[String])(implicit errors: mutable.MutableList[String], fileName: String) = {
-    logger.info("processing: " + fileName)
-    lines.flatMap(process(_)).toList
-  }
+  def processRows(lines: LongTraversable[String])(implicit errors: mutable.MutableList[String], fileName: String) = lines.flatMap(process(_)).toList
 
   def process(line: String)(implicit errors: mutable.MutableList[String], fileName: String) = {
     val parsed = parseCsvLine(line)
@@ -29,7 +26,7 @@ object Transformers extends Logging {
 
   def extractRow[T <: AddressBase](parsed: List[String], addressBase: AddressBaseHelpers[T])(implicit errors: mutable.MutableList[String], fileName: String): Option[T] = {
       if(!addressBase.isValidCsvLine(parsed)) {
-        errors += "ROW Error filename [" + fileName + "] row [" + parsed.mkString(", ") + "]"
+        errors += "Row error for filename=[" + fileName + "] row data=[" + parsed.mkString(", ") + "]"
         None
       }
       else Some(addressBase.fromCsvLine(parsed))

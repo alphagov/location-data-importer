@@ -18,7 +18,10 @@ object ProcessAddressBaseFiles extends Logging {
 
   private def processFiles(filePath: String) = {
     val errors = mutable.MutableList.empty[String]
-    val rows = directoryContents(filePath).flatMap(f => processRows(loadFile(f).lines())(errors, f.getName))
+    val rows = directoryContents(filePath).flatMap(f => {
+      logger.info("processing: " + f.getName)
+      processRows(loadFile(f).lines())(errors, f.getName)
+    })
     if (errors.isEmpty) {
       Result(Success, "Processed [" + rows.filter(row => row.isInstanceOf[BLPU]).size + "] addressable objects")
     } else {
