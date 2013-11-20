@@ -16,11 +16,13 @@ object Transformers extends Logging {
   def process(line: String)(implicit errors: mutable.MutableList[String], fileName: String) = {
     val parsed = parseCsvLine(line)
 
-    parsed(0) match {
+    parsed.head match {
       case BLPU.recordIdentifier =>  extractRow[BLPU](parsed, BLPU)
       case LPI.recordIdentifier => extractRow[LPI](parsed, LPI)
       case Street.recordIdentifier =>   extractRow[Street](parsed, Street)
       case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](parsed, StreetDescriptor)
+      case Classification.recordIdentifier => extractRow[Classification](parsed, Classification)
+      case Organisation.recordIdentifier => extractRow[Organisation](parsed, Organisation)
       case _ => None
     }
   }
@@ -33,15 +35,39 @@ object Transformers extends Logging {
       else Some(addressBase.fromCsvLine(parsed))
   }
 
-  def extractBlpu(raw: List[AddressBase]) =
+  def extractBlpus(raw: List[AddressBase]) =
     raw flatMap {
       case a: BLPU => Some(a)
       case _ => None
     }
 
-  def extractLpi(raw: List[AddressBase]) =
+  def extractLpis(raw: List[AddressBase]) =
     raw flatMap {
       case a: LPI => Some(a)
+      case _ => None
+    }
+
+  def extractStreets(raw: List[AddressBase]) =
+    raw flatMap {
+      case a: Street => Some(a)
+      case _ => None
+    }
+
+  def extractStreetDescriptors(raw: List[AddressBase]) =
+    raw flatMap {
+      case a: StreetDescriptor => Some(a)
+      case _ => None
+    }
+
+  def extractOrganisations(raw: List[AddressBase]) =
+    raw flatMap {
+      case a: Organisation => Some(a)
+      case _ => None
+    }
+
+  def extractClassifications(raw: List[AddressBase]) =
+    raw flatMap {
+      case a: Classification => Some(a)
       case _ => None
     }
 

@@ -21,3 +21,8 @@ Contents
 (1) Documentation
 
     docs/ contains an example csv file [example.csv] and all the address base premium pdf documentation.
+
+
+Classifications:
+
+(1) Whats residential? TODO  is it just R vs everything else?

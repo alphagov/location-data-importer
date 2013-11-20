@@ -204,12 +204,68 @@ object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
 
 
   def fromCsvLine(csvLine: List[String]) = StreetDescriptor(
-      csvLine(usrnIndex),
-      csvLine(streetDescriptionIndex),
-      csvLine(localityNameIndex),
-      csvLine(townNameIndex),
-      csvLine(administrativeAreaIndex)
+    csvLine(usrnIndex),
+    csvLine(streetDescriptionIndex),
+    csvLine(localityNameIndex),
+    csvLine(townNameIndex),
+    csvLine(administrativeAreaIndex)
   )
 }
 
+case class Organisation(
+                         uprn: String,
+                         organistation: String,
+                         startDate: DateTime,
+                         endDate: Option[DateTime],
+                         lastUpdated: DateTime
+                         ) extends AddressBase
+
+object Organisation extends AddressBaseHelpers[Organisation] {
+  val recordIdentifier = "31"
+  val requiredCsvColumns = 11
+
+  private val uprnIndex = 3
+  private val organisationIndex = 5
+  private val startDateIndex = 7
+  private val endDateIndex = 8
+  private val updatedDateIndex = 9
+
+  def fromCsvLine(csvLine: List[String]) = Organisation(
+    csvLine(uprnIndex),
+    csvLine(organisationIndex),
+    csvLine(startDateIndex),
+    csvLine(endDateIndex),
+    csvLine(updatedDateIndex)
+  )
+}
+
+case class Classification(
+                         uprn: String,
+                         classificationCode: String,
+                         startDate: DateTime,
+                         endDate: Option[DateTime],
+                         lastUpdated: DateTime
+                         ) extends AddressBase {
+  /* R means residential, but RC means residential parking not dwelling! */
+  def isResidential = classificationCode.startsWith("R") && !classificationCode.startsWith("RC")
+}
+
+object Classification extends AddressBaseHelpers[Classification] {
+  val recordIdentifier = "32"
+  val requiredCsvColumns = 12
+
+  private val uprnIndex = 3
+  private val classificationCodeIndex = 5
+  private val startDateIndex = 8
+  private val endDateIndex = 9
+  private val updatedDateIndex = 10
+
+  def fromCsvLine(csvLine: List[String]) = Classification(
+    csvLine(uprnIndex),
+    csvLine(classificationCodeIndex),
+    csvLine(startDateIndex),
+    csvLine(endDateIndex),
+    csvLine(updatedDateIndex)
+  )
+}
 

@@ -224,6 +224,98 @@ class ModelTests extends Specification {
   }
 
 
+  "Organisation " should {
+
+    val completeValidLine = """31,"I",68275,9059056630,"9059O000001011","TMA Accountants","Legal Name",2012-02-01,2013-01-01,2012-02-01,2012-02-01"""
+    val incompleteValidLine = """31,"I",68275,9059056630,"9059O000001011","TMA Accountants","",2012-02-01,,2012-02-01,2012-02-01"""
+
+    "be able to identify a valid line" in {
+      Organisation.isValidCsvLine(parseCsvLine(completeValidLine)) must beTrue
+    }
+
+    "be able to identify an invalid line due to wrong type" in {
+      val wrongRecordIdentifier = """1,"I",68275,9059056630,"9059O000001011","TMA Accountants","Legal Name",2012-02-01,2013-01-01,2012-02-01,2012-02-01"""
+      Organisation.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
+    }
+
+    "be able to identify an invalid line due to wrong number of columns" in {
+      val wrongNumberOfColumns = """31,68275,9059056630,"9059O000001011","TMA Accountants","Legal Name",2012-02-01,2013-01-01,2012-02-01,2012-02-01"""
+      Organisation.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to be constructed from a fully populated csv line" in {
+      organisation(completeValidLine).uprn must beEqualTo("9059056630")
+      organisation(completeValidLine).organistation must beEqualTo("TMA Accountants")
+      organisation(completeValidLine).startDate must beEqualTo(new DateTime(2012, 2, 1, 0, 0))
+      organisation(completeValidLine).endDate.get must beEqualTo(new DateTime(2013, 1, 1, 0, 0))
+      organisation(completeValidLine).lastUpdated must beEqualTo(new DateTime(2012, 2, 1, 0, 0))
+    }
+
+    "be able to be constructed from a minimum populated csv line" in {
+      organisation(incompleteValidLine).uprn must beEqualTo("9059056630")
+      organisation(incompleteValidLine).organistation must beEqualTo("TMA Accountants")
+      organisation(incompleteValidLine).startDate must beEqualTo(new DateTime(2012, 2, 1, 0, 0))
+      organisation(incompleteValidLine).endDate must beEqualTo(None)
+      organisation(incompleteValidLine).lastUpdated must beEqualTo(new DateTime(2012, 2, 1, 0, 0))
+    }
+
+    "be able to be made into correct type" in {
+      organisation(completeValidLine).isInstanceOf[AddressBase] must beTrue
+      organisation(completeValidLine).isInstanceOf[Organisation] must beTrue
+    }
+  }
+
+  "Classification " should {
+
+    val completeValidLine = """32,"I",94712,9059004789,"9059C000080071","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
+    val incompleteValidLine = """32,"I",94712,9059004789,"9059C000080071","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-21,,2011-04-13,2010-04-21"""
+
+    "be able to identify a valid line" in {
+      Classification.isValidCsvLine(parseCsvLine(completeValidLine)) must beTrue
+    }
+
+    "be able to identify a residential property" in {
+      val residential = """32,"I",94712,9059004789,"9059C000080071","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
+      Classification.fromCsvLine(parseCsvLine(residential)).isResidential must beTrue
+    }
+
+    "be able to identify a non-residential property" in {
+      val nonResidential = """32,"I",94712,9059004789,"9059C000080071","M","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
+      Classification.fromCsvLine(parseCsvLine(nonResidential)).isResidential must beFalse
+    }
+
+    "be able to identify an invalid line due to wrong type" in {
+      val wrongRecordIdentifier = """1,"I",94712,9059004789,"9059C000080071","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
+      Classification.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
+    }
+
+    "be able to identify an invalid line due to wrong number of columns" in {
+      val wrongNumberOfColumns = """32,94712,9059004789,"9059C000080071","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-21,,2011-04-13,2010-04-21"""
+      Classification.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to be constructed from a fully populated csv line" in {
+      classification(completeValidLine).uprn must beEqualTo("9059004789")
+      classification(completeValidLine).classificationCode must beEqualTo("RD04")
+      classification(completeValidLine).startDate must beEqualTo(new DateTime(2010, 4, 21, 0, 0))
+      classification(completeValidLine).endDate.get must beEqualTo(new DateTime(2012, 1, 1, 0, 0))
+      classification(completeValidLine).lastUpdated must beEqualTo(new DateTime(2011, 4, 13, 0, 0))
+    }
+
+    "be able to be constructed from a minimum populated csv line" in {
+      classification(incompleteValidLine).uprn must beEqualTo("9059004789")
+      classification(incompleteValidLine).classificationCode must beEqualTo("RD04")
+      classification(incompleteValidLine).startDate must beEqualTo(new DateTime(2010, 4, 21, 0, 0))
+      classification(incompleteValidLine).endDate must beEqualTo(None)
+      classification(incompleteValidLine).lastUpdated must beEqualTo(new DateTime(2011, 4, 13, 0, 0))
+    }
+
+    "be able to be made into correct type" in {
+      classification(completeValidLine).isInstanceOf[AddressBase] must beTrue
+      classification(completeValidLine).isInstanceOf[Classification] must beTrue
+    }
+  }
+
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))
 
   private def lpi(line: String) = LPI.fromCsvLine(parseCsvLine(line))
@@ -231,4 +323,8 @@ class ModelTests extends Specification {
   private def street(line: String) = Street.fromCsvLine(parseCsvLine(line))
 
   private def streetDescriptor(line: String) = StreetDescriptor.fromCsvLine(parseCsvLine(line))
+
+  private def organisation(line: String) = Organisation.fromCsvLine(parseCsvLine(line))
+
+  private def classification(line: String) = Classification.fromCsvLine(parseCsvLine(line))
 }
