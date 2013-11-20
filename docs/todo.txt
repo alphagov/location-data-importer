@@ -21,3 +21,5 @@
     - etc
 
 - generate mongo inserts on fly NOT build object list up.
+
+- calculate address base wrapper objects on a per file basis

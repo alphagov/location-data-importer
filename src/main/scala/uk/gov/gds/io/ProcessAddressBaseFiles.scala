@@ -2,7 +2,8 @@ package uk.gov.gds.io
 
 import uk.gov.gds.logging.Logging
 
-import uk.gov.gds.model.Transformers.processRows
+import uk.gov.gds.model.Transformers._
+import uk.gov.gds.model.AddressBuilder._
 import scala.collection._
 import uk.gov.gds.model.BLPU
 
@@ -23,6 +24,14 @@ object ProcessAddressBaseFiles extends Logging {
       processRows(loadFile(f).lines())(errors, f.getName)
     })
     if (errors.isEmpty) {
+
+      val blpus = extractBlpus(rows)
+      val lpis = extractLpis(rows)
+
+      val addressBase = constructAddressBaseWrapper(blpus, lpis)
+
+      addressBase.foreach(addressBaseWrapper => println(geographicAddressToSimpleAddress(addressBaseWrapper)))
+
       Result(Success, "Processed [" + rows.filter(row => row.isInstanceOf[BLPU]).size + "] addressable objects")
     } else {
       Result(Some(Failure), errors.toList)

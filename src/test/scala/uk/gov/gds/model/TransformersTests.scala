@@ -120,11 +120,11 @@ class TransformersTests extends Specification {
       lpis.size must beEqualTo(3)
 
       val streets = extractStreets(processed)
-      for (p <- streets) p.isInstanceOf[Street] must beTrue
+      for (p <- streets) p._2.isInstanceOf[Street] must beTrue
       streets.size must beEqualTo(3)
 
       val streetDescriptors = extractStreetDescriptors(processed)
-      for (p <- streetDescriptors) p.isInstanceOf[StreetDescriptor] must beTrue
+      for (p <- streetDescriptors) p._2.isInstanceOf[StreetDescriptor] must beTrue
       streetDescriptors.size must beEqualTo(3)
 
       val organisations = extractOrganisations(processed)
@@ -141,9 +141,9 @@ class TransformersTests extends Specification {
       val addressWrappers = constructAddressBaseWrapper(extractBlpus(processed), List.empty[LPI])
 
       addressWrappers.size must beEqualTo(3)
-      addressWrappers("9059007610").blpu.postcode must beEqualTo("DD5 3BX")
-      addressWrappers("9059007611").blpu.postcode must beEqualTo("DD5 3BY")
-      addressWrappers("9059007612").blpu.postcode must beEqualTo("DD5 3BZ")
+      addressWrappers(0).blpu.postcode must beEqualTo("DD5 3BX")
+      addressWrappers(1).blpu.postcode must beEqualTo("DD5 3BY")
+      addressWrappers(2).blpu.postcode must beEqualTo("DD5 3BZ")
 
     }
 
@@ -153,18 +153,18 @@ class TransformersTests extends Specification {
 
       addressWrappers.size must beEqualTo(3)
 
-      addressWrappers("9059007610").blpu.postcode must beEqualTo("DD5 3BX")
-      addressWrappers("9059007610").lpis.size must beEqualTo(1)
-      addressWrappers("9059007610").lpis(0).usrn must beEqualTo("7803241")
+      addressWrappers(0).blpu.postcode must beEqualTo("DD5 3BX")
+      addressWrappers(0).lpis.size must beEqualTo(1)
+      addressWrappers(0).lpis(0).usrn must beEqualTo("7803241")
 
 
-      addressWrappers("9059007611").blpu.postcode must beEqualTo("DD5 3BY")
-      addressWrappers("9059007611").lpis.size must beEqualTo(1)
-      addressWrappers("9059007611").lpis(0).usrn must beEqualTo("7803242")
+      addressWrappers(1).blpu.postcode must beEqualTo("DD5 3BY")
+      addressWrappers(1).lpis.size must beEqualTo(1)
+      addressWrappers(1).lpis(0).usrn must beEqualTo("7803242")
 
-      addressWrappers("9059007612").blpu.postcode must beEqualTo("DD5 3BZ")
-      addressWrappers("9059007612").lpis.size must beEqualTo(1)
-      addressWrappers("9059007612").lpis(0).usrn must beEqualTo("7803243")
+      addressWrappers(2).blpu.postcode must beEqualTo("DD5 3BZ")
+      addressWrappers(2).lpis.size must beEqualTo(1)
+      addressWrappers(2).lpis(0).usrn must beEqualTo("7803243")
 
     }
   }

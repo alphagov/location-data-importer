@@ -81,6 +81,7 @@ object BLPU extends AddressBaseHelpers[BLPU] {
   }
 }
 
+/* Land and Property Identitifier */
 case class LPI(
                 uprn: String,
                 usrn: String,
@@ -246,7 +247,9 @@ case class Classification(
                          endDate: Option[DateTime],
                          lastUpdated: DateTime
                          ) extends AddressBase {
-  /* R means residential, but RC means residential parking not dwelling! */
+  /* R means residential, but RC means residential parking not dwelling!
+   * Much too simplified and may not belong here
+   */
   def isResidential = classificationCode.startsWith("R") && !classificationCode.startsWith("RC")
 }
 

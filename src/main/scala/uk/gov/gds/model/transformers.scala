@@ -2,9 +2,10 @@ package uk.gov.gds.model
 
 import scalax.io.LongTraversable
 import uk.gov.gds.io._
-import scala.Some
 import scala.collection._
 import uk.gov.gds.logging.Logging
+import uk.gov.gds.model.AddressBuilder._
+import scala.Some
 
 object Transformers extends Logging {
 
@@ -46,13 +47,13 @@ object Transformers extends Logging {
 
   def extractStreets(raw: List[AddressBase]) =
     raw flatMap {
-      case a: Street => Some(a)
+      case a: Street => Map(a.usrn -> a)
       case _ => None
     }
 
   def extractStreetDescriptors(raw: List[AddressBase]) =
     raw flatMap {
-      case a: StreetDescriptor => Some(a)
+      case a: StreetDescriptor => Map(a.usrn -> a)
       case _ => None
     }
 
@@ -72,7 +73,7 @@ object Transformers extends Logging {
     val lpisByUprn = lpis.groupBy(_.uprn)
 
     blpus.map(
-      blpu => blpu.uprn -> AddressBaseWrapper(blpu, lpisByUprn.getOrElse(blpu.uprn, List.empty[LPI]))
-    ).toMap
+      blpu => AddressBaseWrapper(blpu, lpisByUprn.getOrElse(blpu.uprn, List.empty[LPI]))
+    ).toList
   }
 }
