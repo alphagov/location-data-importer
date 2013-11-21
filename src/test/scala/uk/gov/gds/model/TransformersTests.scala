@@ -90,6 +90,25 @@ class TransformersTests extends Specification {
       processed(2).asInstanceOf[Street].usrn must beEqualTo("709895")
     }
 
+    "parse Street lines into correctly typed objects grouped by usrn if there are several with same usrn" in {
+      val validLinesForStreetWithNonUniqueUSRN = List(
+        """11,"I",1147,709884,2,9053,2,2010-02-05,,8,0,2008-01-17,,2009-06-05,2008-01-17,349535.00,734956.00,350014.00,735097.00,999""",
+        """11,"I",1149,709884,2,9053,2,2010-02-05,,8,0,2008-01-25,2010-01-01,2008-10-09,2008-01-25,349535.00,734956.00,349125.00,735569.00,999""",
+        """11,"I",1151,709884,2,9053,2,2010-02-05,,8,0,2008-01-25,2011-01-01,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
+      )
+      val processed = processStringLists(validLinesForStreetWithNonUniqueUSRN)
+      processed.size must beEqualTo(3)
+      for (p <- processed) p.isInstanceOf[Street] must beTrue
+      processed(0).asInstanceOf[Street].usrn must beEqualTo("709884")
+      processed(1).asInstanceOf[Street].usrn must beEqualTo("709884")
+      processed(2).asInstanceOf[Street].usrn must beEqualTo("709884")
+
+      val streets = extractStreets(processed)
+
+      streets.size must beEqualTo(1)
+      streets("709884").size must beEqualTo(3)
+    }
+
     "parse Street Descriptor lines into correctly typed objects with correct values" in {
       val processed = processStringLists(validLinesForStreetDescriptor)
       processed.size must beEqualTo(3)
@@ -102,11 +121,11 @@ class TransformersTests extends Specification {
     "collect lines into lists of correctly typed objects with correct values" in {
       val processed = processStringLists(
         validLinesForBLPU ++
-        validLinesForLPI ++
-        validLinesForOrganisation ++
-        validLinesForClassification ++
-        validLinesForStreet ++
-        validLinesForStreetDescriptor
+          validLinesForLPI ++
+          validLinesForOrganisation ++
+          validLinesForClassification ++
+          validLinesForStreet ++
+          validLinesForStreetDescriptor
       )
 
       processed.size must beEqualTo(18)
@@ -120,8 +139,9 @@ class TransformersTests extends Specification {
       lpis.size must beEqualTo(3)
 
       val streets = extractStreets(processed)
-      for (p <- streets) p._2.isInstanceOf[Street] must beTrue
+      for (p <- streets) p._2(0).isInstanceOf[Street] must beTrue
       streets.size must beEqualTo(3)
+
 
       val streetDescriptors = extractStreetDescriptors(processed)
       for (p <- streetDescriptors) p._2.isInstanceOf[StreetDescriptor] must beTrue

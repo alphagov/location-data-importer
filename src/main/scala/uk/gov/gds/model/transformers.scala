@@ -65,17 +65,26 @@ object Transformers extends Logging {
       case _ => None
     }
 
-  def extractStreets(raw: List[AddressBase]) =
-    raw flatMap {
-      case a: Street => Map(a.usrn -> a)
+  def extractStreets(raw: List[AddressBase]): Map[String, List[Street]] = {
+    var streets = scala.collection.mutable.Map.empty[String, List[Street]]
+    raw map {
+      case a: Street => {
+        if (streets.contains(a.usrn)) streets(a.usrn) = streets(a.usrn) :+ a
+        else streets += a.usrn -> List(a)
+      }
       case _ => None
     }
+    streets.toMap
+  }
 
-  def extractStreetDescriptors(raw: List[AddressBase]) =
-    raw flatMap {
-      case a: StreetDescriptor => Map(a.usrn -> a)
+  def extractStreetDescriptors(raw: List[AddressBase]): Map[String, StreetDescriptor] = {
+    var streetDescriptors = scala.collection.mutable.Map.empty[String, StreetDescriptor]
+    raw map {
+      case a: StreetDescriptor => streetDescriptors += (a.usrn -> a)
       case _ => None
     }
+    streetDescriptors.toMap
+  }
 
   def extractOrganisations(raw: List[AddressBase]) =
     raw flatMap {

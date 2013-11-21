@@ -7,7 +7,7 @@ case class Address(line1: String, line2: String, postcode: String)
 object AddressBuilder {
 
 
-  def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper) = {
+  def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper, streets: List[Street] = List.empty[Street], streetDescriptors: List[StreetDescriptor] = List.empty[StreetDescriptor]) = {
 
     if (addressWrapper.lpis.size > 1) println("too big " + addressWrapper.blpu.uprn)
 
