@@ -16,10 +16,10 @@ package object io {
 
   case object Failure extends Outcome(false)
 
-  case class Result(outcome: Option[Outcome] = None, messages: List[String] = List.empty[String])
+  case class Result(outcome: Outcome, messages: List[String] = List.empty[String])
 
   object Result {
-    def apply(outcome: Outcome, message: String):Result = Result(Some(outcome), List(message))
+    def apply(outcome: Outcome, message: String):Result = Result(outcome, List(message))
   }
 
 

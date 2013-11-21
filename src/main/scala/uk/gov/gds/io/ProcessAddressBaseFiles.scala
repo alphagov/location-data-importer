@@ -18,24 +18,14 @@ object ProcessAddressBaseFiles extends Logging {
   }
 
   private def processFiles(filePath: String) = {
-    val errors = mutable.MutableList.empty[String]
-    val rows = directoryContents(filePath).flatMap(f => {
-      logger.info("processing: " + f.getName)
-      processRows(loadFile(f).lines())(errors, f.getName)
-    })
-    if (errors.isEmpty) {
+    val results = directoryContents(filePath).flatMap(processFile)
 
-      val blpus = extractBlpus(rows)
-      val lpis = extractLpis(rows)
-
-      val addressBase = constructAddressBaseWrapper(blpus, lpis)
-
-      addressBase.foreach(addressBaseWrapper => println(geographicAddressToSimpleAddress(addressBaseWrapper)))
-
-      Result(Success, "Processed [" + rows.filter(row => row.isInstanceOf[BLPU]).size + "] addressable objects")
+    if(!results.filter(r => r.outcome.equals(Failure)).isEmpty) {
+      Result(Failure, results.filter(r => r.outcome.equals(Failure)).map(failure => failure.messages).flatten)
     } else {
-      Result(Some(Failure), errors.toList)
+      Result(Success, "processed=[" + results.size + "] files")
     }
+
   }
 
   private def filePathHasErrors(filePath: String): Option[Result] = {

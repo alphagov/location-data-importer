@@ -5,9 +5,29 @@ import uk.gov.gds.io._
 import scala.collection._
 import uk.gov.gds.logging.Logging
 import uk.gov.gds.model.AddressBuilder._
+import java.io.File
 import scala.Some
 
 object Transformers extends Logging {
+
+  def processFile(file: File) = {
+    val errors = mutable.MutableList.empty[String]
+    val rows = processRows(loadFile(file).lines())(errors, file.getName)
+    if (errors.isEmpty) {
+
+      val blpus = extractBlpus(rows)
+      val lpis = extractLpis(rows)
+
+      val addressBase = constructAddressBaseWrapper(blpus, lpis)
+
+      addressBase.foreach(addressBaseWrapper => println(geographicAddressToSimpleAddress(addressBaseWrapper)))
+      Some(Result(Success, file.getName))
+    } else {
+      logger.info(errors.mkString("\n"))
+      Some(Result(Failure, file.getName))
+    }
+
+  }
 
   def processRows(lines: LongTraversable[String])(implicit errors: mutable.MutableList[String], fileName: String) = lines.flatMap(process(_)).toList
 
@@ -15,9 +35,9 @@ object Transformers extends Logging {
     val parsed = parseCsvLine(line)
 
     parsed.head match {
-      case BLPU.recordIdentifier =>  extractRow[BLPU](parsed, BLPU)
+      case BLPU.recordIdentifier => extractRow[BLPU](parsed, BLPU)
       case LPI.recordIdentifier => extractRow[LPI](parsed, LPI)
-      case Street.recordIdentifier =>   extractRow[Street](parsed, Street)
+      case Street.recordIdentifier => extractRow[Street](parsed, Street)
       case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](parsed, StreetDescriptor)
       case Classification.recordIdentifier => extractRow[Classification](parsed, Classification)
       case Organisation.recordIdentifier => extractRow[Organisation](parsed, Organisation)
@@ -26,11 +46,11 @@ object Transformers extends Logging {
   }
 
   def extractRow[T <: AddressBase](parsed: List[String], addressBase: AddressBaseHelpers[T])(implicit errors: mutable.MutableList[String], fileName: String): Option[T] = {
-      if(!addressBase.isValidCsvLine(parsed)) {
-        errors += "Row error for filename=[" + fileName + "] row data=[" + parsed.mkString(", ") + "]"
-        None
-      }
-      else Some(addressBase.fromCsvLine(parsed))
+    if (!addressBase.isValidCsvLine(parsed)) {
+      errors += "Row error for filename=[" + fileName + "] row data=[" + parsed.mkString(", ") + "]"
+      None
+    }
+    else Some(addressBase.fromCsvLine(parsed))
   }
 
   def extractBlpus(raw: List[AddressBase]) =
