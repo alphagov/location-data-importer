@@ -3,9 +3,6 @@ package uk.gov.gds.io
 import uk.gov.gds.logging.Logging
 
 import uk.gov.gds.model.Transformers._
-import uk.gov.gds.model.AddressBuilder._
-import scala.collection._
-import uk.gov.gds.model.BLPU
 
 
 object ProcessAddressBaseFiles extends Logging {
@@ -19,7 +16,6 @@ object ProcessAddressBaseFiles extends Logging {
 
   private def processFiles(filePath: String) = {
     val results = directoryContents(filePath).flatMap(processFile)
-
     if(!results.filter(r => r.outcome.equals(Failure)).isEmpty) {
       Result(Failure, results.filter(r => r.outcome.equals(Failure)).map(failure => failure.messages).flatten)
     } else {

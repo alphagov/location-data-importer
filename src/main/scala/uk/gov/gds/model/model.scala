@@ -20,7 +20,7 @@ import uk.gov.gds.model.CodeLists.LogicalStatusCode.LogicalStatusCode
 import uk.gov.gds.model.CodeLists.LogicalStatusCode
 
 
-case class AddressBaseWrapper(blpu: BLPU, lpis: List[LPI]) {
+case class AddressBaseWrapper(blpu: BLPU, lpis: List[LPI], classifications: List[Classification], organisations: List[Organisation]) {
   lazy val uprn = blpu.uprn
 }
 

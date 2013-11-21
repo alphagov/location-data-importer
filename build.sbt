@@ -10,6 +10,8 @@ libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.0.3",
     "joda-time" % "joda-time" % "2.3",
     "org.joda" % "joda-convert" % "1.2",
+    "org.mongodb" %% "casbah" % "2.5.0",
+    "com.novus" % "salat-core_2.10" % "1.9.2",
     "org.specs2" %% "specs2" % "2.3.3" % "test"
     )
 

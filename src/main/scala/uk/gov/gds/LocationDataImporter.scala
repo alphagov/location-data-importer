@@ -7,7 +7,7 @@ import uk.gov.gds.io.{Failure, Success}
 
 object LocationDataImporter extends Logging {
 
-  case class Config(dir: String = "")
+  case class Config(dir: String = "", persist: Boolean = true)
 
   def main(args: Array[String]) {
 
@@ -16,13 +16,16 @@ object LocationDataImporter extends Logging {
       opt[String]('d', "dir") text "Location of address base files files" required() action {
         (dir: String, c: Config) => c.copy(dir = dir)
       }
+      opt[Boolean]('p', "persist") text "Persist the data" required() action {
+        (p: Boolean, c: Config) => c.copy(persist = p)
+      }
       help("help") text "use -d or -dir to identify source directory containg files to parse"
       version("version") text "0.1"
     }
 
     opts.parse(args, Config()) map {
       config => {
-          logger.info("Processing: " + config.dir)
+        logger.info("Processing: " + config.dir)
           val result = ProcessAddressBaseFiles.process(config.dir)
 
           result.outcome match {
@@ -30,7 +33,7 @@ object LocationDataImporter extends Logging {
             case Failure => logger.info("Failed processing: \n" + result.messages.mkString("\n"))
             case _ => logger.info("Failed processing: Unable to generate a result]")
           }
-      }
+        }
     }
   }
 

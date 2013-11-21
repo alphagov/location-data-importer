@@ -2,25 +2,36 @@ package uk.gov.gds.model
 
 import scalax.io.LongTraversable
 import uk.gov.gds.io._
-import scala.collection._
+import scala.collection.mutable.MutableList
+import scala.collection.immutable.Map
 import uk.gov.gds.logging.Logging
 import uk.gov.gds.model.AddressBuilder._
 import java.io.File
 import scala.Some
+import uk.gov.gds.MongoConnection
 
 object Transformers extends Logging {
 
   def processFile(file: File) = {
-    val errors = mutable.MutableList.empty[String]
+    logger.info("Processing " + file.getName)
+
+    val errors = MutableList.empty[String]
     val rows = processRows(loadFile(file).lines())(errors, file.getName)
     if (errors.isEmpty) {
 
       val blpus = extractBlpus(rows)
       val lpis = extractLpis(rows)
+      val streets = extractStreets(rows)
+      val streetDescriptors = extractStreetDescriptors(rows)
 
       val addressBase = constructAddressBaseWrapper(blpus, lpis)
 
-      addressBase.foreach(addressBaseWrapper => println(geographicAddressToSimpleAddress(addressBaseWrapper)))
+      //addressBase.foreach(addressBaseWrapper => println(geographicAddressToSimpleAddress(addressBaseWrapper,streets, streetDescriptors)))
+
+      println(addressBase.size)
+
+      new MongoConnection().insert(addressBase.flatMap(geographicAddressToSimpleAddress(_, streets, streetDescriptors)).map(_.serialize))
+
       Some(Result(Success, file.getName))
     } else {
       logger.info(errors.mkString("\n"))
@@ -29,9 +40,9 @@ object Transformers extends Logging {
 
   }
 
-  def processRows(lines: LongTraversable[String])(implicit errors: mutable.MutableList[String], fileName: String) = lines.flatMap(process(_)).toList
+  def processRows(lines: LongTraversable[String])(implicit errors: MutableList[String], fileName: String) = lines.flatMap(process(_)).toList
 
-  def process(line: String)(implicit errors: mutable.MutableList[String], fileName: String) = {
+  def process(line: String)(implicit errors: MutableList[String], fileName: String) = {
     val parsed = parseCsvLine(line)
 
     parsed.head match {
@@ -45,7 +56,7 @@ object Transformers extends Logging {
     }
   }
 
-  def extractRow[T <: AddressBase](parsed: List[String], addressBase: AddressBaseHelpers[T])(implicit errors: mutable.MutableList[String], fileName: String): Option[T] = {
+  def extractRow[T <: AddressBase](parsed: List[String], addressBase: AddressBaseHelpers[T])(implicit errors: MutableList[String], fileName: String): Option[T] = {
     if (!addressBase.isValidCsvLine(parsed)) {
       errors += "Row error for filename=[" + fileName + "] row data=[" + parsed.mkString(", ") + "]"
       None
@@ -66,24 +77,18 @@ object Transformers extends Logging {
     }
 
   def extractStreets(raw: List[AddressBase]): Map[String, List[Street]] = {
-    var streets = scala.collection.mutable.Map.empty[String, List[Street]]
-    raw map {
-      case a: Street => {
-        if (streets.contains(a.usrn)) streets(a.usrn) = streets(a.usrn) :+ a
-        else streets += a.usrn -> List(a)
-      }
+    raw flatMap  {
+      case a: Street => Some(a)
       case _ => None
-    }
-    streets.toMap
+    } groupBy(_.usrn)
   }
 
   def extractStreetDescriptors(raw: List[AddressBase]): Map[String, StreetDescriptor] = {
-    var streetDescriptors = scala.collection.mutable.Map.empty[String, StreetDescriptor]
-    raw map {
-      case a: StreetDescriptor => streetDescriptors += (a.usrn -> a)
+    val sd = raw flatMap {
+      case a: StreetDescriptor => Some(a)
       case _ => None
     }
-    streetDescriptors.toMap
+    sd.groupBy(_.usrn).map(a => a._1 -> a._2.head)
   }
 
   def extractOrganisations(raw: List[AddressBase]) =
@@ -98,11 +103,18 @@ object Transformers extends Logging {
       case _ => None
     }
 
-  def constructAddressBaseWrapper(blpus: List[BLPU], lpis: List[LPI]) = {
+  def constructAddressBaseWrapper(blpus: List[BLPU], lpis: List[LPI], classifications: List[Classification] = List.empty[Classification], organisations: List[Organisation] = List.empty[Organisation]) = {
     val lpisByUprn = lpis.groupBy(_.uprn)
+    val classificationsByUprn = classifications.groupBy(_.uprn)
+    val organisationsByUprn = organisations.groupBy(_.uprn)
 
     blpus.map(
-      blpu => AddressBaseWrapper(blpu, lpisByUprn.getOrElse(blpu.uprn, List.empty[LPI]))
+      blpu => AddressBaseWrapper(
+        blpu,
+        lpisByUprn.getOrElse(blpu.uprn, List.empty[LPI]),
+        classificationsByUprn.getOrElse(blpu.uprn, List.empty[Classification]),
+        organisationsByUprn.getOrElse(blpu.uprn, List.empty[Organisation])
+      )
     ).toList
   }
 }
