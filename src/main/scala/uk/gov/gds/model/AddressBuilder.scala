@@ -37,6 +37,8 @@ case class Address(property: Option[String] = None,
                    locality: Option[String] = None,
                    area: Option[String] = None,
                    postcode: String,
+                   lcPostcode: String,
+                   localCustodianCode: Int,
                    uprn: String,
                    details: Details
                     ) {
@@ -83,11 +85,13 @@ object AddressBuilder extends Logging {
 
       val address = Address(
         property = constructProperty(lpi),
-        streetAddress = streetPrefix + street,
+        streetAddress = String.format("%s %s",streetPrefix,street).trim,
         town = area,
         locality = locality,
         postcode = addressWrapper.blpu.postcode,
+        lcPostcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ",""),
         uprn = addressWrapper.uprn,
+        localCustodianCode = addressWrapper.blpu.localCustodianCode,
         details = Details(addressWrapper, streets(lpi.usrn))
       )
 
