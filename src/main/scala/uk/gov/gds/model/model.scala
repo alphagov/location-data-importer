@@ -33,7 +33,7 @@ trait AddressBaseHelpers[T <: AddressBase] {
 
   def isMissingAMandatoryField(csvLine: List[String]) = mandatoryCsvColumns.map(column => csvLine(column).isEmpty).contains(true)
 
-  def isValidCsvLine(csvLine: List[String]) = csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns //&& !isMissingAMandatoryField(csvLine)
+  def isValidCsvLine(csvLine: List[String]) = csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns && !isMissingAMandatoryField(csvLine)
 
   def fromCsvLine(csvLine: List[String]): T
 
@@ -190,15 +190,15 @@ object Street extends AddressBaseHelpers[Street] {
     csvLine(updatedDateIndex)
   )
 
-  val mandatoryCsvColumns = List(usrnIndex, recordTypeIndex, stateIndex, surfaceIndex, classificationIndex, startDateIndex, updatedDateIndex)
+  val mandatoryCsvColumns = List(usrnIndex, recordTypeIndex, startDateIndex, updatedDateIndex)
 }
 
 case class StreetDescriptor(
                              usrn: String,
                              streetDescription: String,
-                             localityName: String,
+                             localityName: Option[String],
                              townName: Option[String],
-                             administrativeArea: Option[String]
+                             administrativeArea: String
                              ) extends AddressBase
 
 object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
@@ -221,7 +221,7 @@ object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
     csvLine(administrativeAreaIndex)
   )
 
-  val mandatoryCsvColumns = List(usrnIndex, streetDescriptionIndex, localityNameIndex, townNameIndex, administrativeAreaIndex)
+  val mandatoryCsvColumns = List(usrnIndex, streetDescriptionIndex, administrativeAreaIndex)
 }
 
 case class Organisation(

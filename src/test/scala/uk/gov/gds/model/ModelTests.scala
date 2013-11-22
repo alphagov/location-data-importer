@@ -185,7 +185,7 @@ class ModelTests extends Specification {
   "Street Descriptor " should {
 
     val completeValidLine = """15,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
-    val incompleteValidLine = """15,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","","","ENG""""
+    val incompleteValidLine = """15,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","","","WESTHALL","ENG""""
 
     "be able to identify a valid line" in {
       StreetDescriptor.isValidCsvLine(parseCsvLine(completeValidLine)) must beTrue
@@ -204,17 +204,17 @@ class ModelTests extends Specification {
     "be able to be constructed from a fully populated csv line" in {
       streetDescriptor(completeValidLine).usrn must beEqualTo("705576")
       streetDescriptor(completeValidLine).streetDescription must beEqualTo("ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES")
-      streetDescriptor(completeValidLine).localityName must beEqualTo("WESTHALL")
+      streetDescriptor(completeValidLine).localityName.get must beEqualTo("WESTHALL")
       streetDescriptor(completeValidLine).townName.get must beEqualTo("KELLAS")
-      streetDescriptor(completeValidLine).administrativeArea.get must beEqualTo("ANGUS")
+      streetDescriptor(completeValidLine).administrativeArea must beEqualTo("ANGUS")
     }
 
     "be able to be constructed from a minimum populated csv line" in {
       streetDescriptor(incompleteValidLine).usrn must beEqualTo("705576")
       streetDescriptor(incompleteValidLine).streetDescription must beEqualTo("ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES")
-      streetDescriptor(incompleteValidLine).localityName must beEqualTo("WESTHALL")
+      streetDescriptor(incompleteValidLine).localityName must beEqualTo(None)
       streetDescriptor(incompleteValidLine).townName must beEqualTo(None)
-      streetDescriptor(incompleteValidLine).administrativeArea must beEqualTo(None)
+      streetDescriptor(incompleteValidLine).administrativeArea must beEqualTo("WESTHALL")
     }
 
     "be able to be made into correct type" in {
