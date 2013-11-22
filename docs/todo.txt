@@ -20,9 +20,8 @@
     - number of BLPUs
     - etc
 
-- generate mongo inserts on fly NOT build object list up.
 
-- calculate address base wrapper objects on a per file basis
+- mongo credentials
 
 - run single file
 
@@ -35,3 +34,7 @@
 - how many files to do , have done, to get to end
 
 - searchable LC postcode
+
+- commercial buildings allowed?
+
+- test mongo auth

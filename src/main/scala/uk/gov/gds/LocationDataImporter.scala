@@ -7,7 +7,7 @@ import uk.gov.gds.io.{Failure, Success}
 
 object LocationDataImporter extends Logging {
 
-  case class Config(dir: String = "", persist: Boolean = true)
+  case class Config(dir: String = "", persist: Boolean = true, index: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
 
@@ -19,7 +19,16 @@ object LocationDataImporter extends Logging {
       opt[Boolean]('p', "persist") text "Persist the data" required() action {
         (p: Boolean, c: Config) => c.copy(persist = p)
       }
-      help("help") text "use -d or -dir to identify source directory containg files to parse"
+      opt[Boolean]('i', "index") text "Index the mongo" required() action {
+        (p: Boolean, c: Config) => c.copy(index = p)
+      }
+      opt[String]('u', "username") text "Username for the mongo" action {
+        (p: String, c: Config) => c.copy(username = p)
+      }
+      opt[String]('p', "password") text "Password for the mongo" action {
+        (p: String, c: Config) => c.copy(password = p)
+      }
+      help("help") text "use -d or -dir to identify source directory containing files to parse"
       version("version") text "0.1"
     }
 
@@ -28,11 +37,17 @@ object LocationDataImporter extends Logging {
         logger.info("Processing: " + config.dir + " Persisting: " + config.persist)
 
         implicit val mongoConnection = config.persist match {
+          case true if !config.username.isEmpty && !config.password.isEmpty => Some(new MongoConnection(Some(config.username), Some(config.password)))
           case true => Some(new MongoConnection)
           case false => None
         }
 
         val result = ProcessAddressBaseFiles.process(config.dir)
+
+        if(config.index) {
+          logger.info("adding indexes")
+          mongoConnection.foreach(_.addIndexes())
+        }
 
         result.outcome match {
           case Success => logger.info("Completed processing: \n" + result.messages.mkString("\n"))

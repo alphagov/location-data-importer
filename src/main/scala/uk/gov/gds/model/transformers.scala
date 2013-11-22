@@ -35,7 +35,6 @@ object Transformers extends Logging {
       logger.info(errors.mkString("\n"))
       Some(Result(Failure, file.getName))
     }
-
   }
 
   def processRows(lines: LongTraversable[String])(implicit errors: MutableList[String], fileName: String) = lines.flatMap(process(_)).toList
@@ -101,11 +100,14 @@ object Transformers extends Logging {
       case _ => None
     }
 
-  def constructAddressBaseWrapper(blpus: List[BLPU], lpis: List[LPI], classifications: List[Classification] = List.empty[Classification], organisations: List[Organisation] = List.empty[Organisation]) = {
+  def constructAddressBaseWrapper(
+                                   blpus: List[BLPU],
+                                   lpis: List[LPI],
+                                   classifications: List[Classification] = List.empty[Classification],
+                                   organisations: List[Organisation] = List.empty[Organisation]) = {
     val lpisByUprn = lpis.groupBy(_.uprn)
     val classificationsByUprn = classifications.groupBy(_.uprn)
     val organisationsByUprn = organisations.groupBy(_.uprn)
-
 
     blpus.map(
       blpu =>
