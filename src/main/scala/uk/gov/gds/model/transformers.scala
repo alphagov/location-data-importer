@@ -12,7 +12,7 @@ import uk.gov.gds.MongoConnection
 
 object Transformers extends Logging {
 
-  def processFile(file: File) = {
+  def processFile(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
     logger.info("Processing " + file.getName)
 
     val errors = MutableList.empty[String]
@@ -26,11 +26,7 @@ object Transformers extends Logging {
 
       val addressBase = constructAddressBaseWrapper(blpus, lpis)
 
-      //addressBase.foreach(addressBaseWrapper => println(geographicAddressToSimpleAddress(addressBaseWrapper,streets, streetDescriptors)))
-
-      println(addressBase.size)
-
-      new MongoConnection().insert(addressBase.flatMap(geographicAddressToSimpleAddress(_, streets, streetDescriptors)).map(_.serialize))
+      mongoConnection.foreach(_.insert(addressBase.flatMap(geographicAddressToSimpleAddress(_, streets, streetDescriptors)).map(_.serialize)))
 
       Some(Result(Success, file.getName))
     } else {

@@ -33,7 +33,7 @@ object AddressBuilder {
     val lpis = filerOutIneligibleLPIs(addressWrapper.lpis)
 
     if (lpis.size <= 0) {
-     // println("No eligible LPI for " + addressWrapper.blpu.uprn)
+      println("No eligible LPI for " + addressWrapper.blpu.uprn)
       None
     } // No LPI for this address
     else if (lpis.size > 1) throw new Exception("too many eligble LPIs for " + addressWrapper.blpu.uprn) // Too many LPIs (error state)

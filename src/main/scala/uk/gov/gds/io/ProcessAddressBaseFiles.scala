@@ -3,19 +3,20 @@ package uk.gov.gds.io
 import uk.gov.gds.logging.Logging
 
 import uk.gov.gds.model.Transformers._
+import uk.gov.gds.MongoConnection
 
 
 object ProcessAddressBaseFiles extends Logging {
 
-  def process(filePath: String): Result = {
+  def process(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processFiles(filePath)
     }
   }
 
-  private def processFiles(filePath: String) = {
-    val results = directoryContents(filePath).flatMap(processFile)
+  private def processFiles(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = {
+    val results = directoryContents(filePath).flatMap(processFile(_))
     if(!results.filter(r => r.outcome.equals(Failure)).isEmpty) {
       Result(Failure, results.filter(r => r.outcome.equals(Failure)).map(failure => failure.messages).flatten)
     } else {

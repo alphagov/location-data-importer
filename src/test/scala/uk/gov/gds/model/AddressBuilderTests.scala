@@ -1,14 +1,15 @@
 package uk.gov.gds.model
 
 import org.specs2.mutable.Specification
-import uk.gov.gds.model.CodeLists.{BlpuStateCode, LogicalStatusCode}
+import uk.gov.gds.model.CodeLists._
 import org.joda.time.DateTime
+import scala.Some
 
 class AddressBuilderTests extends Specification {
 
   "The address builder" should {
     "include the postcode from the BLPU" in {
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation))).get.postcode must beEqualTo("postcode")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.postcode must beEqualTo("postcode")
     }
 
     "include not create an address if no LPI" in {
@@ -28,21 +29,21 @@ class AddressBuilderTests extends Specification {
     }
 
     "should concatenate all the SAO and PAO fields into one line each " in {
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation))).get.postcode must beEqualTo("postcode")
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation))).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation))).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.postcode must beEqualTo("postcode")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
     }
 
     "if there is more than one LPI for a BLPU use the one that has no end date" in {
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation))).get.postcode must beEqualTo("postcode")
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation))).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation))).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.postcode must beEqualTo("postcode")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
     }
 
     "if there is more than one LPI for a BLPU and both have no end date use the approved one" in {
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation))).get.postcode must beEqualTo("postcode")
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation))).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
-      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation))).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.postcode must beEqualTo("postcode")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
+      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
     }
   }
 
@@ -140,4 +141,8 @@ class AddressBuilderTests extends Specification {
 
   private lazy val classification = Classification("uprn", "code", startDate, None, lastUpdatedDate)
   private lazy val organisation = Organisation("uprn", "organisation", startDate, None, lastUpdatedDate)
+  private lazy val street = Street("usrn", Some(StreetRecordTypeCode.numberedStreet), Some(StreetStateCode.open), Some(StreetSurfaceCode.mixed), Some(StreetClassificationCode.footpath), startDate, None, endDate)
+  private lazy val streetDescriptor = StreetDescriptor("usrn", "street name", "locality", "town", "area")
+  private lazy val streetMap = Map("usrn" -> List(street))
+  private lazy val streetDescriptorMap = Map("usrn" -> streetDescriptor)
 }

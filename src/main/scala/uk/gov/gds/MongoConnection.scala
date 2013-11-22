@@ -13,9 +13,5 @@ class MongoConnection {
 
   private val collection = db.getCollection("address")
 
-  def insert = {
-    collection.insert(MongoDBObject("key" -> "value"))
-  }
-
   def insert(things: List[DBObject]) = collection.insert(things.toArray, WriteConcern.Normal)
 }

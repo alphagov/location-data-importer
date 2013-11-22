@@ -26,14 +26,21 @@ object LocationDataImporter extends Logging {
     opts.parse(args, Config()) map {
       config => {
         logger.info("Processing: " + config.dir)
-          val result = ProcessAddressBaseFiles.process(config.dir)
+        logger.info("Persisting: " + config.persist)
 
-          result.outcome match {
-            case Success => logger.info("Completed processing: \n" + result.messages.mkString("\n"))
-            case Failure => logger.info("Failed processing: \n" + result.messages.mkString("\n"))
-            case _ => logger.info("Failed processing: Unable to generate a result]")
-          }
+        implicit val mongoConnection = config.persist match {
+          case true => Some(new MongoConnection)
+          case false => None
         }
+
+        val result = ProcessAddressBaseFiles.process(config.dir)
+
+        result.outcome match {
+          case Success => logger.info("Completed processing: \n" + result.messages.mkString("\n"))
+          case Failure => logger.info("Failed processing: \n" + result.messages.mkString("\n"))
+          case _ => logger.info("Failed processing: Unable to generate a result]")
+        }
+      }
     }
   }
 
