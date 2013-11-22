@@ -25,8 +25,7 @@ object LocationDataImporter extends Logging {
 
     opts.parse(args, Config()) map {
       config => {
-        logger.info("Processing: " + config.dir)
-        logger.info("Persisting: " + config.persist)
+        logger.info("Processing: " + config.dir + " Persisting: " + config.persist)
 
         implicit val mongoConnection = config.persist match {
           case true => Some(new MongoConnection)

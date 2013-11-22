@@ -17,8 +17,13 @@ object ProcessAddressBaseFiles extends Logging {
 
   private def processFiles(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = {
     val results = directoryContents(filePath).flatMap(processFile(_))
+
     if(!results.filter(r => r.outcome.equals(Failure)).isEmpty) {
-      Result(Failure, results.filter(r => r.outcome.equals(Failure)).map(failure => failure.messages).flatten)
+      val errors = results.filter(r => r.outcome.equals(Failure)).map(failure => failure.messages).flatten
+      val success = results.filter(r => r.outcome.equals(Success)).size
+
+      if(success > 0)  Result(Failure,errors.::("processed=[" + success + "] files"))
+      else Result(Failure, errors)
     } else {
       Result(Success, "processed=[" + results.size + "] files")
     }

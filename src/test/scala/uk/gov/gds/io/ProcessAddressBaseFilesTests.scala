@@ -42,12 +42,12 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample {
       ProcessAddressBaseFiles.process("/tmp/testdir/")(None).messages(0) must beEqualTo("processed=[1] files")
     }
 
-    "correctly process a 'good' file returning count of processed rows" in {
+    "correctly process a 'good' file returning count of processed fiels" in {
       ProcessAddressBaseFiles.process("testdata/single-good-file")(None).outcome must beEqualTo(Success)
       ProcessAddressBaseFiles.process("testdata/single-good-file")(None).messages(0) must beEqualTo("processed=[1] files")
     }
 
-    "correctly process a number 'good' files returning count of processed rows in all files" in {
+    "correctly process a number 'good' files returning count of all processed files" in {
       ProcessAddressBaseFiles.process("testdata/multiple-good-files")(None).outcome must beEqualTo(Success)
       ProcessAddressBaseFiles.process("testdata/multiple-good-files")(None).messages(0) must beEqualTo("processed=[2] files")
     }
@@ -61,6 +61,12 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample {
       ProcessAddressBaseFiles.process("testdata/multiple-bad-files")(None).outcome must beEqualTo(Failure)
       ProcessAddressBaseFiles.process("testdata/multiple-bad-files")(None).messages must contain("bad-file-1.csv")
       ProcessAddressBaseFiles.process("testdata/multiple-bad-files")(None).messages must contain("bad-file-2.csv")
+    }
+
+    "correctly process a set of 'good' and 'bad' files returning errors by file name" in {
+      ProcessAddressBaseFiles.process("testdata/good-and-bad-files")(None).outcome must beEqualTo(Failure)
+      ProcessAddressBaseFiles.process("testdata/good-and-bad-files")(None).messages(0) must beEqualTo("processed=[1] files")
+      ProcessAddressBaseFiles.process("testdata/good-and-bad-files")(None).messages must contain("bad-file-1.csv")
     }
   }
 

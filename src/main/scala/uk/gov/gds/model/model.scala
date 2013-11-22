@@ -33,7 +33,7 @@ trait AddressBaseHelpers[T <: AddressBase] {
 
   def isMissingAMandatoryField(csvLine: List[String]) = mandatoryCsvColumns.map(column => csvLine(column).isEmpty).contains(true)
 
-  def isValidCsvLine(csvLine: List[String]) = csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns && !isMissingAMandatoryField(csvLine)
+  def isValidCsvLine(csvLine: List[String]) = csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns //&& !isMissingAMandatoryField(csvLine)
 
   def fromCsvLine(csvLine: List[String]): T
 
