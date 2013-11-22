@@ -29,8 +29,11 @@ trait AddressBase
 trait AddressBaseHelpers[T <: AddressBase] {
   val recordIdentifier: String
   val requiredCsvColumns: Int
+  val mandatoryCsvColumns: List[Int]
 
-  def isValidCsvLine(csvLine: List[String]) = csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns
+  def isMissingAMandatoryField(csvLine: List[String]) = mandatoryCsvColumns.map(column => csvLine(column).isEmpty).contains(true)
+
+  def isValidCsvLine(csvLine: List[String]) = csvLine(0) == recordIdentifier && csvLine.size == requiredCsvColumns && !isMissingAMandatoryField(csvLine)
 
   def fromCsvLine(csvLine: List[String]): T
 
@@ -79,6 +82,8 @@ object BLPU extends AddressBaseHelpers[BLPU] {
       csvLine(postcodeIndex)
     )
   }
+
+  val mandatoryCsvColumns = List(uprnIndex, logicalStateIndex, xCoordinateIndex, yCoordinateIndex, localCustodianCodeIndex, startDateIndex, updatedDateIndex, postcodeIndex)
 }
 
 /* Land and Property Identitifier */
@@ -106,6 +111,7 @@ case class LPI(
 object LPI extends AddressBaseHelpers[LPI] {
   val recordIdentifier = "24"
   val requiredCsvColumns = 26
+  val mandatoryCsvColumns = List(uprnIndex, usrnIndex, logicalStateIndex, startDateIndex, updatedDateIndex)
 
   private val uprnIndex = 3
   private val logicalStateIndex = 6
@@ -126,6 +132,7 @@ object LPI extends AddressBaseHelpers[LPI] {
   private val areaNameIndex = 23
   private val officialFlagIndex = 25
 
+  override def isValidCsvLine(csvLine: List[String]) = super.isValidCsvLine(csvLine) && (!csvLine(paoText).isEmpty || !csvLine(paoStartNumber).isEmpty)
 
   def fromCsvLine(csvLine: List[String]) = LPI(
     csvLine(uprnIndex),
@@ -161,7 +168,6 @@ case class Street(usrn: String,
 
 object Street extends AddressBaseHelpers[Street] {
   val recordIdentifier = "11"
-
   val requiredCsvColumns = 20
 
   private val usrnIndex = 3
@@ -183,6 +189,8 @@ object Street extends AddressBaseHelpers[Street] {
     csvLine(endDateIndex),
     csvLine(updatedDateIndex)
   )
+
+  val mandatoryCsvColumns = List(usrnIndex, recordTypeIndex, stateIndex, surfaceIndex, classificationIndex, startDateIndex, updatedDateIndex)
 }
 
 case class StreetDescriptor(
@@ -196,6 +204,7 @@ case class StreetDescriptor(
 object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
   val recordIdentifier = "15"
   val requiredCsvColumns = 9
+
 
   private val usrnIndex = 3
   private val streetDescriptionIndex = 4
@@ -211,6 +220,8 @@ object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
     csvLine(townNameIndex),
     csvLine(administrativeAreaIndex)
   )
+
+  val mandatoryCsvColumns = List(usrnIndex, streetDescriptionIndex, localityNameIndex, townNameIndex, administrativeAreaIndex)
 }
 
 case class Organisation(
@@ -238,15 +249,17 @@ object Organisation extends AddressBaseHelpers[Organisation] {
     csvLine(endDateIndex),
     csvLine(updatedDateIndex)
   )
+
+  val mandatoryCsvColumns = List(uprnIndex, organisationIndex, startDateIndex, updatedDateIndex)
 }
 
 case class Classification(
-                         uprn: String,
-                         classificationCode: String,
-                         startDate: DateTime,
-                         endDate: Option[DateTime],
-                         lastUpdated: DateTime
-                         ) extends AddressBase {
+                           uprn: String,
+                           classificationCode: String,
+                           startDate: DateTime,
+                           endDate: Option[DateTime],
+                           lastUpdated: DateTime
+                           ) extends AddressBase {
   /* R means residential, but RC means residential parking not dwelling!
    * Much too simplified and may not belong here
    */
@@ -270,5 +283,7 @@ object Classification extends AddressBaseHelpers[Classification] {
     csvLine(endDateIndex),
     csvLine(updatedDateIndex)
   )
+
+  val mandatoryCsvColumns = List(uprnIndex, classificationCodeIndex, startDateIndex, updatedDateIndex)
 }
 
