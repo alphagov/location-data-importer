@@ -40,6 +40,8 @@ class ModelTests extends Specification {
       blpu(line).endDate.get must beEqualTo(new DateTime(2010, 4, 5, 0, 0))
       blpu(line).xCoordinate must beEqualTo(346782.00)
       blpu(line).yCoordinate must beEqualTo(732382.00)
+      blpu(line).receivesPost must beEqualTo("S")
+      blpu(line).canReceivePost must beEqualTo(true)
       blpu(line).postcode must beEqualTo("DD5 3BZ")
     }
 
@@ -53,8 +55,17 @@ class ModelTests extends Specification {
       blpu(line).endDate must beEqualTo(None)
       blpu(line).xCoordinate must beEqualTo(346782.00)
       blpu(line).yCoordinate must beEqualTo(732382.00)
+      blpu(line).receivesPost must beEqualTo("S")
+      blpu(line).canReceivePost must beEqualTo(true)
       blpu(line).postcode must beEqualTo("DD5 3BZ")
     }
+
+    "be able to be constructed from a csv line with only mandatory fields - indicating not able to recieve post" in {
+      val line = """21,"I",94755,9059007610,1,,,,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"N","DD5 3BZ",0"""
+      blpu(line).receivesPost must beEqualTo("N")
+      blpu(line).canReceivePost must beEqualTo(false)
+    }
+
 
     "be able to be made into correct type" in {
       val line = """21,"I",94755,9059007610,1,,,,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BZ",0"""

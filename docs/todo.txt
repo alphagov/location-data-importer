@@ -29,3 +29,7 @@
 - mongo indexes
 
 - properly codify transformation rules.
+
+- OS use cases
+
+- how many files to do , have done, to get to end

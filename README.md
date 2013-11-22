@@ -54,3 +54,14 @@ Process:
 
     -> File applied to DB in one go using mongo batch insert
 
+
+Valid Address:
+
+    - BLPU must be
+        -> Logical status approved (not historical or provisional)
+        ->
+
+Assumptions:
+
+    -> Suffix on LPI (SAO or PAO) not relevant if no corresponding numbers
+    -> filtered out addresses that cannot receive post

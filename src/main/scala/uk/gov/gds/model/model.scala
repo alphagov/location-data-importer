@@ -50,8 +50,12 @@ case class BLPU(
                  startDate: DateTime,
                  endDate: Option[DateTime],
                  lastUpdated: DateTime,
+                 receivesPost: String,
                  postcode: String
-                 ) extends AddressBase
+                 ) extends AddressBase {
+
+  def canReceivePost = !receivesPost.equals("N")
+}
 
 object BLPU extends AddressBaseHelpers[BLPU] {
   val recordIdentifier = "21"
@@ -66,6 +70,7 @@ object BLPU extends AddressBaseHelpers[BLPU] {
   private val startDateIndex = 12
   private val endDateIndex = 13
   private val updatedDateIndex = 14
+  private val receivesPostIndex = 16
   private val postcodeIndex = 17
 
   def fromCsvLine(csvLine: List[String]) = {
@@ -79,6 +84,7 @@ object BLPU extends AddressBaseHelpers[BLPU] {
       csvLine(startDateIndex),
       csvLine(endDateIndex),
       csvLine(updatedDateIndex),
+      csvLine(receivesPostIndex),
       csvLine(postcodeIndex)
     )
   }

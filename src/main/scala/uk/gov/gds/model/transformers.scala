@@ -22,9 +22,11 @@ object Transformers extends Logging {
       val blpus = extractBlpus(rows)
       val lpis = extractLpis(rows)
       val streets = extractStreets(rows)
+      val classifications = extractClassifications(rows)
+      val organisations = extractOrganisations(rows)
       val streetDescriptors = extractStreetDescriptors(rows)
 
-      val addressBase = constructAddressBaseWrapper(blpus, lpis)
+      val addressBase = constructAddressBaseWrapper(blpus, lpis, classifications, organisations)
 
       mongoConnection.foreach(_.insert(addressBase.flatMap(geographicAddressToSimpleAddress(_, streets, streetDescriptors)).map(_.serialize)))
 
@@ -73,10 +75,10 @@ object Transformers extends Logging {
     }
 
   def extractStreets(raw: List[AddressBase]): Map[String, List[Street]] = {
-    raw flatMap  {
+    raw flatMap {
       case a: Street => Some(a)
       case _ => None
-    } groupBy(_.usrn)
+    } groupBy (_.usrn)
   }
 
   def extractStreetDescriptors(raw: List[AddressBase]): Map[String, StreetDescriptor] = {
@@ -104,13 +106,15 @@ object Transformers extends Logging {
     val classificationsByUprn = classifications.groupBy(_.uprn)
     val organisationsByUprn = organisations.groupBy(_.uprn)
 
+
     blpus.map(
-      blpu => AddressBaseWrapper(
-        blpu,
-        lpisByUprn.getOrElse(blpu.uprn, List.empty[LPI]),
-        classificationsByUprn.getOrElse(blpu.uprn, List.empty[Classification]),
-        organisationsByUprn.getOrElse(blpu.uprn, List.empty[Organisation])
-      )
+      blpu =>
+        AddressBaseWrapper(
+          blpu,
+          lpisByUprn.getOrElse(blpu.uprn, List.empty[LPI]),
+          classificationsByUprn.getOrElse(blpu.uprn, List.empty[Classification]),
+          organisationsByUprn.getOrElse(blpu.uprn, List.empty[Organisation])
+        )
     ).toList
   }
 }
