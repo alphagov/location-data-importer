@@ -80,6 +80,17 @@ class ModelTests extends Specification {
       LPI.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
     }
 
+    "be able to identify an invalid line due to missing required PAO information" in {
+      val missingBothPaoTextAndPaoStartNumber = """24,"I",1082431,100100077917,"6815L000701604","ENG",1,2001-05-10,,2001-05- 15,2001-05-10,,"",,"","",,"",,"","",5801201,1,"","","""""
+      LPI.isValidCsvLine(parseCsvLine(missingBothPaoTextAndPaoStartNumber)) must beFalse
+
+      val missingOnlyPaoText = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","",1,"",,"","",7803241,"1","","","Y""""
+      LPI.isValidCsvLine(parseCsvLine(missingOnlyPaoText)) must beTrue
+
+      val missingOnlyPaoStartNumber = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","",,"",,"","TEXT",7803241,"1","","","Y""""
+      LPI.isValidCsvLine(parseCsvLine(missingOnlyPaoStartNumber)) must beTrue
+    }
+
     "be able to be constructed from a fully populated csv line" in {
       val validLine = """24,"I",92423,9059082524,"9059L000069680","ENG",1,2005-04-05,2006-04-01,2005-04-05,2005-04-05,99,"SAO Start Suffix",100,"SAO End Suffix","Sao Text",1,"PAO Start Suffix",2,"PAO End Suffix","PAO Text",7803241,"1","Area 51","level","Y""""
       lpi(validLine).uprn must beEqualTo("9059082524")
@@ -100,7 +111,6 @@ class ModelTests extends Specification {
       lpi(validLine).saoText.get must beEqualTo("Sao Text")
       lpi(validLine).areaName.get must beEqualTo("Area 51")
       lpi(validLine).officialAddress.get must beTrue
-
     }
 
     "be able to be constructed from a minimum populated csv line" in {

@@ -111,23 +111,22 @@ case class LPI(
 object LPI extends AddressBaseHelpers[LPI] {
   val recordIdentifier = "24"
   val requiredCsvColumns = 26
-  val mandatoryCsvColumns = List(uprnIndex, usrnIndex, logicalStateIndex, startDateIndex, updatedDateIndex)
 
   private val uprnIndex = 3
   private val logicalStateIndex = 6
   private val startDateIndex = 7
   private val endDateIndex = 8
   private val updatedDateIndex = 9
-  private val paoStartNumber = 16
-  private val paoStartSuffix = 17
-  private val paoEndNumber = 18
-  private val paoEndSuffix = 19
-  private val paoText = 20
   private val saoStartNumber = 11
   private val saoStartSuffix = 12
   private val saoEndNumber = 13
   private val saoEndSuffix = 14
   private val saoText = 15
+  private val paoStartNumber = 16
+  private val paoStartSuffix = 17
+  private val paoEndNumber = 18
+  private val paoEndSuffix = 19
+  private val paoText = 20
   private val usrnIndex = 21
   private val areaNameIndex = 23
   private val officialFlagIndex = 25
@@ -154,6 +153,9 @@ object LPI extends AddressBaseHelpers[LPI] {
     csvLine(areaNameIndex),
     csvLine(officialFlagIndex)
   )
+
+  val mandatoryCsvColumns = List(uprnIndex, usrnIndex, logicalStateIndex, startDateIndex, updatedDateIndex)
+
 }
 
 case class Street(usrn: String,
