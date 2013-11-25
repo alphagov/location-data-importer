@@ -42,7 +42,7 @@ Process:
 
 - File processed singularly
     -> File rows checked by type for correct number of columns and all mandatory fields (ours not OS's) present
-        - errors on a file means file not persisted
+        - errors on a file means file not persisted (row check not data integrity check)
 
     -> Whole file processed into
         - list containing 6 types of object, BLPU, LPI, Classification, Organisation, Street and StreetDescriptor -> as per OS data model (these are reduced to fields we are intereseted in)

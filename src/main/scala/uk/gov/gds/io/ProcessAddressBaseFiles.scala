@@ -4,9 +4,15 @@ import uk.gov.gds.logging.Logging
 
 import uk.gov.gds.model.Transformers._
 import uk.gov.gds.MongoConnection
+import java.io.File
 
 
 object ProcessAddressBaseFiles extends Logging {
+
+  def processSingleFile(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
+    if (!fileExists(filePath)) Result(Failure, "Supplied path does not exist")
+    else processFile(new File(filePath)).get
+  }
 
   def process(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
     filePathHasErrors(filePath) match {
@@ -18,11 +24,11 @@ object ProcessAddressBaseFiles extends Logging {
   private def processFiles(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = {
     val results = directoryContents(filePath).flatMap(processFile(_))
 
-    if(!results.filter(r => r.outcome.equals(Failure)).isEmpty) {
+    if (!results.filter(r => r.outcome.equals(Failure)).isEmpty) {
       val errors = results.filter(r => r.outcome.equals(Failure)).map(failure => failure.messages).flatten
       val success = results.filter(r => r.outcome.equals(Success)).size
 
-      if(success > 0)  Result(Failure,errors.::("processed=[" + success + "] files"))
+      if (success > 0) Result(Failure, errors.::("processed=[" + success + "] files"))
       else Result(Failure, errors)
     } else {
       Result(Success, "processed=[" + results.size + "] files")

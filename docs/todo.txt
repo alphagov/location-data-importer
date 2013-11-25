@@ -1,19 +1,14 @@
 - reporting on upload
     - files
     - rows per file
-    - total BLPU
-    - errors
     - anomalies
 
  - skip whole file with an error?
 
 - better upload checking
-    - file name check
     - directory read status
 
 - better row checking
-    - columns
-    - mandatory
     - report
 
 - validation scripts
@@ -21,19 +16,17 @@
     - etc
 
 
-- mongo credentials
+- sort data model
 
-- run single file
+- push reporter into address mapper
 
-- mongo indexes
+- mongo indexes  (define)
 
 - properly codify transformation rules.
 
 - OS use cases
 
 - how many files to do , have done, to get to end
-
-- searchable LC postcode
 
 - commercial buildings allowed?
 

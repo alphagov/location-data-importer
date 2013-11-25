@@ -51,7 +51,12 @@ object AddressBuilder extends Logging {
 
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper, streets: Map[String, List[Street]] = Map.empty[String, List[Street]], streetDescriptors: Map[String, StreetDescriptor] = Map.empty[String, StreetDescriptor]) = {
 
+    logger.info("LPIS before for " + addressWrapper.uprn + " " + addressWrapper.lpis)
+
+
     val lpis = filerOutIneligibleLPIs(addressWrapper.lpis)
+
+    logger.info("LPIS after for " + addressWrapper.uprn + " " + lpis)
 
     if (!isValidBLPU(addressWrapper.blpu)) {
       logger.info("Not eligible BLPU " + addressWrapper.blpu.uprn)
@@ -106,7 +111,7 @@ object AddressBuilder extends Logging {
     blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
     blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
     !blpu.endDate.isDefined, // MUST not have an end date
-    blpu.canReceivePost // must be able to recieve post
+    blpu.canReceivePost // must be able to receive post
   ).contains(false)
 
   def constructProperty(lpi: LPI) = {

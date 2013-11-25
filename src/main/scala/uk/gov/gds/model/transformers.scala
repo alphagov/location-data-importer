@@ -9,6 +9,8 @@ import uk.gov.gds.model.AddressBuilder._
 import java.io.File
 import scala.Some
 import uk.gov.gds.MongoConnection
+import uk.gov.gds.logging.Reporter.report
+import uk.gov.gds.logging.RowParseError
 
 object Transformers extends Logging {
 
@@ -55,6 +57,7 @@ object Transformers extends Logging {
 
   def extractRow[T <: AddressBase](parsed: List[String], addressBase: AddressBaseHelpers[T])(implicit errors: MutableList[String], fileName: String): Option[T] = {
     if (!addressBase.isValidCsvLine(parsed)) {
+      report(fileName, RowParseError, Some(parsed.mkString("|")))
       errors += "Row error for filename=[" + fileName + "] row data=[" + parsed.mkString(", ") + "]"
       None
     }

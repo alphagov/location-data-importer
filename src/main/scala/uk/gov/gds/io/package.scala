@@ -27,6 +27,8 @@ package object io {
 
   def loadFile(file: File) = Resource.fromFile(file)
 
+  def reportWriter = Resource.fromFile("/tmp/location-data-import-report.txt").writer
+
   def fileExists(location: String) = new File(location).exists
 
   def isDirectory(location: String) = new File(location).isDirectory
