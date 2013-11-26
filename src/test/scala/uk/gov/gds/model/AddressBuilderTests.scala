@@ -51,12 +51,12 @@ class AddressBuilderTests extends Specification {
 
     "should transform all the SAO and PAO fields successfully when no suffix" in {
       AddressBuilder.constructProperty(lpiWithNoSuffix).get must beEqualTo("sao start number-sao end number sao text pao text")
-      AddressBuilder.constructStreetAddress(lpiWithNoSuffix) must beEqualTo("pao start number-pao end number")
+      AddressBuilder.constructStreetAddressPrefix(lpiWithNoSuffix) must beEqualTo("pao start number-pao end number")
     }
 
     "should transform all the SAO and PAO fields successfully when no numbers" in {
       AddressBuilder.constructProperty(lpiWithNoNumbers).get must beEqualTo("sao text pao text")
-      AddressBuilder.constructStreetAddress(lpiWithNoNumbers).isEmpty must beTrue
+      AddressBuilder.constructStreetAddressPrefix(lpiWithNoNumbers).isEmpty must beTrue
     }
 
     "should transform all missing sao and pao text fields into an empty string that returns true to isEmpty" in {
@@ -64,7 +64,7 @@ class AddressBuilderTests extends Specification {
     }
 
     "should transform all the PAO fields into a string" in {
-      AddressBuilder.constructStreetAddress(lpi) must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
+      AddressBuilder.constructStreetAddressPrefix(lpi) must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
     }
 
     "valid blpus should be marked as valid" in {

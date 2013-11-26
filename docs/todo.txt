@@ -31,3 +31,5 @@
 - commercial buildings allowed?
 
 - test mongo auth
+
+- remove ambiguity around lists by choosing only the one with no end date, order by updated, head - on all listed classes

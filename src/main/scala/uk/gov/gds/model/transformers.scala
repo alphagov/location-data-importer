@@ -70,6 +70,8 @@ object Transformers extends Logging {
       case _ => None
     }
 
+  // Should the below filter out to return a single row? Skipping historical for now?
+
   def extractLpis(raw: List[AddressBase]) =
     raw flatMap {
       case a: LPI => Some(a)
