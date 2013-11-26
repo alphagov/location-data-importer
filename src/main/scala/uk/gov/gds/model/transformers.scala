@@ -2,8 +2,6 @@ package uk.gov.gds.model
 
 import scalax.io.LongTraversable
 import uk.gov.gds.io._
-import scala.collection.mutable.MutableList
-import scala.collection.immutable.Map
 import uk.gov.gds.logging.Logging
 import uk.gov.gds.model.AddressBuilder._
 import java.io.File
@@ -12,54 +10,82 @@ import uk.gov.gds.MongoConnection
 import uk.gov.gds.logging.Reporter.report
 import uk.gov.gds.logging.RowParseError
 
-object Transformers extends Logging {
+object transformers extends Logging {
 
-  def processFile(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
-    logger.info("Processing " + file.getName)
+  def processStreets(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
+    logger.info("Processing streets " + file.getName)
 
-    val errors = MutableList.empty[String]
-    val rows = processRows(loadFile(file).lines())(errors, file.getName)
-    if (errors.isEmpty) {
-
-      val blpus = extractBlpus(rows)
-      val lpis = extractLpis(rows)
-      val streets = extractStreets(rows)
-      val classifications = extractClassifications(rows)
-      val organisations = extractOrganisations(rows)
-      val streetDescriptors = extractStreetDescriptors(rows)
-
-      val addressBase = constructAddressBaseWrapper(blpus, lpis, classifications, organisations)
-
-      mongoConnection.foreach(_.insert(addressBase.flatMap(geographicAddressToSimpleAddress(_, streets, streetDescriptors)).map(_.serialize)))
-
+    try {
+      persistStreetDescriptors(processRowsIntoStreetsDescriptors(file))
       Some(Result(Success, file.getName))
-    } else {
-      logger.info(errors.mkString("\n"))
-      Some(Result(Failure, file.getName))
+    } catch {
+      case e: Exception => {
+        Some(Result(Failure, file.getName))
+      }
     }
   }
 
-  def processRows(lines: LongTraversable[String])(implicit errors: MutableList[String], fileName: String) = lines.flatMap(process(_)).toList
+  def processAddresses(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
+    implicit val fileName = file.getName
+    logger.info("Processing " + fileName)
 
-  def process(line: String)(implicit errors: MutableList[String], fileName: String) = {
-    val parsed = parseCsvLine(line)
-
-    parsed.head match {
-      case BLPU.recordIdentifier => extractRow[BLPU](parsed, BLPU)
-      case LPI.recordIdentifier => extractRow[LPI](parsed, LPI)
-      case Street.recordIdentifier => extractRow[Street](parsed, Street)
-      case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](parsed, StreetDescriptor)
-      case Classification.recordIdentifier => extractRow[Classification](parsed, Classification)
-      case Organisation.recordIdentifier => extractRow[Organisation](parsed, Organisation)
-      case _ => None
+    try {
+      persistAddresses(processRowsIntoAddressWrappers(file))
+      Some(Result(Success, fileName))
+    } catch {
+      case e: Exception => {
+        logger.info("Failed to process: [" + file.getName + "]")
+        Some(Result(Failure, file.getName))
+      }
     }
   }
 
-  def extractRow[T <: AddressBase](parsed: List[String], addressBase: AddressBaseHelpers[T])(implicit errors: MutableList[String], fileName: String): Option[T] = {
+
+  def processRowsIntoStreetsDescriptors(file: File) = {
+
+    def processRow(line: String) = {
+      val parsed = parseCsvLine(line)
+      parsed.head match {
+        case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](file.getName, parsed, StreetDescriptor)
+        case _ => None
+      }
+    }
+
+    val genericRows = processRows(loadFile(file).lines(), processRow)
+    extractStreetDescriptors(genericRows)
+  }
+
+  def processRowsIntoAddressWrappers(file: File) = {
+    def processRow(line: String) = {
+      val parsed = parseCsvLine(line)
+
+      parsed.head match {
+        case BLPU.recordIdentifier => extractRow[BLPU](file.getName, parsed, BLPU)
+        case LPI.recordIdentifier => extractRow[LPI](file.getName, parsed, LPI)
+        case Classification.recordIdentifier => extractRow[Classification](file.getName, parsed, Classification)
+        case Organisation.recordIdentifier => extractRow[Organisation](file.getName, parsed, Organisation)
+        case _ => None
+      }
+    }
+
+    val genericRows = processRows(loadFile(file).lines(), processRow)
+    constructAddressBaseWrappers(genericRows)
+  }
+
+  private def processRows(lines: LongTraversable[String], f: String => Option[AddressBase]) = lines.flatMap(f(_)).toList
+
+  def persistStreetDescriptors(streetDescriptors: List[StreetDescriptor])(implicit mongoConnection: Option[MongoConnection]) {
+    mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
+  }
+
+  def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection]) {
+    mongoConnection.foreach(_.insert(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
+  }
+
+  def extractRow[T <: AddressBase](fileName: String, parsed: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsed)) {
       report(fileName, RowParseError, Some(parsed.mkString("|")))
-      errors += "Row error for filename=[" + fileName + "] row data=[" + parsed.mkString(", ") + "]"
-      None
+      throw new Exception("Unable to parse row")
     }
     else Some(addressBase.fromCsvLine(parsed))
   }
@@ -70,28 +96,17 @@ object Transformers extends Logging {
       case _ => None
     }
 
-  // Should the below filter out to return a single row? Skipping historical for now?
-
   def extractLpis(raw: List[AddressBase]) =
     raw flatMap {
       case a: LPI => Some(a)
       case _ => None
     }
 
-  def extractStreets(raw: List[AddressBase]): Map[String, List[Street]] = {
+  def extractStreetDescriptors(raw: List[AddressBase]): List[StreetDescriptor] =
     raw flatMap {
-      case a: Street => Some(a)
-      case _ => None
-    } groupBy (_.usrn)
-  }
-
-  def extractStreetDescriptors(raw: List[AddressBase]): Map[String, StreetDescriptor] = {
-    val sd = raw flatMap {
       case a: StreetDescriptor => Some(a)
       case _ => None
     }
-    sd.groupBy(_.usrn).map(a => a._1 -> a._2.head)
-  }
 
   def extractOrganisations(raw: List[AddressBase]) =
     raw flatMap {
@@ -105,11 +120,13 @@ object Transformers extends Logging {
       case _ => None
     }
 
-  def constructAddressBaseWrapper(
-                                   blpus: List[BLPU],
-                                   lpis: List[LPI],
-                                   classifications: List[Classification] = List.empty[Classification],
-                                   organisations: List[Organisation] = List.empty[Organisation]) = {
+  def constructAddressBaseWrappers(rows: List[AddressBase]) = {
+
+    val blpus = extractBlpus(rows)
+    val lpis = extractLpis(rows)
+    val classifications = extractClassifications(rows)
+    val organisations = extractOrganisations(rows)
+
     val lpisByUprn = lpis.groupBy(_.uprn)
     val classificationsByUprn = classifications.groupBy(_.uprn)
     val organisationsByUprn = organisations.groupBy(_.uprn)

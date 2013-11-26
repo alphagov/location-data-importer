@@ -1,24 +1,12 @@
 package uk.gov.gds.model
 
 import org.joda.time.DateTime
-import uk.gov.gds.model.CodeLists._
-import uk.gov.gds.model.CodeLists.BlpuStateCode.BlpuStateCode
-import uk.gov.gds.model.CodeLists.LogicalStatusCode.LogicalStatusCode
-import uk.gov.gds.model.CodeLists.StreetRecordTypeCode.StreetRecordTypeCode
-import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
-import uk.gov.gds.model.CodeLists.StreetSurfaceCode.StreetSurfaceCode
-import uk.gov.gds.model.CodeLists.StreetClassificationCode.StreetClassificationCode
-import uk.gov.gds.model.CodeLists.StreetRecordTypeCode.StreetRecordTypeCode
-import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
 import uk.gov.gds.model.CodeLists.BlpuStateCode.BlpuStateCode
 import uk.gov.gds.model.CodeLists.BlpuStateCode
-import uk.gov.gds.model.CodeLists.StreetRecordTypeCode.StreetRecordTypeCode
-import uk.gov.gds.model.CodeLists.StreetRecordTypeCode
-import uk.gov.gds.model.CodeLists.StreetStateCode
-import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
 import uk.gov.gds.model.CodeLists.LogicalStatusCode.LogicalStatusCode
 import uk.gov.gds.model.CodeLists.LogicalStatusCode
-
+import com.novus.salat._
+import com.novus.salat.global._
 
 case class AddressBaseWrapper(blpu: BLPU, lpis: List[LPI], classifications: List[Classification], organisations: List[Organisation]) {
   lazy val uprn = blpu.uprn
@@ -164,50 +152,16 @@ object LPI extends AddressBaseHelpers[LPI] {
 
 }
 
-case class Street(usrn: String,
-                  recordType: Option[StreetRecordTypeCode],
-                  state: Option[StreetStateCode],
-                  surface: Option[StreetSurfaceCode],
-                  classification: Option[StreetClassificationCode],
-                  startDate: DateTime,
-                  endDate: Option[DateTime],
-                  lastUpdated: DateTime
-                   ) extends AddressBase
-
-object Street extends AddressBaseHelpers[Street] {
-  val recordIdentifier = "11"
-  val requiredCsvColumns = 20
-
-  private val usrnIndex = 3
-  private val recordTypeIndex = 4
-  private val stateIndex = 6
-  private val surfaceIndex = 8
-  private val classificationIndex = 9
-  private val startDateIndex = 11
-  private val endDateIndex = 12
-  private val updatedDateIndex = 13
-
-  def fromCsvLine(csvLine: List[String]) = Street(
-    csvLine(usrnIndex),
-    StreetRecordTypeCode.forId(csvLine(recordTypeIndex)),
-    StreetStateCode.forId(csvLine(stateIndex)),
-    StreetSurfaceCode.forId(csvLine(surfaceIndex)),
-    StreetClassificationCode.forId(csvLine(classificationIndex)),
-    csvLine(startDateIndex),
-    csvLine(endDateIndex),
-    csvLine(updatedDateIndex)
-  )
-
-  val mandatoryCsvColumns = List(usrnIndex, recordTypeIndex, startDateIndex, updatedDateIndex)
-}
-
 case class StreetDescriptor(
                              usrn: String,
                              streetDescription: String,
                              localityName: Option[String],
                              townName: Option[String],
                              administrativeArea: String
-                             ) extends AddressBase
+                             ) extends AddressBase {
+
+  def serialize = grater[StreetDescriptor].asDBObject(this)
+}
 
 object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
   val recordIdentifier = "15"
@@ -295,3 +249,38 @@ object Classification extends AddressBaseHelpers[Classification] {
   val mandatoryCsvColumns = List(uprnIndex, classificationCodeIndex, startDateIndex, updatedDateIndex)
 }
 
+case class Location(x: Double, y: Double)
+
+case class Details(
+                    blpuCreatedAt: DateTime,
+                    blpuUpdatedAt: DateTime,
+                    classification: String,
+                    status: Option[String] = None,
+                    state: Option[String] = None,
+                    isPostalAddress: Boolean,
+                    isCommercial: Boolean,
+                    isResidential: Boolean
+                    )
+
+case class Presentation(
+                         property: Option[String] = None,
+                         streetAddress: Option[String],
+                         locality: Option[String] = None,
+                         town: Option[String] = None,
+                         area: Option[String] = None,
+                         postcode: String,
+                         uprn: String
+                         )
+
+case class Address(
+                    houseNumber: Option[String],
+                    houseName: Option[String],
+                    postcode: String,
+                    gssCode: String,
+                    createdAt: DateTime = new DateTime,
+                    presentation: Presentation,
+                    location: Location,
+                    details: Details
+                    ) {
+  def serialize = grater[Address].asDBObject(this)
+}

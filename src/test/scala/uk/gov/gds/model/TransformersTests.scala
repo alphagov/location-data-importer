@@ -3,8 +3,9 @@ package uk.gov.gds.model
 import org.specs2.mutable.Specification
 import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable}
 import scalax.io.Line.Terminators.NewLine
-import Transformers._
+import transformers._
 import scala.collection.mutable
+import uk.gov.gds.io._
 
 class TransformersTests extends Specification {
 
@@ -25,23 +26,33 @@ class TransformersTests extends Specification {
     """32,"I",94733,9059004872,"9059C000003726","R","AddressBase Premium Classification Scheme",1.0,2010-04-23,,2012-01-12,2010-04-23""",
     """32,"I",94733,9059004873,"9059C000003726","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-24,,2012-01-13,2010-04-24"""
   )
+
   private val validLinesForOrganisation = List(
     """31,"I",93718,9059017793,"9059O000000971","Hannahs","",2012-02-01,,2012-02-01,2012-02-01""",
     """31,"I",93835,9059085157,"9059O000001679","Party Time","",2012-03-20,,2012-03-20,2012-03-20""",
     """31,"I",93843,9059000379,"9059O000000619","Department Of Leisure And Culture","",2012-01-23,,2012-01-23,2012-01-23"""
   )
-  private val validLinesForStreet = List(
-    """11,"I",1147,709884,2,9053,2,2010-02-05,,8,0,2008-01-17,,2009-06-05,2008-01-17,349535.00,734956.00,350014.00,735097.00,999""",
-    """11,"I",1149,709887,2,9053,2,2010-02-05,,8,0,2008-01-25,,2008-10-09,2008-01-25,349535.00,734956.00,349125.00,735569.00,999""",
-    """11,"I",1151,709895,2,9053,2,2010-02-05,,8,0,2008-01-25,,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
-  )
+
   private val validLinesForStreetDescriptor = List(
     """15,"I",1146,709838,"ACCESS FROM ZC4 TO GAGIE HOLDING","","MURROES","ANGUS","ENG"""",
     """15,"I",1148,709884,"ACCESS FROM ZU306 TO B962 AT LAWS","NEWBIGGING","MONIFIETH","ANGUS","ENG"""",
     """15,"I",1150,709887,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG""""
   )
 
-  private def processStringLists(input: List[String], errors: mutable.MutableList[String] = mutable.MutableList.empty[String], fileName: String = "testing") = processRows(new LineTraversable(CloseableIterator(input.mkString("\n").toCharArray.iterator), NewLine, false, DefaultResourceContext))(errors, fileName)
+  private def processRowForAddresses(line: String) = {
+    val parsed = parseCsvLine(line)
+
+    parsed.head match {
+      case BLPU.recordIdentifier => extractRow[BLPU](parsed, BLPU)
+      case LPI.recordIdentifier => extractRow[LPI](parsed, LPI)
+      case Classification.recordIdentifier => extractRow[Classification](parsed, Classification)
+      case Organisation.recordIdentifier => extractRow[Organisation](parsed, Organisation)
+      case _ => None
+    }
+  }
+
+
+  private def processStringLists(input: List[String], errors: mutable.MutableList[String] = mutable.MutableList.empty[String], fileName: String = "testing") = processRows(new LineTraversable(CloseableIterator(input.mkString("\n").toCharArray.iterator), NewLine, false, DefaultResourceContext), processRowForAddresses)
 
   "Transformer" should {
 
@@ -81,34 +92,6 @@ class TransformersTests extends Specification {
       processed(2).asInstanceOf[Organisation].uprn must beEqualTo("9059000379")
     }
 
-    "parse Street lines into correctly typed objects with correct values" in {
-      val processed = processStringLists(validLinesForStreet)
-      processed.size must beEqualTo(3)
-      for (p <- processed) p.isInstanceOf[Street] must beTrue
-      processed(0).asInstanceOf[Street].usrn must beEqualTo("709884")
-      processed(1).asInstanceOf[Street].usrn must beEqualTo("709887")
-      processed(2).asInstanceOf[Street].usrn must beEqualTo("709895")
-    }
-
-    "parse Street lines into correctly typed objects grouped by usrn if there are several with same usrn" in {
-      val validLinesForStreetWithNonUniqueUSRN = List(
-        """11,"I",1147,709884,2,9053,2,2010-02-05,,8,0,2008-01-17,,2009-06-05,2008-01-17,349535.00,734956.00,350014.00,735097.00,999""",
-        """11,"I",1149,709884,2,9053,2,2010-02-05,,8,0,2008-01-25,2010-01-01,2008-10-09,2008-01-25,349535.00,734956.00,349125.00,735569.00,999""",
-        """11,"I",1151,709884,2,9053,2,2010-02-05,,8,0,2008-01-25,2011-01-01,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
-      )
-      val processed = processStringLists(validLinesForStreetWithNonUniqueUSRN)
-      processed.size must beEqualTo(3)
-      for (p <- processed) p.isInstanceOf[Street] must beTrue
-      processed(0).asInstanceOf[Street].usrn must beEqualTo("709884")
-      processed(1).asInstanceOf[Street].usrn must beEqualTo("709884")
-      processed(2).asInstanceOf[Street].usrn must beEqualTo("709884")
-
-      val streets = extractStreets(processed)
-
-      streets.size must beEqualTo(1)
-      streets("709884").size must beEqualTo(3)
-    }
-
     "parse Street Descriptor lines into correctly typed objects with correct values" in {
       val processed = processStringLists(validLinesForStreetDescriptor)
       processed.size must beEqualTo(3)
@@ -124,7 +107,6 @@ class TransformersTests extends Specification {
           validLinesForLPI ++
           validLinesForOrganisation ++
           validLinesForClassification ++
-          validLinesForStreet ++
           validLinesForStreetDescriptor
       )
 
@@ -138,14 +120,9 @@ class TransformersTests extends Specification {
       for (p <- lpis) p.isInstanceOf[LPI] must beTrue
       lpis.size must beEqualTo(3)
 
-      val streets = extractStreets(processed)
-      for (p <- streets) p._2(0).isInstanceOf[Street] must beTrue
-      streets.size must beEqualTo(3)
-
-
-      val streetDescriptors = extractStreetDescriptors(processed)
-      for (p <- streetDescriptors) p._2.isInstanceOf[StreetDescriptor] must beTrue
-      streetDescriptors.size must beEqualTo(3)
+//      val streetDescriptors = extractStreetDescriptors(processed)
+//      for (p <- streetDescriptors) p._2.isInstanceOf[StreetDescriptor] must beTrue
+//      streetDescriptors.size must beEqualTo(3)
 
       val organisations = extractOrganisations(processed)
       for (p <- organisations) p.isInstanceOf[Organisation] must beTrue
@@ -158,7 +135,7 @@ class TransformersTests extends Specification {
 
     "construct an address base wrapper object with the correct BLPUs" in {
       val processed = processStringLists(validLinesForBLPU ++ validLinesForLPI)
-      val addressWrappers = constructAddressBaseWrapper(extractBlpus(processed), List.empty[LPI])
+      val addressWrappers = constructAddressBaseWrappers(extractBlpus(processed), List.empty[LPI])
 
       addressWrappers.size must beEqualTo(3)
       addressWrappers(0).blpu.postcode must beEqualTo("DD5 3BX")
@@ -169,7 +146,7 @@ class TransformersTests extends Specification {
 
     "construct an address base wrapper object with the LPI associated with correct BLPU" in {
       val processed = processStringLists(validLinesForBLPU ++ validLinesForLPI)
-      val addressWrappers = constructAddressBaseWrapper(extractBlpus(processed), extractLpis(processed))
+      val addressWrappers = constructAddressBaseWrappers(extractBlpus(processed), extractLpis(processed))
 
       addressWrappers.size must beEqualTo(3)
 

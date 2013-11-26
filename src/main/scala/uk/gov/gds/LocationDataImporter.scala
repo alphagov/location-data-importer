@@ -7,7 +7,7 @@ import uk.gov.gds.io.{Failure, Success}
 
 object LocationDataImporter extends Logging {
 
-  case class Config(file: String = "", dir: String = "", persist: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
+  case class Config(dir: String = "", persist: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
 
@@ -15,9 +15,6 @@ object LocationDataImporter extends Logging {
       head("Parse and import location data", "0.1")
       opt[String]('d', "dir") text "Location of address base files files" action {
         (dir: String, c: Config) => c.copy(dir = dir)
-      }
-      opt[String]('f', "file") text "Specific file (full path required) to process" action {
-        (file: String, c: Config) => c.copy(file = file)
       }
       opt[Unit]('p', "persist") text "Persist the data" action {
         (_, c: Config) => c.copy(persist = true)
@@ -45,17 +42,28 @@ object LocationDataImporter extends Logging {
           case false => None
         }
 
-        val result = if(!config.file.isEmpty) ProcessAddressBaseFiles.processSingleFile(config.file)
-        else ProcessAddressBaseFiles.process(config.dir)
+        val resultForStreets = ProcessAddressBaseFiles.streets(config.dir)
+        resultForStreets.outcome match {
+          case Success => logger.info("Completed processing streets: \n" + resultForStreets.messages.mkString("\n"))
+          case Failure => logger.info("Failed processing streets: \n" + resultForStreets.messages.mkString("\n"))
+          case _ => logger.info("Failed processing: Unable to generate a result]")
+        }
+
+        if(config.index) {
+          logger.info("adding street indexes")
+          mongoConnection.foreach(_.addStreetIndexes())
+        }
+
+        val resultForAddresses = ProcessAddressBaseFiles.addresses(config.dir)
 
         if(config.index) {
           logger.info("adding indexes")
           mongoConnection.foreach(_.addIndexes())
         }
 
-        result.outcome match {
-          case Success => logger.info("Completed processing: \n" + result.messages.mkString("\n"))
-          case Failure => logger.info("Failed processing: \n" + result.messages.mkString("\n"))
+        resultForAddresses.outcome match {
+          case Success => logger.info("Completed processing: \n" + resultForAddresses.messages.mkString("\n"))
+          case Failure => logger.info("Failed processing: \n" + resultForAddresses.messages.mkString("\n"))
           case _ => logger.info("Failed processing: Unable to generate a result]")
         }
       }

@@ -40,6 +40,8 @@ Process:
         - has files
         - all files are .csv
 
+- Process all files for streets ahead of processing BLPU - streets are across files
+
 - File processed singularly
     -> File rows checked by type for correct number of columns and all mandatory fields (ours not OS's) present
         - errors on a file means file not persisted (row check not data integrity check)

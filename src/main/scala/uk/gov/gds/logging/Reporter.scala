@@ -7,15 +7,15 @@ import org.joda.time.DateTime
 sealed abstract class Error(errorType: String) {
   override def toString = errorType
 }
-object RowParseError extends Error("rowparse")
+object RowParseError extends Error("row-parse-error")
+object FileError extends Error("file-error")
 
 
 object Reporter {
 
-
   reportWriter.writeStrings(List("\n", "=== Starting Run at " + new DateTime + " ===\n"))
 
-  def report(fileName: String, errorType: Error, errorData: Option[String]) {
+  def report(fileName: String, errorType: Error, errorData: Option[String] = None) {
     report(List(fileName, errorType, errorData.getOrElse("")).mkString(",") + "\n")
   }
 

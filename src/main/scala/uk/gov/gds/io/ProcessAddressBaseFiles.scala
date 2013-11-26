@@ -1,39 +1,40 @@
 package uk.gov.gds.io
 
-import uk.gov.gds.logging.Logging
-
-import uk.gov.gds.model.Transformers._
+import uk.gov.gds.logging.{FileError, Logging}
+import uk.gov.gds.logging.Reporter._
+import uk.gov.gds.model.transformers._
 import uk.gov.gds.MongoConnection
-import java.io.File
-
 
 object ProcessAddressBaseFiles extends Logging {
 
-  def processSingleFile(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
-    if (!fileExists(filePath)) Result(Failure, "Supplied path does not exist")
-    else processFile(new File(filePath)).get
-  }
-
-  def process(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
+  def streets(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
     filePathHasErrors(filePath) match {
       case Some(error) => error
-      case _ => processFiles(filePath)
+      case _ => processForStreets(filePath)
     }
   }
 
-  private def processFiles(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = {
-    val results = directoryContents(filePath).flatMap(processFile(_))
-
-    if (!results.filter(r => r.outcome.equals(Failure)).isEmpty) {
-      val errors = results.filter(r => r.outcome.equals(Failure)).map(failure => failure.messages).flatten
-      val success = results.filter(r => r.outcome.equals(Success)).size
-
-      if (success > 0) Result(Failure, errors.::("processed=[" + success + "] files"))
-      else Result(Failure, errors)
-    } else {
-      Result(Success, "processed=[" + results.size + "] files")
+  def addresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
+    filePathHasErrors(filePath) match {
+      case Some(error) => error
+      case _ => processForAddresses(filePath)
     }
+  }
 
+  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = result(directoryContents(filePath).flatMap(processStreets(_)))
+
+  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = result(directoryContents(filePath).flatMap(processAddresses(_)))
+
+  private def result(results: List[Result]) = {
+    val r = results.partition(result => result.outcome.equals(Success))
+
+    r match {
+      case r._2.isEmpty => Result(Success, "processed " + r._1.size + " files")
+      case _ => {
+        r._2 foreach (failure => report(failure.messages.head, FileError))
+        Result(Failure, "processed " + r._1.size + " files successfully and " + r._2.size + " files with errors")
+      }
+    }
   }
 
   private def filePathHasErrors(filePath: String): Option[Result] = {
