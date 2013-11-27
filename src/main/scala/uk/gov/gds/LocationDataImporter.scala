@@ -36,31 +36,54 @@ object LocationDataImporter extends Logging {
       config => {
         logger.info("Processing: " + config.dir + " Persisting: " + config.persist)
 
+        /*
+          Initialize the mongo connection
+         */
         implicit val mongoConnection = config.persist match {
           case true if !config.username.isEmpty && !config.password.isEmpty => Some(new MongoConnection(Some(config.username), Some(config.password)))
           case true => Some(new MongoConnection)
           case false => None
         }
 
+        /*
+          Process all streets into mongo first for reference
+         */
         val resultForStreets = ProcessAddressBaseFiles.streets(config.dir)
+
+        /*
+          Log result summary
+         */
         resultForStreets.outcome match {
           case Success => logger.info("Completed processing streets: \n" + resultForStreets.messages.mkString("\n"))
           case Failure => logger.info("Failed processing streets: \n" + resultForStreets.messages.mkString("\n"))
           case _ => logger.info("Failed processing: Unable to generate a result]")
         }
 
-        if(config.index) {
+        /*
+          Add indexes on streets
+         */
+        if (config.index) {
           logger.info("adding street indexes")
           mongoConnection.foreach(_.addStreetIndexes())
         }
 
+        /*
+          Process files a second time, now for address objects
+          This requires the streets to be in mongo already
+         */
         val resultForAddresses = ProcessAddressBaseFiles.addresses(config.dir)
 
-        if(config.index) {
+        /*
+          Add indexes to address rows
+         */
+        if (config.index) {
           logger.info("adding indexes")
           mongoConnection.foreach(_.addIndexes())
         }
 
+        /*
+          Log result summary
+         */
         resultForAddresses.outcome match {
           case Success => logger.info("Completed processing: \n" + resultForAddresses.messages.mkString("\n"))
           case Failure => logger.info("Failed processing: \n" + resultForAddresses.messages.mkString("\n"))
@@ -69,5 +92,4 @@ object LocationDataImporter extends Logging {
       }
     }
   }
-
 }

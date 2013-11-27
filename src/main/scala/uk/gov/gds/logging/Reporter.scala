@@ -4,10 +4,10 @@ import uk.gov.gds.io.reportWriter
 import org.joda.time.DateTime
 
 
-sealed abstract class Error(errorType: String) {
-  override def toString = errorType
-}
+sealed abstract class Error(errorType: String)
 object RowParseError extends Error("row-parse-error")
+object MissingLpiError extends Error("no-active-lpi-for-uprn")
+object MissingClassificationError extends Error("no-active-classification-for-uprn")
 object FileError extends Error("file-error")
 
 

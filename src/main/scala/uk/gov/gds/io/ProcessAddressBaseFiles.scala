@@ -2,7 +2,7 @@ package uk.gov.gds.io
 
 import uk.gov.gds.logging.{FileError, Logging}
 import uk.gov.gds.logging.Reporter._
-import uk.gov.gds.model.transformers._
+import uk.gov.gds.model.processors._
 import uk.gov.gds.MongoConnection
 
 object ProcessAddressBaseFiles extends Logging {
@@ -21,18 +21,24 @@ object ProcessAddressBaseFiles extends Logging {
     }
   }
 
-  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = result(directoryContents(filePath).flatMap(processStreets(_)))
+  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf(directoryContents(filePath).flatMap(processStreets(_)))
 
-  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = result(directoryContents(filePath).flatMap(processAddresses(_)))
+  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf(directoryContents(filePath).flatMap(processAddresses(_)))
 
-  private def result(results: List[Result]) = {
-    val r = results.partition(result => result.outcome.equals(Success))
+  private def resultOf(fileResult: List[Result]) = {
+    /*
+      Results partitioned on result type, 1) Success 2) Failure
+     */
+    val overallResult = fileResult.partition(result => result.outcome.equals(Success))
 
-    r match {
-      case r._2.isEmpty => Result(Success, "processed " + r._1.size + " files")
+    /*
+      Partitions used to count success / error rows
+     */
+    overallResult match {
+      case success if success._2.isEmpty => Result(Success, "processed " + overallResult._1.size + " files")
       case _ => {
-        r._2 foreach (failure => report(failure.messages.head, FileError))
-        Result(Failure, "processed " + r._1.size + " files successfully and " + r._2.size + " files with errors")
+        overallResult._2 foreach (failure => report(failure.messages.head, FileError))
+        Result(Failure, "processed " + overallResult._1.size + " files successfully and " + overallResult._2.size + " files with errors")
       }
     }
   }

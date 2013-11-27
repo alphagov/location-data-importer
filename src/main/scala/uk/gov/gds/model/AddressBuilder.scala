@@ -11,30 +11,19 @@ object AddressBuilder extends Logging {
 
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection]) = {
 
-    logger.info("Getting street descritptor for " + addressWrapper.lpis.head.usrn)
+    logger.info("Getting street descritptor for " + addressWrapper.lpi.usrn)
 
-    val streetDescriptor: Option[StreetDescriptor] = mongo.get.streetForUsrn(addressWrapper.lpis.head.usrn)
+    val streetDescriptor: Option[StreetDescriptor] = mongo.get.streetForUsrn(addressWrapper.lpi.usrn)
 
     streetDescriptor match {
       case Some(street) => {
-        val lpis = filerOutIneligibleLPIs(addressWrapper.lpis)
 
         if (!isValidBLPU(addressWrapper.blpu)) {
           logger.info("Not eligible BLPU " + addressWrapper.blpu.uprn)
           None
         }
-        else if (lpis.size <= 0) {
-          logger.info("No eligible LPI for " + addressWrapper.blpu.uprn)
-          None
-        } // No LPI for this address
-        else if (lpis.size > 1) {
-          logger.info("too many eligble LPIs for " + addressWrapper.blpu.uprn)
-          None
-        }
         else {
-          val lpi = lpis.head
-
-          val streetPrefix = constructStreetAddressPrefix(lpi)
+          val streetPrefix = constructStreetAddressPrefix(addressWrapper.lpi)
 
           val streetDescription = street.streetDescription
           val locality = street.localityName
@@ -49,7 +38,7 @@ object AddressBuilder extends Logging {
 
           val location = Location(addressWrapper.blpu.xCoordinate, addressWrapper.blpu.yCoordinate)
           val presentation = Presentation(
-            property = constructProperty(lpi),
+            property = constructProperty(addressWrapper.lpi),
             streetAddress = String.format("%s %s", streetPrefix, streetDescription).trim,
             locality = locality,
             town = town,
@@ -62,16 +51,17 @@ object AddressBuilder extends Logging {
           val details = Details(
             blpuCreatedAt = addressWrapper.blpu.startDate,
             blpuUpdatedAt = addressWrapper.blpu.lastUpdated,
-            classification = addressWrapper.classifications.head.classificationCode,
+            classification = addressWrapper.classification.classificationCode,
             status = addressWrapper.blpu.blpuState.map(pp => pp.toString),
             state = addressWrapper.blpu.logicalState.map(pp => pp.toString),
             isPostalAddress = addressWrapper.blpu.canReceivePost,
-            isResidential = addressWrapper.classifications.head.isResidential,
-            isCommercial = !addressWrapper.classifications.head.isResidential
+            isResidential = addressWrapper.classification.isResidential,
+            isCommercial = !addressWrapper.classification.isResidential,
+            usrn = addressWrapper.lpi.usrn
           )
 
           Some(Address(
-            houseName = lpis.head.paoText,
+            houseName = addressWrapper.lpi.paoText,
             houseNumber = Some(streetPrefix),
             gssCode = addressWrapper.blpu.localCustodianCode.toString,
             postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
@@ -86,8 +76,6 @@ object AddressBuilder extends Logging {
       case _ => None
     }
   }
-
-  private def filerOutIneligibleLPIs(lpis: List[LPI]) = lpis.filter(lpi => !lpi.endDate.isDefined && lpi.logicalState.get.equals(LogicalStatusCode.approved))
 
   def isValidBLPU(blpu: BLPU) = !List(
     blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'

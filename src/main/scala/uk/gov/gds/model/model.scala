@@ -8,9 +8,17 @@ import uk.gov.gds.model.CodeLists.LogicalStatusCode
 import com.novus.salat._
 import com.novus.salat.global._
 
-case class AddressBaseWrapper(blpu: BLPU, lpis: List[LPI], classifications: List[Classification], organisations: List[Organisation]) {
+
+/*
+  Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to mongo model
+ */
+case class AddressBaseWrapper(blpu: BLPU, lpi: LPI, classification: Classification, organisation: Option[Organisation]) {
   lazy val uprn = blpu.uprn
 }
+
+/*
+  These are the models we create from the address base data
+ */
 
 trait AddressBase
 
@@ -249,6 +257,9 @@ object Classification extends AddressBaseHelpers[Classification] {
   val mandatoryCsvColumns = List(uprnIndex, classificationCodeIndex, startDateIndex, updatedDateIndex)
 }
 
+/*
+  These case classes are the model we translate too and persist
+ */
 case class Location(x: Double, y: Double)
 
 case class Details(
@@ -259,7 +270,8 @@ case class Details(
                     state: Option[String] = None,
                     isPostalAddress: Boolean,
                     isCommercial: Boolean,
-                    isResidential: Boolean
+                    isResidential: Boolean,
+                    usrn: String
                     )
 
 case class Presentation(

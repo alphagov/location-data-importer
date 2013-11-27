@@ -3,7 +3,7 @@ package uk.gov.gds.model
 import org.specs2.mutable.Specification
 import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable}
 import scalax.io.Line.Terminators.NewLine
-import transformers._
+import processors._
 import scala.collection.mutable
 import uk.gov.gds.io._
 
