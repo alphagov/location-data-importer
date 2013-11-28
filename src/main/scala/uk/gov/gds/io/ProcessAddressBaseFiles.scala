@@ -21,11 +21,12 @@ object ProcessAddressBaseFiles extends Logging {
     }
   }
 
-  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf(directoryContents(filePath).flatMap(processStreets(_)))
+  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("streets", directoryContents(filePath).flatMap(processStreets(_)))
 
-  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf(directoryContents(filePath).flatMap(processAddresses(_)))
+  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("addresses", directoryContents(filePath).flatMap(processAddresses(_)))
 
-  private def resultOf(fileResult: List[Result]) = {
+  private def resultOf(pass: String, fileResult: List[Result]) = {
+
     /*
       Results partitioned on result type, 1) Success 2) Failure
      */
@@ -35,11 +36,8 @@ object ProcessAddressBaseFiles extends Logging {
       Partitions used to count success / error rows
      */
     overallResult match {
-      case success if success._2.isEmpty => Result(Success, "processed " + overallResult._1.size + " files")
-      case _ => {
-        overallResult._2 foreach (failure => report(failure.messages.head, FileError))
-        Result(Failure, "processed " + overallResult._1.size + " files successfully and " + overallResult._2.size + " files with errors")
-      }
+      case results if results._2.isEmpty => Result(Success, "processed " + pass + ": [" + overallResult._1.size + "] files")
+      case _ => Result(Failure, "processed " + pass + ": " + overallResult._1.size + " files successfully and " + overallResult._2.size + " files with errors")
     }
   }
 

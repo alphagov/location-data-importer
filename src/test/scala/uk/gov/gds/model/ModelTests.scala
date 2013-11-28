@@ -30,6 +30,11 @@ class ModelTests extends Specification {
       BLPU.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
     }
 
+    "be able to identify an invalid line due to missing mandatory column" in {
+      val invalidLine = """21,"I",94755,,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BZ",0"""
+      BLPU.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
     "be able to be constructed from a fully populated csv line" in {
       val line = """21,"I",94755,9059007610,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BZ",0"""
       blpu(line).uprn must beEqualTo("9059007610")
@@ -89,6 +94,11 @@ class ModelTests extends Specification {
     "be able to identify an invalid line due to wrong number of columns" in {
       val wrongNumberOfColumns = """24,92423,9059082524,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","UNIT 1",,"",,"","WEST PITKERRO",7803241,"1","","","Y""""
       LPI.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to identify an invalid line due to missing mandatory column" in {
+      val invalidLine = """24,"I",92423,,"9059L000069680","ENG",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","UNIT 1",,"",,"","WEST PITKERRO",7803241,"1","","","Y""""
+      LPI.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
     }
 
     "be able to identify an invalid line due to missing required PAO information" in {
@@ -154,55 +164,6 @@ class ModelTests extends Specification {
     }
   }
 
-  "Street" should {
-
-    val completeValidLine = """11,"I",1151,709895,2,9053,2,2010-02-05,1,8,0,2008-01-25,2010-01-01,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
-    val incompleteValidLine = """11,"I",1151,709895,2,9053,,,,,0,2008-01-25,,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
-
-    "be able to identify a valid line" in {
-      Street.isValidCsvLine(parseCsvLine(completeValidLine)) must beTrue
-    }
-
-    "be able to identify an invalid line due to wrong type" in {
-      val wrongRecordIdentifier = """17,"I",1151,709895,2,9053,2,2010-02-05,1,8,0,2008-01-25,2010-01-01,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
-      Street.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
-    }
-
-    "be able to identify an invalid line due to wrong number of columns" in {
-      val wrongNumberOfColumns = """17,"I",709895,2,9053,,,,,0,2008-01-25,,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
-      Street.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
-    }
-
-    "be able to be constructed from a fully populated csv line" in {
-      street(completeValidLine).usrn must beEqualTo("709895")
-      street(completeValidLine).recordType.get must beEqualTo(streetDescription)
-      street(completeValidLine).state.get must beEqualTo(open)
-      street(completeValidLine).surface.get must beEqualTo(metalled)
-      street(completeValidLine).classification.get must beEqualTo(allVehicles)
-      street(completeValidLine).startDate must beEqualTo(new DateTime(2008, 1, 25, 0, 0))
-      street(completeValidLine).endDate.get must beEqualTo(new DateTime(2010, 1, 1, 0, 0))
-      street(completeValidLine).lastUpdated must beEqualTo(new DateTime(2008, 10, 9, 0, 0))
-    }
-
-    "be able to be constructed from a minimum populated csv line" in {
-      street(incompleteValidLine).usrn must beEqualTo("709895")
-      street(incompleteValidLine).recordType.get must beEqualTo(streetDescription)
-      street(incompleteValidLine).state must beEqualTo(None)
-      street(incompleteValidLine).surface must beEqualTo(None)
-      street(incompleteValidLine).classification must beEqualTo(None)
-      street(incompleteValidLine).startDate must beEqualTo(new DateTime(2008, 1, 25, 0, 0))
-      street(incompleteValidLine).endDate must beEqualTo(None)
-      street(incompleteValidLine).lastUpdated must beEqualTo(new DateTime(2008, 10, 9, 0, 0))
-
-    }
-
-    "be able to be made into correct type" in {
-      street(completeValidLine).isInstanceOf[AddressBase] must beTrue
-      street(completeValidLine).isInstanceOf[Street] must beTrue
-    }
-  }
-
-
   "Street Descriptor " should {
 
     val completeValidLine = """15,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
@@ -220,6 +181,11 @@ class ModelTests extends Specification {
     "be able to identify an invalid line due to wrong number of columns" in {
       val wrongNumberOfColumns = """16,1,2,1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
       StreetDescriptor.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to identify an invalid line due to missing mandatory columns" in {
+      val invalidLine = """15,"I",1142,,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
+      StreetDescriptor.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
     }
 
     "be able to be constructed from a fully populated csv line" in {
@@ -262,6 +228,12 @@ class ModelTests extends Specification {
     "be able to identify an invalid line due to wrong number of columns" in {
       val wrongNumberOfColumns = """31,68275,9059056630,"9059O000001011","TMA Accountants","Legal Name",2012-02-01,2013-01-01,2012-02-01,2012-02-01"""
       Organisation.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+
+    "be able to identify an invalid line due to missing mandatory columns" in {
+      val inValidLine = """31,"I",68275,,"9059O000001011","TMA Accountants","Legal Name",2012-02-01,2013-01-01,2012-02-01,2012-02-01"""
+      Organisation.isValidCsvLine(parseCsvLine(inValidLine)) must beFalse
     }
 
     "be able to be constructed from a fully populated csv line" in {
@@ -315,6 +287,11 @@ class ModelTests extends Specification {
       Classification.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
     }
 
+    "be able to identify an invalid line due to missing mandatory columns" in {
+      val invalidLine = """32,"I",94712,,"9059C000080071","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
+      Classification.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
     "be able to be constructed from a fully populated csv line" in {
       classification(completeValidLine).uprn must beEqualTo("9059004789")
       classification(completeValidLine).classificationCode must beEqualTo("RD04")
@@ -340,8 +317,6 @@ class ModelTests extends Specification {
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))
 
   private def lpi(line: String) = LPI.fromCsvLine(parseCsvLine(line))
-
-  private def street(line: String) = Street.fromCsvLine(parseCsvLine(line))
 
   private def streetDescriptor(line: String) = StreetDescriptor.fromCsvLine(parseCsvLine(line))
 

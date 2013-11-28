@@ -19,7 +19,8 @@ object processors extends Logging {
   import extractors._
 
   def processStreets(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
-    logger.info("Processing streets in: " + file.getName)
+    implicit val fileName = file.getName
+    logger.info("Processing streets in: " + fileName)
 
     try {
       persistStreetDescriptors(processRowsIntoStreetsDescriptors(file))
@@ -80,11 +81,11 @@ object processors extends Logging {
 
   private def processRows(lines: LongTraversable[String], f: String => Option[AddressBase]) = lines.flatMap(f(_)).toList
 
-  private def persistStreetDescriptors(streetDescriptors: List[StreetDescriptor])(implicit mongoConnection: Option[MongoConnection]) {
+  private def persistStreetDescriptors(streetDescriptors: List[StreetDescriptor])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
     mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
   }
 
-  private def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection]) {
+  private def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
     mongoConnection.foreach(_.insert(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
   }
 
@@ -96,6 +97,9 @@ object extractors {
     def compare(a: DateTime, b: DateTime) = a compareTo b
   }
 
+  /*
+    if any file contains an invalid row the we throw an exception and fail the whole file
+   */
   def extractRow[T <: AddressBase](fileName: String, parsed: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsed)) {
       report(fileName, RowParseError, Some(parsed.mkString("|")))
@@ -149,6 +153,7 @@ object extractors {
 
   /*
     Combine the blpu with the lpi and classification into a wrapper. Error if no classification or LPI.
+    Errors here don't fail the file - files will fail if some row is invalid - however log the failed UPRN
    */
   def buildAddressWrapper(
                            fileName: String,

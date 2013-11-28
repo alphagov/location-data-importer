@@ -4,126 +4,302 @@ import org.specs2.mutable.Specification
 import uk.gov.gds.model.CodeLists._
 import org.joda.time.DateTime
 import scala.Some
+import org.specs2.mock.Mockito
+import uk.gov.ReporterTestUtils.reportLines
+import scala.util.Random
+import scala.collection.immutable.List
 
-class AddressBuilderTests extends Specification {
+class AddressBuilderTests extends Specification with Mockito {
+
+  import AddressBuilder._
+  import uk.gov.gds.model.formatters._
+
+  val mongoConnection = mock[uk.gov.gds.MongoConnection]
+  mongoConnection.streetForUsrn(anyString) returns Some(streetDescriptor)
+
+  lazy val random = new Random()
+
+  def randomFilename = List.fill(10)(random.nextPrintableChar()).mkString
+
+  def reportLineToTest(fileName: String) = reportLines.filter(_.startsWith(fileName)).headOption
 
   "The address builder" should {
-//    "include the postcode from the BLPU" in {
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.postcode must beEqualTo("postcode")
-//    }
-//
-//    "include not create an address if no LPI" in {
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List.empty[LPI], List(classification), List(organisation))) must beEqualTo(None)
-//    }
-//
-//    "include not create an address if no eligible BLPU (logical status not approved)" in {
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blpuProvisonal, List(lpi), List(classification), List(organisation))) must beEqualTo(None)
-//    }
-//
-//    "include not create an address if no eligible LPI (end date present)" in {
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpiWithEndDate), List(classification), List(organisation))) must beEqualTo(None)
-//    }
-//
-//    "include not create an address if no eligible LPI (logical status not approved)" in {
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpiProvisional), List(classification), List(organisation))) must beEqualTo(None)
-//    }
 
+    "not create an address if no street available for the usrn" in {
+      val file = randomFilename
 
-//    "if there is more than one LPI for a BLPU use the one that has no end date" in {
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.postcode must beEqualTo("postcode")
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiWithEndDate), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
-//    }
-//
-//    "if there is more than one LPI for a BLPU and both have no end date use the approved one" in {
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.postcode must beEqualTo("postcode")
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line1 must beEqualTo("sao text sao start number sao start suffix sao end number sao end suffix")
-//      AddressBuilder.geographicAddressToSimpleAddress(AddressBaseWrapper(blup, List(lpi, lpiProvisional), List(classification), List(organisation)), streetMap, streetDescriptorMap).get.line2 must beEqualTo("pao text pao start number pao start suffix pao end number pao end suffix")
-//    }
+      val mongoConnectionWithNoStreet = mock[uk.gov.gds.MongoConnection]
+      mongoConnectionWithNoStreet.streetForUsrn(anyString) returns None
 
-    "should transform all the SAO fields plus PAO Text into a string" in {
-       AddressBuilder.constructProperty(lpi).get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithNoStreet), file) must beEqualTo(None)
+
+      reportLineToTest(file) must not be None
+      reportLineToTest(file).get must contain("no-street-for-blpu")
+    }
+
+    "not create an address if no eligible BLPU (logical status not approved)" in {
+      val file = randomFilename
+      geographicAddressToSimpleAddress(AddressBaseWrapper(blpuProvisonal, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
+
+      reportLineToTest(file) must not be None
+      reportLineToTest(file).get must contain("invalid-blpu")
+    }
+
+    "not create an address if no eligible BLPU ( state not in use)" in {
+      val file = randomFilename
+      geographicAddressToSimpleAddress(AddressBaseWrapper(invalidBlpuDueToBlpuStatus, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
+
+      reportLineToTest(file) must not be None
+      reportLineToTest(file).get must contain("invalid-blpu")
+    }
+
+    "not create an address if no eligible BLPU ( end date present)" in {
+      val file = randomFilename
+
+      geographicAddressToSimpleAddress(AddressBaseWrapper(invalidBlpuDueToEndDates, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
+
+      reportLineToTest(file) must not be None
+      reportLineToTest(file).get must contain("invalid-blpu")
+    }
+
+    "not create an address if no eligible BLPU ( can't receieve post)" in {
+      val file = randomFilename
+      geographicAddressToSimpleAddress(AddressBaseWrapper(invalidBlpuDueToPostalStatus, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
+      reportLineToTest(file) must not be None
+      reportLineToTest(file).get must contain("invalid-blpu")
+    }
+
+    "include the postcode from the BLPU all lowercased on the root address object" in {
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu.copy(postcode = "SE45 0PP"), lpi, classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.postcode must beEqualTo("se450pp")
+    }
+
+    "include the local custodian code from the BLPU on the root address object as gss code" in {
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu.copy(localCustodianCode = "1234"), lpi, classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.gssCode must beEqualTo("1234")
+    }
+
+    "include the pao text from the LPI on the root address object as houseName" in {
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi.copy(paoText = "house name"), classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseName.get must beEqualTo("house name")
+    }
+
+    "not include house name if the pao text from the LPI is absent" in {
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi.copy(paoText = None), classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseName must beEqualTo(None)
+    }
+
+    "include house number generated from the LPI PAO fields on the root address object" in {
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu,
+        lpi.copy(paoStartNumber = Some("99"), paoStartSuffix = Some("A"), paoEndNumber = Some("100"), paoEndSuffix = Some("Z"), saoStartNumber = Some("9"), saoStartSuffix = Some("A"), saoEndNumber = Some("10"), saoEndSuffix = Some("B"))
+        , classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseNumber.get must beEqualTo("99A-100Z")
+    }
+
+    "not include house number if no LPI PAO fields - ignoring SAO fields" in {
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu,
+        lpi.copy(paoStartNumber = None, paoStartSuffix = None, paoEndNumber = None, paoEndSuffix = None, saoStartNumber = Some("9"), saoStartSuffix = Some("A"), saoEndNumber = Some("10"), saoEndSuffix = Some("B"))
+        , classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseNumber must beEqualTo(None)
+    }
+
+    "include the postcode from the BLPU as supplied on the presentation address object" in {
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu.copy(postcode = "SE45 0PP"), lpi, classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.presentation.postcode must beEqualTo("SE45 0PP")
+    }
+
+    "construct suffixes - if start and end they should be seperated by a dash is both present" in {
+      formatStartAndEndNumbersAndSuffixes(Some("10"), Some("A"), Some("11"), Some("B")).get must beEqualTo("10A-11B")
+    }
+
+    "construct suffixes - if start and end they should be seperated by a dash is both present - with no suffixes" in {
+      formatStartAndEndNumbersAndSuffixes(Some("10"), None, Some("11"), None).get must beEqualTo("10-11")
+    }
+
+    "construct suffixes - if start and end they should be seperated by a dash is both present - with only start suffix" in {
+      formatStartAndEndNumbersAndSuffixes(Some("10"), Some("A"), Some("11"), None).get must beEqualTo("10A-11")
+    }
+
+    "construct suffixes - if start and end they should be seperated by a dash is both present - with only end suffix" in {
+      formatStartAndEndNumbersAndSuffixes(Some("10"), None, Some("11"), Some("B")).get must beEqualTo("10-11B")
+    }
+
+    "construct suffixes - start only with suffix" in {
+      formatStartAndEndNumbersAndSuffixes(Some("10"), Some("A"), None, None).get must beEqualTo("10A")
+    }
+
+    "construct suffixes - start only with no suffix" in {
+      formatStartAndEndNumbersAndSuffixes(Some("10"), None, None, None).get must beEqualTo("10")
+    }
+
+    "construct suffixes - start only with suffix ignores end suffix if no end number" in {
+      formatStartAndEndNumbersAndSuffixes(Some("10"), Some("A"), None, Some("B")).get must beEqualTo("10A")
+    }
+
+    "construct suffixes - should be None if no suffixes / numbers present" in {
+      formatStartAndEndNumbersAndSuffixes(None, None, None, None) must beEqualTo(None)
+    }
+
+    "construct suffixes - should be None if only end suffixes and numbers present" in {
+      formatStartAndEndNumbersAndSuffixes(None, None, Some("10"), Some("B")) must beEqualTo(None)
+    }
+
+    "construct suffixes - should be None if only end suffixes present" in {
+      formatStartAndEndNumbersAndSuffixes(None, None, None, Some("B")) must beEqualTo(None)
+    }
+
+    "construct suffixes - should be None if only end numbers present" in {
+      formatStartAndEndNumbersAndSuffixes(None, None, Some("10"), None) must beEqualTo(None)
+    }
+
+    "construct suffixes - should be None if only start suffix present" in {
+      formatStartAndEndNumbersAndSuffixes(None, Some("B"), None, None) must beEqualTo(None)
+    }
+
+    "should transform all the SAO fields plus PAO Text into a string excluding the pao fields fornumber and suffix" in {
+      constructProperty(lpi).get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
 
     "should transform all the SAO fields supplied plus PAO Text into a string" in {
-      AddressBuilder.constructProperty(lpiWithSaoStartAndPaoText).get must beEqualTo("sao start numbersao start suffix pao text")
+      constructProperty(lpiWithSaoStartAndPaoTextAndNoSaoEndOrSaoText).get must beEqualTo("sao start numbersao start suffix pao text")
     }
 
     "should transform all the SAO and PAO fields successfully when no suffix" in {
-      AddressBuilder.constructProperty(lpiWithNoSuffix).get must beEqualTo("sao start number-sao end number sao text pao text")
-      AddressBuilder.constructStreetAddressPrefix(lpiWithNoSuffix) must beEqualTo("pao start number-pao end number")
+      constructProperty(lpiWithNoSuffix).get must beEqualTo("sao start number-sao end number sao text pao text")
     }
 
-    "should transform all the SAO and PAO fields successfully when no numbers" in {
-      AddressBuilder.constructProperty(lpiWithNoNumbers).get must beEqualTo("sao text pao text")
-      AddressBuilder.constructStreetAddressPrefix(lpiWithNoNumbers).isEmpty must beTrue
+    "should transform all the SAO and PAO fields excluding the suffixs when no numbers" in {
+      constructProperty(lpiWithNoNumbers).get must beEqualTo("sao text pao text")
     }
 
     "should transform all missing sao and pao text fields into an empty string that returns true to isEmpty" in {
-      AddressBuilder.constructProperty(lpiWithNoSaoFieldsAndNoPaoText) must beEqualTo(None)
+      constructProperty(lpiWithNoSaoFieldsAndNoPaoText) must beEqualTo(None)
     }
 
-    "should transform all the PAO fields into a string" in {
-      AddressBuilder.constructStreetAddressPrefix(lpi) must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
+    "should format a street address from the pao start and end numbers on an LPI" in {
+      constructStreetAddressPrefix(lpi).get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
+    }
+
+    "should return None for a street address if no pao start number on an LPI" in {
+      constructStreetAddressPrefix(lpi.copy(paoStartNumber = None)) must beEqualTo(None)
+    }
+
+    "should construct a location object from the x and y of a blpu" in {
+      location(validBlpu).x must beEqualTo(1.1)
+      location(validBlpu).y must beEqualTo(2.2)
+    }
+
+    "should construct a street address from the LPI and the street description" in {
+      constructStreetAddress(
+        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = Some("a"), paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetDescriptor.copy(streetDescription = "The Street")
+      ) must beEqualTo("10a-11b The Street")
+    }
+
+    "should construct a street address from the LPI with no pao start suffix and the street description" in {
+      constructStreetAddress(
+        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetDescriptor.copy(streetDescription = "The Street")
+      ) must beEqualTo("10-11b The Street")
+    }
+
+    "should construct a street address from the LPI with no pao end and the street description" in {
+      constructStreetAddress(
+        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = None, paoEndSuffix = None), streetDescriptor.copy(streetDescription = "The Street")
+      ) must beEqualTo("10 The Street")
     }
 
     "valid blpus should be marked as valid" in {
-      AddressBuilder.isValidBLPU(blpu) must beTrue
+      isValidBLPU(validBlpu) must beTrue
     }
 
     "invalid blpu due to recieve post must be marked invalid" in {
-      AddressBuilder.isValidBLPU(invalidBlpuDueToPostalStatus) must beFalse
+      isValidBLPU(invalidBlpuDueToPostalStatus) must beFalse
     }
 
     "invalid blpu due to blpu status must be marked invalid" in {
-      AddressBuilder.isValidBLPU(invalidBlpuDueToLogicalStatus) must beFalse
+      isValidBLPU(invalidBlpuDueToLogicalStatus) must beFalse
     }
 
     "invalid blpu due to logical state must be marked invalid" in {
-      AddressBuilder.isValidBLPU(invalidBlpuDueToBlpuStatus) must beFalse
+      isValidBLPU(invalidBlpuDueToBlpuStatus) must beFalse
     }
 
     "invalid blpu due to end date must be marked invalid" in {
-      AddressBuilder.isValidBLPU(invalidBlpuDueToEndDates) must beFalse
+      isValidBLPU(invalidBlpuDueToEndDates) must beFalse
     }
 
+    "make a details object containing the correct classification information" in {
+      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "R1"), None)).classification must beEqualTo("R1")
+      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "R1"), None)).isResidential must beEqualTo(true)
+      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "C1"), None)).isCommercial must beEqualTo(true)
+    }
+
+    "make a detail object that correctly interprets the postal address" in {
+      details(AddressBaseWrapper(validBlpu.copy(receivesPost = "N"), lpi, classification, None)).isPostalAddress must beEqualTo(false)
+    }
+
+    "make a detail object that correctly set the usrn" in {
+      details(AddressBaseWrapper(validBlpu, lpi.copy(usrn = "USRN"), classification, None)).usrn must beEqualTo("USRN")
+    }
+
+    "make a detail object that correctly contains the updated and created dates from the BLPU" in {
+      details(AddressBaseWrapper(validBlpu.copy(startDate = startDate), lpi, classification, None)).blpuCreatedAt must beEqualTo(startDate)
+      details(AddressBaseWrapper(validBlpu.copy(lastUpdated = lastUpdatedDate), lpi, classification, None)).blpuUpdatedAt must beEqualTo(lastUpdatedDate)
+    }
+
+    "make a detail object that correctly contains the BLPU logical status and state codes" in {
+      details(AddressBaseWrapper(validBlpu.copy(logicalState = Some(LogicalStatusCode.approved)), lpi, classification, None)).state.get must beEqualTo("approved")
+      details(AddressBaseWrapper(validBlpu.copy(blpuState = Some(BlpuStateCode.inUse)), lpi, classification, None)).status.get must beEqualTo("inUse")
+    }
+
+    "make an address object with all the fields set up correctly" in  {
+      val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnection), randomFilename).get
+
+      /* base object */
+      address.gssCode must beEqualTo("1234")
+      address.postcode must beEqualTo("postcode")
+      address.houseName.get must beEqualTo("pao text")
+      address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
+
+      /* details */
+      address.details.blpuCreatedAt must beEqualTo(startDate)
+      address.details.blpuUpdatedAt must beEqualTo(lastUpdatedDate)
+      address.details.classification must beEqualTo("code")
+      address.details.isPostalAddress must beEqualTo(true)
+      address.details.isResidential must beEqualTo(false)
+      address.details.usrn must beEqualTo("usrn")
+      address.details.state.get must beEqualTo("approved")
+      address.details.status.get must beEqualTo("inUse")
+
+      /* location */
+      address.location.x must beEqualTo(1.1)
+      address.location.y must beEqualTo(2.2)
+
+      /* presentation */
+      address.presentation.postcode must beEqualTo("postcode")
+      address.presentation.uprn must beEqualTo("uprn")
+      address.presentation.town.get must beEqualTo("town")
+      address.presentation.area.get must beEqualTo("area")
+      address.presentation.locality.get must beEqualTo("locality")
+      address.presentation.streetAddress.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
+      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+    }
   }
 
 
   private lazy val startDate = new DateTime().minusDays(100)
-  private lazy val endDate = new DateTime().minusDays(1)
   private lazy val lastUpdatedDate = new DateTime().minusDays(50)
 
-  private lazy val blpu = BLPU(
+  private lazy val validBlpu = BLPU(
     "uprn",
     Some(BlpuStateCode.inUse),
     Some(LogicalStatusCode.approved),
     1.1,
     2.2,
-    1234,
+    "1234",
     startDate,
     None,
     lastUpdatedDate,
     "S",
     "postcode")
 
-  private lazy val invalidBlpuDueToPostalStatus = blpu.copy(receivesPost = "N")
-  private lazy val invalidBlpuDueToLogicalStatus = blpu.copy(logicalState = Some(LogicalStatusCode.historical))
-  private lazy val invalidBlpuDueToBlpuStatus = blpu.copy(blpuState = Some(BlpuStateCode.noLongerExists))
-  private lazy val invalidBlpuDueToEndDates = blpu.copy(endDate = Some(new DateTime()))
-
-  private lazy val blpuProvisonal = BLPU(
-    "uprn",
-    Some(BlpuStateCode.inUse),
-    Some(LogicalStatusCode.provisional),
-    1.1,
-    2.2,
-    1234,
-    startDate,
-    None,
-    lastUpdatedDate,
-    "S",
-    "postcode")
+  private lazy val invalidBlpuDueToPostalStatus = validBlpu.copy(receivesPost = "N")
+  private lazy val invalidBlpuDueToLogicalStatus = validBlpu.copy(logicalState = Some(LogicalStatusCode.historical))
+  private lazy val invalidBlpuDueToBlpuStatus = validBlpu.copy(blpuState = Some(BlpuStateCode.noLongerExists))
+  private lazy val invalidBlpuDueToEndDates = validBlpu.copy(endDate = Some(new DateTime()))
+  private lazy val blpuProvisonal = validBlpu.copy(logicalState = Some(LogicalStatusCode.provisional))
 
   private lazy val lpi = LPI(
     "uprn",
@@ -147,97 +323,19 @@ class AddressBuilderTests extends Specification {
   )
 
   private lazy val lpiWithNoSuffix = lpi.copy(saoStartSuffix = None, saoEndSuffix = None, paoStartSuffix = None, paoEndSuffix = None)
-
   private lazy val lpiWithNoNumbers = lpi.copy(saoStartNumber = None, saoEndNumber = None, paoStartNumber = None, paoEndNumber = None)
 
-  private lazy val lpiWithSaoStartAndPaoText = LPI(
-    "uprn",
-    "usrn",
-    Some(LogicalStatusCode.approved),
-    startDate,
-    None,
-    lastUpdatedDate,
-    None,
-    None,
-    None,
-    None,
-    Some("pao text"),
-    Some("sao start number"),
-    Some("sao start suffix"),
-    None,
-    None,
-    None,
-    Some("area name"),
-    Some(true)
+  private lazy val lpiWithSaoStartAndPaoTextAndNoSaoEndOrSaoText = lpi.copy(saoStartNumber = Some("sao start number"), saoStartSuffix = Some("sao start suffix"), saoEndNumber = None, saoEndSuffix = None, saoText = None, paoText = Some("pao text"))
+
+  private lazy val lpiWithNoSaoFieldsAndNoPaoText = lpi.copy(
+    saoStartNumber = None, saoStartSuffix = None, saoEndNumber = None, saoEndSuffix = None, saoText = None,
+    paoStartNumber = None, paoStartSuffix = None, paoEndNumber = None, paoEndSuffix = None, paoText = None
   )
 
-  private lazy val lpiWithNoSaoFieldsAndNoPaoText = LPI(
-    "uprn",
-    "usrn",
-    Some(LogicalStatusCode.approved),
-    startDate,
-    None,
-    lastUpdatedDate,
-    Some("1"),
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    Some("area name"),
-    Some(true)
-  )
-
-  private lazy val lpiProvisional = LPI(
-    "uprn",
-    "usrn",
-    Some(LogicalStatusCode.provisional),
-    startDate,
-    None,
-    lastUpdatedDate,
-    Some("pao start number"),
-    Some("pao start suffix"),
-    Some("pao end number"),
-    Some("pao end suffix"),
-    Some("pao text"),
-    Some("sao start number"),
-    Some("sao start suffix"),
-    Some("sao end number"),
-    Some("sao end suffix"),
-    Some("sao text"),
-    Some("area name"),
-    Some(true)
-  )
-
-  private lazy val lpiWithEndDate = LPI(
-    "uprn",
-    "usrn",
-    Some(LogicalStatusCode.approved),
-    startDate,
-    Some(endDate),
-    lastUpdatedDate,
-    Some("pao start number - end"),
-    Some("pao start suffix - end"),
-    Some("pao end number - end"),
-    Some("pao end suffix - end"),
-    Some("pao text - end"),
-    Some("sao start number - end"),
-    Some("sao start suffix - end"),
-    Some("sao end number - end"),
-    Some("sao end suffix - end"),
-    Some("sao text - end"),
-    Some("area name - end"),
-    Some(true)
-  )
 
   private lazy val classification = Classification("uprn", "code", startDate, None, lastUpdatedDate)
   private lazy val organisation = Organisation("uprn", "organisation", startDate, None, lastUpdatedDate)
-  private lazy val street = Street("usrn", Some(StreetRecordTypeCode.numberedStreet), Some(StreetStateCode.open), Some(StreetSurfaceCode.mixed), Some(StreetClassificationCode.footpath), startDate, None, endDate)
   private lazy val streetDescriptor = StreetDescriptor("usrn", "street name", "locality", "town", "area")
-  private lazy val streetMap = Map("usrn" -> List(street))
-  private lazy val streetDescriptorMap = Map("usrn" -> streetDescriptor)
+
+
 }

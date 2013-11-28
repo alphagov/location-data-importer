@@ -5,21 +5,9 @@ import org.joda.time.format.DateTimeFormat
 
 package object model {
 
-  // TODO fix this
-  implicit def stringToInt(s: String) = try {
-    java.lang.Integer.parseInt(s)
-  } catch {
-    case e: Exception => 9999
-  }
+  implicit def stringToDouble(s: String) = java.lang.Double.parseDouble(s)
 
-  // TODO and this
-  implicit def stringToDouble(s: String) = try {
-    java.lang.Double.parseDouble(s)
-  } catch {
-    case e: Exception => 9999
-  }
-
-  implicit def yesNoToOptionalBoolean(s: String) = if (s == null || s.isEmpty) None else Some(s.equalsIgnoreCase("Y"))
+  implicit def yOrNToOptionalBoolean(s: String) = if (s == null || s.isEmpty) None else Some(s.equalsIgnoreCase("Y"))
 
   implicit def stringToDate(dateString: String): DateTime = DateTimeFormat.forPattern("yyyy-MM-dd").parseDateTime(dateString)
 

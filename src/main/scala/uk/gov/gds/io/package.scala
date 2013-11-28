@@ -3,6 +3,7 @@ package uk.gov.gds
 import java.io.File
 import com.Ostermiller.util.CSVParser
 import scalax.io.{Resource, Codec}
+import uk.gov.gds.logging.Reporter
 
 package object io {
 
@@ -16,18 +17,13 @@ package object io {
 
   case object Failure extends Outcome(false)
 
-  case class Result(outcome: Outcome, messages: List[String] = List.empty[String])
-
-  object Result {
-    def apply(outcome: Outcome, message: String):Result = Result(outcome, List(message))
-  }
-
+  case class Result(outcome: Outcome, message: String)
 
   /* File utility methods */
 
   def loadFile(file: File) = Resource.fromFile(file)
 
-  def reportWriter = Resource.fromFile("/tmp/location-data-import-report.txt").writer
+  def writer(location: String) = Resource.fromFile(location).writer
 
   def fileExists(location: String) = new File(location).exists
 

@@ -33,3 +33,7 @@
 - test mongo auth
 
 - remove ambiguity around lists by choosing only the one with no end date, order by updated, head - on all listed classes
+
+- validate the string to double and string to int mappings
+
+- validate that an exception thrown on parsing a row/file results in file skipped and carries on with next file

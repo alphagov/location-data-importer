@@ -10,14 +10,15 @@ import com.novus.salat.global._
 
 
 /*
-  Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to mongo model
+  Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to simple model
  */
 case class AddressBaseWrapper(blpu: BLPU, lpi: LPI, classification: Classification, organisation: Option[Organisation]) {
   lazy val uprn = blpu.uprn
+  lazy val usrn = lpi.usrn
 }
 
 /*
-  These are the models we create from the address base data
+  These are the models we create from the address base raw data
  */
 
 trait AddressBase
@@ -42,7 +43,7 @@ case class BLPU(
                  logicalState: Option[LogicalStatusCode],
                  xCoordinate: Double,
                  yCoordinate: Double,
-                 localCustodianCode: Int,
+                 localCustodianCode: String,
                  startDate: DateTime,
                  endDate: Option[DateTime],
                  lastUpdated: DateTime,
@@ -230,7 +231,8 @@ case class Classification(
                            endDate: Option[DateTime],
                            lastUpdated: DateTime
                            ) extends AddressBase {
-  /* R means residential, but RC means residential parking not dwelling!
+  /*
+   * R means residential, but RC means residential parking not dwelling!
    * Much too simplified and may not belong here
    */
   def isResidential = classificationCode.startsWith("R") && !classificationCode.startsWith("RC")

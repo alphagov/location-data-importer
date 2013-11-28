@@ -3,80 +3,77 @@ package uk.gov.gds.model
 import uk.gov.gds.model.CodeLists.{BlpuStateCode, LogicalStatusCode}
 import uk.gov.gds.logging.Logging
 import uk.gov.gds.MongoConnection
-import uk.gov.gds.model._
+import uk.gov.gds.logging.Reporter.report
+import uk.gov.gds.logging.InvalidBlpuError
+import uk.gov.gds.logging.NoStreetForBlpuError
 
 
 object AddressBuilder extends Logging {
 
+  import formatters._
 
-  def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection]) = {
-
-    logger.info("Getting street descritptor for " + addressWrapper.lpi.usrn)
-
-    val streetDescriptor: Option[StreetDescriptor] = mongo.get.streetForUsrn(addressWrapper.lpi.usrn)
+  def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection], fileName: String) = {
+    val streetDescriptor: Option[StreetDescriptor] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
 
     streetDescriptor match {
+
       case Some(street) => {
 
         if (!isValidBLPU(addressWrapper.blpu)) {
-          logger.info("Not eligible BLPU " + addressWrapper.blpu.uprn)
+          report(fileName, InvalidBlpuError, addressWrapper.uprn)
           None
         }
-        else {
-          val streetPrefix = constructStreetAddressPrefix(addressWrapper.lpi)
-
-          val streetDescription = street.streetDescription
-          val locality = street.localityName
-          val town = street.townName
-          val area = if (
-            town.isDefined &&
-              !town.equals(street.administrativeArea)) {
-            Some(street.administrativeArea)
-          } else {
-            None
-          }
-
-          val location = Location(addressWrapper.blpu.xCoordinate, addressWrapper.blpu.yCoordinate)
-          val presentation = Presentation(
-            property = constructProperty(addressWrapper.lpi),
-            streetAddress = String.format("%s %s", streetPrefix, streetDescription).trim,
-            locality = locality,
-            town = town,
-            area = area,
-            postcode = addressWrapper.blpu.postcode,
-            uprn = addressWrapper.uprn
-          )
-
-
-          val details = Details(
-            blpuCreatedAt = addressWrapper.blpu.startDate,
-            blpuUpdatedAt = addressWrapper.blpu.lastUpdated,
-            classification = addressWrapper.classification.classificationCode,
-            status = addressWrapper.blpu.blpuState.map(pp => pp.toString),
-            state = addressWrapper.blpu.logicalState.map(pp => pp.toString),
-            isPostalAddress = addressWrapper.blpu.canReceivePost,
-            isResidential = addressWrapper.classification.isResidential,
-            isCommercial = !addressWrapper.classification.isResidential,
-            usrn = addressWrapper.lpi.usrn
-          )
-
+        else
           Some(Address(
             houseName = addressWrapper.lpi.paoText,
-            houseNumber = Some(streetPrefix),
+            houseNumber = constructStreetAddressPrefix(addressWrapper.lpi),
             gssCode = addressWrapper.blpu.localCustodianCode.toString,
             postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
-            presentation = presentation,
-            location = location,
-            details = details
+            presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
+            location = location(addressWrapper.blpu),
+            details = details(addressWrapper)
           ))
-
-
-        }
       }
-      case _ => None
+      case _ => {
+        report(fileName, NoStreetForBlpuError, addressWrapper.uprn)
+        None
+      }
+
     }
   }
 
+  /*
+    Model class builders
+   */
+  def details(addressWrapper: AddressBaseWrapper) = Details(
+    blpuCreatedAt = addressWrapper.blpu.startDate,
+    blpuUpdatedAt = addressWrapper.blpu.lastUpdated,
+    classification = addressWrapper.classification.classificationCode,
+    status = addressWrapper.blpu.blpuState.map(pp => pp.toString),
+    state = addressWrapper.blpu.logicalState.map(pp => pp.toString),
+    isPostalAddress = addressWrapper.blpu.canReceivePost,
+    isResidential = addressWrapper.classification.isResidential,
+    isCommercial = !addressWrapper.classification.isResidential,
+    usrn = addressWrapper.lpi.usrn
+  )
+
+  def location(blpu: BLPU) = Location(blpu.xCoordinate, blpu.yCoordinate)
+
+  def presentation(blpu: BLPU, lpi: LPI, street: StreetDescriptor) = {
+    Presentation(
+      property = constructProperty(lpi),
+      streetAddress = constructStreetAddress(lpi, street),
+      locality = street.localityName,
+      town = street.townName,
+      area = if (street.townName.isDefined && !street.townName.equals(street.administrativeArea)) Some(street.administrativeArea) else None,
+      postcode = blpu.postcode,
+      uprn = blpu.uprn
+    )
+  }
+
+  /*
+    BLPU checker
+   */
   def isValidBLPU(blpu: BLPU) = !List(
     blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
     blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
@@ -84,20 +81,30 @@ object AddressBuilder extends Logging {
     blpu.canReceivePost // must be able to receive post
   ).contains(false)
 
+}
+
+object formatters {
+  /*
+    Various address formatters
+   */
   def constructProperty(lpi: LPI) = {
-    val formatted = List(formatStartAndEndSuffixes(lpi.saoStartNumber, lpi.saoStartSuffix, lpi.saoEndNumber, lpi.saoEndSuffix), lpi.saoText, lpi.paoText).flatten.mkString(" ")
+    val formatted = List(formatStartAndEndNumbersAndSuffixes(lpi.saoStartNumber, lpi.saoStartSuffix, lpi.saoEndNumber, lpi.saoEndSuffix), lpi.saoText, lpi.paoText).flatten.mkString(" ")
     if (formatted.isEmpty) None
     else Some(formatted)
   }
 
-  def constructStreetAddressPrefix(lpi: LPI) = List(formatStartAndEndSuffixes(lpi.paoStartNumber, lpi.paoStartSuffix, lpi.paoEndNumber, lpi.paoEndSuffix)).flatten.mkString(" ")
+  def constructStreetAddress(lpi: LPI, street: StreetDescriptor) = String.format("%s %s", constructStreetAddressPrefix(lpi).getOrElse(""), street.streetDescription).trim
 
-  private def formatStartAndEndSuffixes(startNumber: Option[String], startSuffix: Option[String], endNumber: Option[String], endSuffix: Option[String]) = {
+  def constructStreetAddressPrefix(lpi: LPI) = formatStartAndEndNumbersAndSuffixes(lpi.paoStartNumber, lpi.paoStartSuffix, lpi.paoEndNumber, lpi.paoEndSuffix)
+
+  def formatStartAndEndNumbersAndSuffixes(startNumber: Option[String], startSuffix: Option[String], endNumber: Option[String], endSuffix: Option[String]) = {
     val start = if (startNumber.isDefined) List(startNumber, startSuffix).flatten.mkString("") else ""
     val end = if (endNumber.isDefined) List(endNumber, endSuffix).flatten.mkString("") else ""
 
-    if (!start.isEmpty && !end.isEmpty) Some(start + "-" + end)
-    else if (!start.isEmpty && end.isEmpty) Some(start)
-    else None
+    startNumber.isDefined && endNumber.isDefined match {
+      case true => Some(start + "-" + end)
+      case false if startNumber.isDefined => Some(start)
+      case _ => None
+    }
   }
 }

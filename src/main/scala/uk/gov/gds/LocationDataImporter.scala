@@ -4,10 +4,11 @@ import scopt.OptionParser
 import uk.gov.gds.io.ProcessAddressBaseFiles
 import uk.gov.gds.logging.{Reporter, Logging}
 import uk.gov.gds.io.{Failure, Success}
+import java.io.File
 
 object LocationDataImporter extends Logging {
 
-  case class Config(dir: String = "", persist: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
+  case class Config(dir: String = "", persist: Boolean = false, cleanReport: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
 
@@ -25,6 +26,9 @@ object LocationDataImporter extends Logging {
       opt[String]('u', "username") text "Username for the mongo" action {
         (p: String, c: Config) => c.copy(username = p)
       }
+      opt[Unit]('c', "cleanReport") text "Clean the report. Default false" action {
+        (_, c: Config) => c.copy(cleanReport = true)
+      }
       opt[String]('p', "password") text "Password for the mongo" action {
         (p: String, c: Config) => c.copy(password = p)
       }
@@ -35,6 +39,8 @@ object LocationDataImporter extends Logging {
     opts.parse(args, Config()) map {
       config => {
         logger.info("Processing: " + config.dir + " Persisting: " + config.persist)
+
+        if(config.cleanReport) new File(Reporter.reportFile).delete()
 
         /*
           Initialize the mongo connection
@@ -54,8 +60,8 @@ object LocationDataImporter extends Logging {
           Log result summary
          */
         resultForStreets.outcome match {
-          case Success => logger.info("Completed processing streets: \n" + resultForStreets.messages.mkString("\n"))
-          case Failure => logger.info("Failed processing streets: \n" + resultForStreets.messages.mkString("\n"))
+          case Success => logger.info("Completed processing streets: \n" + resultForStreets.message)
+          case Failure => logger.info("Failed processing streets: \n" + resultForStreets.message)
           case _ => logger.info("Failed processing: Unable to generate a result]")
         }
 
@@ -85,8 +91,8 @@ object LocationDataImporter extends Logging {
           Log result summary
          */
         resultForAddresses.outcome match {
-          case Success => logger.info("Completed processing: \n" + resultForAddresses.messages.mkString("\n"))
-          case Failure => logger.info("Failed processing: \n" + resultForAddresses.messages.mkString("\n"))
+          case Success => logger.info("Completed processing: \n" + resultForAddresses.message)
+          case Failure => logger.info("Failed processing: \n" + resultForAddresses.message)
           case _ => logger.info("Failed processing: Unable to generate a result]")
         }
       }
