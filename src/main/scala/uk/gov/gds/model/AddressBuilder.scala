@@ -13,7 +13,10 @@ object AddressBuilder extends Logging {
   import formatters._
 
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection], fileName: String) = {
-    mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn)) match {
+    val streetDescriptor: Option[StreetDescriptor] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
+
+    streetDescriptor match {
+
       case Some(street) =>
         if (!isValidBLPU(addressWrapper.blpu)) {
           report(fileName, InvalidBlpuError, addressWrapper.uprn)
