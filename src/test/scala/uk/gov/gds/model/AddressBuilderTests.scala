@@ -150,31 +150,31 @@ class AddressBuilderTests extends Specification with Mockito {
     }
 
     "should transform all the SAO fields plus PAO Text into a string excluding the pao fields fornumber and suffix" in {
-      constructProperty(lpi).get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      constructPropertyFrom(lpi).get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
 
     "should transform all the SAO fields supplied plus PAO Text into a string" in {
-      constructProperty(lpiWithSaoStartAndPaoTextAndNoSaoEndOrSaoText).get must beEqualTo("sao start numbersao start suffix pao text")
+      constructPropertyFrom(lpiWithSaoStartAndPaoTextAndNoSaoEndOrSaoText).get must beEqualTo("sao start numbersao start suffix pao text")
     }
 
     "should transform all the SAO and PAO fields successfully when no suffix" in {
-      constructProperty(lpiWithNoSuffix).get must beEqualTo("sao start number-sao end number sao text pao text")
+      constructPropertyFrom(lpiWithNoSuffix).get must beEqualTo("sao start number-sao end number sao text pao text")
     }
 
     "should transform all the SAO and PAO fields excluding the suffixs when no numbers" in {
-      constructProperty(lpiWithNoNumbers).get must beEqualTo("sao text pao text")
+      constructPropertyFrom(lpiWithNoNumbers).get must beEqualTo("sao text pao text")
     }
 
     "should transform all missing sao and pao text fields into an empty string that returns true to isEmpty" in {
-      constructProperty(lpiWithNoSaoFieldsAndNoPaoText) must beEqualTo(None)
+      constructPropertyFrom(lpiWithNoSaoFieldsAndNoPaoText) must beEqualTo(None)
     }
 
     "should format a street address from the pao start and end numbers on an LPI" in {
-      constructStreetAddressPrefix(lpi).get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
+      constructStreetAddressPrefixFrom(lpi).get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
     }
 
     "should return None for a street address if no pao start number on an LPI" in {
-      constructStreetAddressPrefix(lpi.copy(paoStartNumber = None)) must beEqualTo(None)
+      constructStreetAddressPrefixFrom(lpi.copy(paoStartNumber = None)) must beEqualTo(None)
     }
 
     "should construct a location object from the x and y of a blpu" in {
@@ -183,19 +183,19 @@ class AddressBuilderTests extends Specification with Mockito {
     }
 
     "should construct a street address from the LPI and the street description" in {
-      constructStreetAddress(
+      constructStreetAddressFrom(
         lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = Some("a"), paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetDescriptor.copy(streetDescription = "The Street")
       ) must beEqualTo("10a-11b The Street")
     }
 
     "should construct a street address from the LPI with no pao start suffix and the street description" in {
-      constructStreetAddress(
+      constructStreetAddressFrom(
         lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetDescriptor.copy(streetDescription = "The Street")
       ) must beEqualTo("10-11b The Street")
     }
 
     "should construct a street address from the LPI with no pao end and the street description" in {
-      constructStreetAddress(
+      constructStreetAddressFrom(
         lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = None, paoEndSuffix = None), streetDescriptor.copy(streetDescription = "The Street")
       ) must beEqualTo("10 The Street")
     }

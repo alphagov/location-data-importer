@@ -13,12 +13,8 @@ object AddressBuilder extends Logging {
   import formatters._
 
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection], fileName: String) = {
-    val streetDescriptor: Option[StreetDescriptor] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
-
-    streetDescriptor match {
-
-      case Some(street) => {
-
+    mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn)) match {
+      case Some(street) =>
         if (!isValidBLPU(addressWrapper.blpu)) {
           report(fileName, InvalidBlpuError, addressWrapper.uprn)
           None
@@ -26,14 +22,13 @@ object AddressBuilder extends Logging {
         else
           Some(Address(
             houseName = addressWrapper.lpi.paoText,
-            houseNumber = constructStreetAddressPrefix(addressWrapper.lpi),
+            houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
             gssCode = addressWrapper.blpu.localCustodianCode.toString,
             postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
             presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
             location = location(addressWrapper.blpu),
             details = details(addressWrapper)
           ))
-      }
       case _ => {
         report(fileName, NoStreetForBlpuError, addressWrapper.uprn)
         None
@@ -61,8 +56,8 @@ object AddressBuilder extends Logging {
 
   def presentation(blpu: BLPU, lpi: LPI, street: StreetDescriptor) = {
     Presentation(
-      property = constructProperty(lpi),
-      streetAddress = constructStreetAddress(lpi, street),
+      property = constructPropertyFrom(lpi),
+      streetAddress = constructStreetAddressFrom(lpi, street),
       locality = street.localityName,
       town = street.townName,
       area = if (street.townName.isDefined && !street.townName.equals(street.administrativeArea)) Some(street.administrativeArea) else None,
@@ -85,17 +80,17 @@ object AddressBuilder extends Logging {
 
 object formatters {
   /*
-    Various address formatters
+    Various address field formatters
    */
-  def constructProperty(lpi: LPI) = {
+  def constructPropertyFrom(lpi: LPI) = {
     val formatted = List(formatStartAndEndNumbersAndSuffixes(lpi.saoStartNumber, lpi.saoStartSuffix, lpi.saoEndNumber, lpi.saoEndSuffix), lpi.saoText, lpi.paoText).flatten.mkString(" ")
     if (formatted.isEmpty) None
     else Some(formatted)
   }
 
-  def constructStreetAddress(lpi: LPI, street: StreetDescriptor) = String.format("%s %s", constructStreetAddressPrefix(lpi).getOrElse(""), street.streetDescription).trim
+  def constructStreetAddressFrom(lpi: LPI, street: StreetDescriptor) = String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), street.streetDescription).trim
 
-  def constructStreetAddressPrefix(lpi: LPI) = formatStartAndEndNumbersAndSuffixes(lpi.paoStartNumber, lpi.paoStartSuffix, lpi.paoEndNumber, lpi.paoEndSuffix)
+  def constructStreetAddressPrefixFrom(lpi: LPI) = formatStartAndEndNumbersAndSuffixes(lpi.paoStartNumber, lpi.paoStartSuffix, lpi.paoEndNumber, lpi.paoEndSuffix)
 
   def formatStartAndEndNumbersAndSuffixes(startNumber: Option[String], startSuffix: Option[String], endNumber: Option[String], endSuffix: Option[String]) = {
     val start = if (startNumber.isDefined) List(startNumber, startSuffix).flatten.mkString("") else ""
