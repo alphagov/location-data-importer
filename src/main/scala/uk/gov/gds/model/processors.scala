@@ -94,7 +94,7 @@ object processors extends Logging {
 object extractors {
 
   implicit object LastUpdatedOrdering extends Ordering[DateTime] {
-    def compare(a: DateTime, b: DateTime) = a compareTo b
+    def compare(a: DateTime, b: DateTime) = b compareTo a
   }
 
   /*

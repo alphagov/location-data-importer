@@ -1,7 +1,6 @@
 package uk.gov.gds.io
 
-import uk.gov.gds.logging.{FileError, Logging}
-import uk.gov.gds.logging.Reporter._
+import uk.gov.gds.logging.Logging
 import uk.gov.gds.model.processors._
 import uk.gov.gds.MongoConnection
 

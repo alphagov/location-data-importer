@@ -5,9 +5,7 @@ import uk.gov.gds.model.CodeLists._
 import org.joda.time.DateTime
 import scala.Some
 import org.specs2.mock.Mockito
-import uk.gov.ReporterTestUtils.reportLines
-import scala.util.Random
-import scala.collection.immutable.List
+import uk.gov.gds.testutils.ReporterTestUtils._
 
 class AddressBuilderTests extends Specification with Mockito {
 
@@ -16,12 +14,6 @@ class AddressBuilderTests extends Specification with Mockito {
 
   val mongoConnection = mock[uk.gov.gds.MongoConnection]
   mongoConnection.streetForUsrn(anyString) returns Some(streetDescriptor)
-
-  lazy val random = new Random()
-
-  def randomFilename = List.fill(10)(random.nextPrintableChar()).mkString
-
-  def reportLineToTest(fileName: String) = reportLines.filter(_.startsWith(fileName)).headOption
 
   "The address builder" should {
 

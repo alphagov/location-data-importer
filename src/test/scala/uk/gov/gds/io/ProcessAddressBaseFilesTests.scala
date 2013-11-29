@@ -4,14 +4,12 @@ import org.specs2.mutable.Specification
 import java.io.File
 import org.specs2.specification.AfterExample
 import uk.gov.gds.logging.Reporter
-import uk.gov.ReporterTestUtils._
 import org.specs2.mock.Mockito
+import uk.gov.gds.testutils.ReporterTestUtils._
 
 class ProcessAddressBaseFilesTests extends Specification with AfterExample with Mockito {
 
   sequential
-
-  def reportLineToTest(fileName: String) = reportLines.filter(_.startsWith(fileName)).headOption
 
   "The supplied file path" should {
     "be checked for existence" in {
