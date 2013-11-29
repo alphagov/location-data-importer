@@ -4,6 +4,8 @@ version := "0.1"
 
 scalaVersion := "2.10.0"
 
+parallelExecution := false
+
 libraryDependencies ++= Seq(
     "com.github.scopt" %% "scopt" % "3.2.0",
     "com.github.scala-incubator.io" % "scala-io-core_2.10.2" % "0.4.2",
