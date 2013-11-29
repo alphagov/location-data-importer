@@ -9,7 +9,6 @@ import com.novus.salat.global._
 import uk.gov.gds.model.StreetDescriptor
 
 class MongoConnection(username: Option[String] = None, password: Option[String] = None) extends Logging {
-  RegisterJodaTimeConversionHelpers()
 
   private val mongoClient = MongoClient()
 

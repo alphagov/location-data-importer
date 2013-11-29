@@ -5,12 +5,15 @@ import uk.gov.gds.io.ProcessAddressBaseFiles
 import uk.gov.gds.logging.{Reporter, Logging}
 import uk.gov.gds.io.{Failure, Success}
 import java.io.File
+import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
 
 object LocationDataImporter extends Logging {
 
   case class Config(dir: String = "", persist: Boolean = false, cleanReport: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
+
+    RegisterJodaTimeConversionHelpers()
 
     val opts = new OptionParser[Config]("Location Data Importer") {
       head("Parse and import location data", "0.1")
