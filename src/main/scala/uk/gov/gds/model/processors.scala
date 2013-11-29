@@ -51,6 +51,7 @@ object processors extends Logging {
   def processRowsIntoStreetsDescriptors(file: File) = {
 
     def processRow(line: String) = {
+
       val parsed = parseCsvLine(line)
       parsed.head match {
         case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](file.getName, parsed, StreetDescriptor)

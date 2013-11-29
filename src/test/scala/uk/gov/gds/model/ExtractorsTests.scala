@@ -9,6 +9,7 @@ import uk.gov.gds.io._
 import uk.gov.gds.testutils.ReporterTestUtils._
 import uk.gov.gds.model.CodeLists.{BlpuStateCode, LogicalStatusCode}
 import org.joda.time.DateTime
+import java.io.File
 
 class ExtractorsTests extends Specification {
 
@@ -44,6 +45,22 @@ class ExtractorsTests extends Specification {
 
   import extractors._
   import uk.gov.gds.io.parseCsvLine
+
+  "Processers" should {
+    "correctly process a file for streets" in {
+      processRowsIntoStreetsDescriptors(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
+      processRowsIntoStreetsDescriptors(new File("testdata/single-good-file/good-file.csv"))(0).usrn must beEqualTo("7803555")
+    }
+
+    "correctly process a file for addresses" in {
+      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
+      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).blpu.uprn must beEqualTo("9059007610")
+      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).lpi.paoStartNumber.get must beEqualTo("2")
+      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).classification.classificationCode must beEqualTo("RD")
+      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).organisation.get.organistation must beEqualTo("Party Time")
+
+    }
+  }
 
   "Extractors" should {
     "extract a BLPU from a parsed line from the address base file" in {
