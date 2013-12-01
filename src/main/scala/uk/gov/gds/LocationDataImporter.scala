@@ -6,6 +6,7 @@ import uk.gov.gds.logging.{Reporter, Logging}
 import uk.gov.gds.io.{Failure, Success}
 import java.io.File
 import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
+import org.joda.time.DateTime
 
 object LocationDataImporter extends Logging {
 
@@ -41,7 +42,8 @@ object LocationDataImporter extends Logging {
 
     opts.parse(args, Config()) map {
       config => {
-        logger.info("Processing: " + config.dir + " Persisting: " + config.persist)
+        val start = new DateTime
+        logger.info("Started processing: " + config.dir + " Persisting: " + config.persist)
 
         if(config.cleanReport) {
           new File(Reporter.reportFile).delete()
@@ -101,6 +103,9 @@ object LocationDataImporter extends Logging {
           case Failure => logger.info("Failed processing: \n" + resultForAddresses.message)
           case _ => logger.info("Failed processing: Unable to generate a result]")
         }
+
+        logger.info("Finshed Processing: " + config.dir + " in " + ((new DateTime).getMillis - start.getMillis) / 1000 / 60 + " minutes")
+
       }
     }
   }
