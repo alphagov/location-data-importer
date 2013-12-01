@@ -73,10 +73,10 @@ object AddressBuilder extends Logging {
     BLPU checker
    */
   def isValidBLPU(blpu: BLPU) = !List(
-    blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
-    blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
-    !blpu.endDate.isDefined, // MUST not have an end date
-    blpu.canReceivePost // must be able to receive post
+   // blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
+   // blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
+    !blpu.endDate.isDefined // MUST not have an end date
+   // blpu.canReceivePost // must be able to receive post
   ).contains(false)
 
 }

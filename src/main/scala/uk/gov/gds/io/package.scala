@@ -27,6 +27,8 @@ package object io {
 
   def fileExists(location: String) = new File(location).exists
 
+  def deleteFile(file: File) = file.delete()
+
   def isDirectory(location: String) = new File(location).isDirectory
 
   def directoryContents(location: String) = new File(location).listFiles().toList

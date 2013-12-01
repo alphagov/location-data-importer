@@ -24,6 +24,7 @@ object FileError extends Error("file-error")
 object Reporter {
 
   val reportFile = "/tmp/location-data-import-report.txt"
+  val processed = "/tmp/location-data-file-list.txt"
 
   writer(reportFile).writeStrings(List("\n", "=== Starting Run at " + new DateTime + " ===\n"))
 
@@ -34,6 +35,13 @@ object Reporter {
   def report(lines: List[String]) {
     synchronized {
       writer(reportFile).writeStrings(lines, "\n")
+    }
+  }
+
+  def processedFile(pass: String, fileName: String, timeTaken: String) {
+    synchronized {
+      writer(processed).writeStrings(List(pass, fileName, timeTaken), ",")
+      writer(processed).write("\n")
     }
   }
 

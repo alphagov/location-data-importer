@@ -35,7 +35,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
       reportLineToTest(file) must not be None
       reportLineToTest(file).get must contain("invalid-blpu")
-    }
+    }.pendingUntilFixed("Adding all logical states currently")
 
     "not create an address if no eligible BLPU ( state not in use)" in {
       val file = randomFilename
@@ -43,7 +43,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
       reportLineToTest(file) must not be None
       reportLineToTest(file).get must contain("invalid-blpu")
-    }
+    }.pendingUntilFixed("Adding all BLPU states currently")
 
     "not create an address if no eligible BLPU ( end date present)" in {
       val file = randomFilename
@@ -59,7 +59,7 @@ class AddressBuilderTests extends Specification with Mockito {
       geographicAddressToSimpleAddress(AddressBaseWrapper(invalidBlpuDueToPostalStatus, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
       reportLineToTest(file) must not be None
       reportLineToTest(file).get must contain("invalid-blpu")
-    }
+    }.pendingUntilFixed("Adding all non-postal addresses states currently")
 
     "include the postcode from the BLPU all lowercased on the root address object" in {
       geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu.copy(postcode = "SE45 0PP"), lpi, classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.postcode must beEqualTo("se450pp")
@@ -198,15 +198,15 @@ class AddressBuilderTests extends Specification with Mockito {
 
     "invalid blpu due to recieve post must be marked invalid" in {
       isValidBLPU(invalidBlpuDueToPostalStatus) must beFalse
-    }
+    }.pendingUntilFixed("allowing non-postal addreses at the momemnt")
 
     "invalid blpu due to blpu status must be marked invalid" in {
       isValidBLPU(invalidBlpuDueToLogicalStatus) must beFalse
-    }
+    }.pendingUntilFixed("allowing all logical states at the momemnt")
 
     "invalid blpu due to logical state must be marked invalid" in {
       isValidBLPU(invalidBlpuDueToBlpuStatus) must beFalse
-    }
+    }.pendingUntilFixed("allowing all statues at the momemnt")
 
     "invalid blpu due to end date must be marked invalid" in {
       isValidBLPU(invalidBlpuDueToEndDates) must beFalse

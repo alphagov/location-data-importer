@@ -11,12 +11,18 @@ object ReporterTestUtils {
 
   def loadReport = loadFile(new File(reportFile))
 
+  def loadProcessed = loadFile(new File(processed))
+
   def reportLines = loadReport.lines()
+
+  def processedLines = loadProcessed.lines()
 
   lazy val random = new Random()
 
   def randomFilename = List.fill(10)(random.nextPrintableChar()).mkString
 
   def reportLineToTest(fileName: String) = reportLines.filter(_.startsWith(fileName)).headOption
+
+  def processedLineToTest(fileName: String) = processedLines.filter(_.contains(fileName)).headOption
 }
 

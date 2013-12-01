@@ -43,7 +43,10 @@ object LocationDataImporter extends Logging {
       config => {
         logger.info("Processing: " + config.dir + " Persisting: " + config.persist)
 
-        if(config.cleanReport) new File(Reporter.reportFile).delete()
+        if(config.cleanReport) {
+          new File(Reporter.reportFile).delete()
+          new File(Reporter.processed).delete()
+        }
 
         /*
           Initialize the mongo connection

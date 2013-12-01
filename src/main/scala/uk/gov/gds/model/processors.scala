@@ -7,6 +7,7 @@ import uk.gov.gds.model.AddressBuilder._
 import java.io.File
 import scala.Some
 import uk.gov.gds.MongoConnection
+import uk.gov.gds.logging.Reporter.processedFile
 import uk.gov.gds.logging.Reporter.report
 import uk.gov.gds.logging.RowParseError
 import uk.gov.gds.logging.MissingLpiError
@@ -22,6 +23,7 @@ object processors extends Logging {
     implicit val fileName = file.getName
     logger.info("Processing streets in: " + fileName)
 
+    val start = new DateTime()
     try {
       persistStreetDescriptors(processRowsIntoStreetsDescriptors(file))
       Some(Result(Success, file.getName))
@@ -29,6 +31,8 @@ object processors extends Logging {
       case e: Exception => {
         Some(Result(Failure, file.getName))
       }
+    } finally {
+      processedFile("streets", fileName, (new DateTime().getMillis - start.getMillis).toString)
     }
   }
 
@@ -36,6 +40,7 @@ object processors extends Logging {
     implicit val fileName = file.getName
     logger.info("Processing addresses in: " + fileName)
 
+    val start = new DateTime()
     try {
       persistAddresses(processRowsIntoAddressWrappers(file))
       Some(Result(Success, fileName))
@@ -44,6 +49,9 @@ object processors extends Logging {
         logger.info("Failed to process: [" + file.getName + "]")
         Some(Result(Failure, file.getName))
       }
+    } finally {
+      deleteFile(file)
+      processedFile("addresses", fileName, (new DateTime().getMillis - start.getMillis).toString)
     }
   }
 

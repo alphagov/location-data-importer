@@ -87,6 +87,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
       reportLineToTest("bad-file.csv") must not be None
       reportLineToTest("bad-file.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file.csv").get must contain("15|BADSTREET-1")
+      processedLineToTest("bad-file.csv") must not be None
+      processedLineToTest("bad-file.csv").get must contain("streets")
     }
 
     "correctly process a 'bad' file returning error message against file name when processing addresses" in {
@@ -95,6 +97,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
       reportLineToTest("bad-file.csv") must not be None
       reportLineToTest("bad-file.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file.csv").get must contain("32|BADROW")
+      processedLineToTest("bad-file.csv") must not be None
+      processedLineToTest("bad-file.csv").get must contain("addresses")
     }
 
     "correctly process a set of 'bad' files returning errors by file name when processing streets" in {
@@ -106,6 +110,10 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
       reportLineToTest("bad-file-2.csv") must not be None
       reportLineToTest("bad-file-2.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-2.csv").get must contain("15|BADSTREET")
+      processedLineToTest("bad-file-1.csv") must not be None
+      processedLineToTest("bad-file-1.csv").get must contain("streets")
+      processedLineToTest("bad-file-2.csv") must not be None
+      processedLineToTest("bad-file-2.csv").get must contain("streets")
     }
 
     "correctly process a set of 'bad' files returning errors by file name when processing addresses" in {
@@ -117,6 +125,10 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
       reportLineToTest("bad-file-2.csv") must not be None
       reportLineToTest("bad-file-2.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-2.csv").get must contain("21|BADROW-2")
+      processedLineToTest("bad-file-1.csv") must not be None
+      processedLineToTest("bad-file-1.csv").get must contain("addresses")
+      processedLineToTest("bad-file-2.csv") must not be None
+      processedLineToTest("bad-file-2.csv").get must contain("addresses")
     }
 
     "correctly process a set of 'good' and 'bad' files returning errors by file name when processing streets" in {
@@ -125,6 +137,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
       reportLineToTest("bad-file-3.csv") must not be None
       reportLineToTest("bad-file-3.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-3.csv").get must contain("15|BADSTREET-3")
+      processedLineToTest("bad-file-3.csv") must not be None
+      processedLineToTest("bad-file-3.csv").get must contain("streets")
     }
 
     "correctly process a set of 'good' and 'bad' files returning errors by file name when processing addresses" in {
@@ -133,6 +147,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
       reportLineToTest("bad-file-3.csv") must not be None
       reportLineToTest("bad-file-3.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-3.csv").get must contain("32|BADROW-1")
+      processedLineToTest("bad-file-3.csv") must not be None
+      processedLineToTest("bad-file-3.csv").get must contain("addresses")
     }
   }
 
@@ -143,6 +159,7 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
     }
 
     if (new File(Reporter.reportFile).exists()) new File(Reporter.reportFile).delete()
+    if (new File(Reporter.processed).exists()) new File(Reporter.processed).delete()
   }
 
 }
