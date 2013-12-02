@@ -1,39 +1,12 @@
-- reporting on upload
-    - files
-    - rows per file
-    - anomalies
 
- - skip whole file with an error?
 
-- better upload checking
-    - directory read status
-
-- better row checking
-    - report
 
 - validation scripts
     - number of BLPUs
     - etc
 
-
-- sort data model
-
-- push reporter into address mapper
-
-- mongo indexes  (define)
-
-- properly codify transformation rules.
-
 - OS use cases
-
-- how many files to do , have done, to get to end
-
-- commercial buildings allowed?
 
 - test mongo auth
 
-- remove ambiguity around lists by choosing only the one with no end date, order by updated, head - on all listed classes
-
-- validate the string to double and string to int mappings
-
-- validate that an exception thrown on parsing a row/file results in file skipped and carries on with next file
+- use street record type code to try and skip the strange street names
