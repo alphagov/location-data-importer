@@ -6,7 +6,7 @@ import com.mongodb.casbah.commons.conversions.scala._
 import uk.gov.gds.logging.Logging
 import com.novus.salat._
 import com.novus.salat.global._
-import uk.gov.gds.model.StreetDescriptor
+import uk.gov.gds.model.{StreetWithDescription, StreetDescriptor}
 
 class MongoConnection(username: Option[String] = None, password: Option[String] = None) extends Logging {
 
@@ -32,7 +32,7 @@ class MongoConnection(username: Option[String] = None, password: Option[String] 
     if (a == null) {
       None
     } else {
-      Some(grater[StreetDescriptor].asObject(a))
+      Some(grater[StreetWithDescription].asObject(a))
     }
   }
 

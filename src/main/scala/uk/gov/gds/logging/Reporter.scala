@@ -16,6 +16,10 @@ object RowParseError extends Error("row-parse-error")
 
 object MissingLpiError extends Error("no-active-lpi-for-uprn")
 
+object MissingActiveStreetError extends Error("no-active-street-for-usrn")
+
+object MissingStreetError extends Error("no-street-for-usrn")
+
 object MissingClassificationError extends Error("no-active-classification-for-uprn")
 
 object FileError extends Error("file-error")

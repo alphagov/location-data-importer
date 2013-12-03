@@ -13,7 +13,7 @@ object AddressBuilder extends Logging {
   import formatters._
 
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection], fileName: String) = {
-    val streetDescriptor: Option[StreetDescriptor] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
+    val streetDescriptor: Option[StreetWithDescription] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
 
     streetDescriptor match {
 
@@ -57,7 +57,7 @@ object AddressBuilder extends Logging {
 
   def location(blpu: BLPU) = Location(blpu.xCoordinate, blpu.yCoordinate)
 
-  def presentation(blpu: BLPU, lpi: LPI, street: StreetDescriptor) = {
+  def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription) = {
     Presentation(
       property = constructPropertyFrom(lpi),
       streetAddress = constructStreetAddressFrom(lpi, street),
@@ -73,10 +73,10 @@ object AddressBuilder extends Logging {
     BLPU checker
    */
   def isValidBLPU(blpu: BLPU) = !List(
-   // blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
-   // blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
+    // blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
+    // blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
     !blpu.endDate.isDefined // MUST not have an end date
-   // blpu.canReceivePost // must be able to receive post
+    // blpu.canReceivePost // must be able to receive post
   ).contains(false)
 
 }
@@ -91,7 +91,11 @@ object formatters {
     else Some(formatted)
   }
 
-  def constructStreetAddressFrom(lpi: LPI, street: StreetDescriptor) = String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), street.streetDescription).trim
+  def constructStreetAddressFrom(lpi: LPI, street: StreetWithDescription) =
+    if (street.recordType.get.equals("officiallyDesignated"))
+      Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), street.streetDescription).trim)
+    else
+      None
 
   def constructStreetAddressPrefixFrom(lpi: LPI) = formatStartAndEndNumbersAndSuffixes(lpi.paoStartNumber, lpi.paoStartSuffix, lpi.paoEndNumber, lpi.paoEndSuffix)
 

@@ -7,9 +7,10 @@ import processors._
 import scala.collection.mutable
 import uk.gov.gds.io._
 import uk.gov.gds.testutils.ReporterTestUtils._
-import uk.gov.gds.model.CodeLists.{BlpuStateCode, LogicalStatusCode}
+import uk.gov.gds.model.CodeLists._
 import org.joda.time.DateTime
 import java.io.File
+import scala.Some
 
 class ExtractorsTests extends Specification {
 
@@ -37,10 +38,16 @@ class ExtractorsTests extends Specification {
     """31,"I",93843,9059007612,"9059O000000619","Department Of Leisure And Culture","",2012-01-23,,2012-01-23,2012-01-23"""
   )
 
+  private val validLinesForStreets = List(
+    """11,"I",1,7803241,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999""",
+    """11,"I",1,7803242,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999""",
+    """11,"I",1,7803243,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999"""
+  )
+
   private val validLinesForStreetDescriptor = List(
-    """15,"I",1146,709838,"ACCESS FROM ZC4 TO GAGIE HOLDING","","MURROES","ANGUS","ENG"""",
-    """15,"I",1148,709884,"ACCESS FROM ZU306 TO B962 AT LAWS","NEWBIGGING","MONIFIETH","ANGUS","ENG"""",
-    """15,"I",1150,709887,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG""""
+    """15,"I",1146,7803241,"ACCESS FROM ZC4 TO GAGIE HOLDING","","MURROES","ANGUS","ENG"""",
+    """15,"I",1148,7803242,"ACCESS FROM ZU306 TO B962 AT LAWS","NEWBIGGING","MONIFIETH","ANGUS","ENG"""",
+    """15,"I",1150,7803243,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG""""
   )
 
   import extractors._
@@ -48,8 +55,8 @@ class ExtractorsTests extends Specification {
 
   "Processers" should {
     "correctly process a file for streets" in {
-      processRowsIntoStreetsDescriptors(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
-      processRowsIntoStreetsDescriptors(new File("testdata/single-good-file/good-file.csv"))(0).usrn must beEqualTo("7803555")
+      processRowsIntoStreets(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
+      processRowsIntoStreets(new File("testdata/single-good-file/good-file.csv"))(0).usrn must beEqualTo("7803555")
     }
 
     "correctly process a file for addresses" in {
@@ -129,6 +136,22 @@ class ExtractorsTests extends Specification {
       reportLineToTest(filename).get must contain(parseCsvLine(lineWithNoUPRN).mkString("|"))
     }
 
+    "extract a Street  from a parsed line from the address base file" in {
+      val streetLine = """11,"I",1,7803555,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999"""
+      val streetOption = extractRow[Street]("filename", parseCsvLine(streetLine), Street)
+      streetOption must not be (None)
+      streetOption.get.usrn must beEqualTo("7803555")
+    }
+
+    "throw an exception if presented with an invalid Street line from the address base file" in {
+      val filename = randomFilename
+      val streetLineWithNoUSRN = """11,"I",1,,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999"""
+      extractRow[Street](filename, parseCsvLine(streetLineWithNoUSRN), Street) must throwA[Exception]
+      reportLineToTest(filename) must not be None
+      reportLineToTest(filename).get must contain("row-parse-error")
+      reportLineToTest(filename).get must contain(parseCsvLine(streetLineWithNoUSRN).mkString("|"))
+    }
+
     "extract a Street Descriptor from a parsed line from the address base file" in {
       val streetDescriptorLine = """15,"I",1150,709887,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG""""
       val streetDescriptorOption = extractRow[StreetDescriptor]("filename", parseCsvLine(streetDescriptorLine), StreetDescriptor)
@@ -155,6 +178,17 @@ class ExtractorsTests extends Specification {
       extractStreetDescriptors(buildListOfAddressBaseObjects).size must beEqualTo(3)
     }
 
+    "should be able to extract all the Streets from a list of AddressBase objects, grouped by UPRN" in {
+      extractStreetsByUsrn(buildListOfAddressBaseObjects).size must beEqualTo(3)
+      extractStreetsByUsrn(buildListOfAddressBaseObjects).get("7803241").get(0).isInstanceOf[Street] must beEqualTo(true)
+      extractStreetsByUsrn(buildListOfAddressBaseObjects).get("7803242").get(0).isInstanceOf[Street] must beEqualTo(true)
+      extractStreetsByUsrn(buildListOfAddressBaseObjects).get("7803243").get(0).isInstanceOf[Street] must beEqualTo(true)
+      extractStreetsByUsrn(buildListOfAddressBaseObjects).get("7803241").size must beEqualTo(1)
+      extractStreetsByUsrn(buildListOfAddressBaseObjects).get("7803242").size must beEqualTo(1)
+      extractStreetsByUsrn(buildListOfAddressBaseObjects).get("7803243").size must beEqualTo(1)
+    }
+
+
     "should be able to extract all the LPIs from a list of AddressBase objects, grouped by UPRN" in {
       extractLpisByUprn(buildListOfAddressBaseObjects).size must beEqualTo(3)
       extractLpisByUprn(buildListOfAddressBaseObjects).get("9059007610").get(0).isInstanceOf[LPI] must beEqualTo(true)
@@ -175,7 +209,7 @@ class ExtractorsTests extends Specification {
       extractOrganisationsUprn(buildListOfAddressBaseObjects).get("9059007612").size must beEqualTo(1)
     }
 
-    "should be able to extract all the CLassifications from a list of AddressBase objects, grouped by UPRN" in {
+    "should be able to extract all the Classifications from a list of AddressBase objects, grouped by UPRN" in {
       extractClassificationsByUprn(buildListOfAddressBaseObjects).size must beEqualTo(3)
       extractClassificationsByUprn(buildListOfAddressBaseObjects).get("9059007610").get(0).isInstanceOf[Classification] must beEqualTo(true)
       extractClassificationsByUprn(buildListOfAddressBaseObjects).get("9059007611").get(0).isInstanceOf[Classification] must beEqualTo(true)
@@ -248,6 +282,27 @@ class ExtractorsTests extends Specification {
       mostRecentOrganisationForUprn("uprn", Map("uprn" -> List(organisation1))) must beEqualTo(None)
     }
 
+    "should be get most recently updated Street from a list of street" in {
+      val street1 = street.copy(lastUpdated = new DateTime().minusDays(1))
+      val street2 = street.copy(lastUpdated = new DateTime().minusDays(2))
+
+      mostRecentStreetForUsrn("usrn", Map("usrn" -> List(street1, street2))).get must beEqualTo(street1)
+    }
+
+    "should be get most recently updated Street from a list of Street excluding those with an end date" in {
+      val street1 = street.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
+      val street2 = street.copy(lastUpdated = new DateTime().minusDays(2))
+      val street3 = street.copy(lastUpdated = new DateTime().minusDays(3))
+
+      mostRecentStreetForUsrn("usrn", Map("usrn" -> List(street1, street2, street3))).get must beEqualTo(street2)
+    }
+
+    "should be returning none if no valid Street available" in {
+      val street1 = street.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
+
+      mostRecentStreetForUsrn("usrn", Map("usrn" -> List(street1))) must beEqualTo(None)
+    }
+
     "should build an address wrapper linking the blpu to the correct LPI and classification" in {
       val lpi1 = lpi.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
       val lpi2 = lpi.copy(lastUpdated = new DateTime().minusDays(2))
@@ -286,6 +341,68 @@ class ExtractorsTests extends Specification {
       reportLineToTest(filename).get must contain("uprn")
     }
 
+    "should build an street wrapper linking the street descriptor to the correct street" in {
+      val street1 = street.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
+      val street2 = street.copy(lastUpdated = new DateTime().minusDays(2))
+      val street3 = street.copy(lastUpdated = new DateTime().minusDays(3))
+
+      val streetWrapper = buildStreetWrapper(randomFilename, Map("usrn" -> List(street1, street2, street3)), streetDescriptor)
+      streetWrapper must not be (None)
+      streetWrapper.get.usrn must beEqualTo("usrn")
+      streetWrapper.get.localityName must beEqualTo(streetDescriptor.localityName)
+      streetWrapper.get.administrativeArea must beEqualTo(streetDescriptor.administrativeArea)
+      streetWrapper.get.townName must beEqualTo(streetDescriptor.townName)
+      streetWrapper.get.streetDescription must beEqualTo(streetDescriptor.streetDescription)
+      streetWrapper.get.state must beEqualTo(Some("open"))
+      streetWrapper.get.surface must beEqualTo(Some("mixed"))
+      streetWrapper.get.recordType must beEqualTo(Some("numberedStreet"))
+      streetWrapper.get.classification must beEqualTo(Some("allVehicles"))
+    }
+
+    "should not build an street wrapper, returning None if no valid Street" in {
+      val filename = randomFilename
+      val street1 = street.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
+
+      val streetWrapper = buildStreetWrapper(filename, Map("usrn" -> List(street1)), streetDescriptor)
+      streetWrapper must be(None)
+      reportLineToTest(filename) must not be None
+      reportLineToTest(filename).get must contain("no-active-street-for-usrn")
+      reportLineToTest(filename).get must contain("usrn")
+    }
+
+    "should not build an street wrapper, returning None if no Street for usrn" in {
+      val filename = randomFilename
+
+      val streetWrapper = buildStreetWrapper(filename, Map.empty, streetDescriptor)
+      streetWrapper must be(None)
+      reportLineToTest(filename) must not be None
+      reportLineToTest(filename).get must contain("no-street-for-usrn")
+      reportLineToTest(filename).get must contain("usrn")
+    }
+
+    "should extract street wrappers from list of address base objects" in {
+      val streetWrappers = extractStreetWrappers(randomFilename, buildListOfAddressBaseObjects)
+      streetWrappers.size must beEqualTo(3)
+    }
+
+    "should extract streets with description from list of address base objects" in {
+
+      val streetsWithOneInvalidLine = List(
+        """11,"I",1,7803241,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999""",
+        """11,"I",1,7803242,1,9059,,1995-09-04,,8,0,1995-09-04,2006-01-01,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999""",
+        """11,"I",1,7803243,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999"""
+      )
+
+      val streetDescriptors = validLinesForStreetDescriptor.flatMap(line => extractRow[StreetDescriptor]("filename", parseCsvLine(line), StreetDescriptor))
+      val streets = streetsWithOneInvalidLine.flatMap(line => extractRow[Street]("filename", parseCsvLine(line), Street))
+
+      val streetWithDescriptions = extractStreetWrappers(randomFilename, List(streets, streetDescriptors).flatten)
+      streetWithDescriptions.size must beEqualTo(2)
+      streetWithDescriptions.filter(a => a.usrn.equalsIgnoreCase("7803241")).size must beEqualTo(1)
+      streetWithDescriptions.filter(a => a.usrn.equalsIgnoreCase("7803242")).size must beEqualTo(0)
+      streetWithDescriptions.filter(a => a.usrn.equalsIgnoreCase("7803243")).size must beEqualTo(1)
+    }
+
     "should extract address base wrappers from list of address base objects" in {
       val addressWrappers = extractAddressBaseWrappers(randomFilename, buildListOfAddressBaseObjects)
       addressWrappers.size must beEqualTo(3)
@@ -313,12 +430,13 @@ class ExtractorsTests extends Specification {
   }
 
   def buildListOfAddressBaseObjects = {
-    val streets = validLinesForStreetDescriptor.flatMap(line => extractRow[StreetDescriptor]("filename", parseCsvLine(line), StreetDescriptor))
+    val streetsDescriptions = validLinesForStreetDescriptor.flatMap(line => extractRow[StreetDescriptor]("filename", parseCsvLine(line), StreetDescriptor))
+    val streets = validLinesForStreets.flatMap(line => extractRow[Street]("filename", parseCsvLine(line), Street))
     val blpus = validLinesForBLPU.flatMap(line => extractRow[BLPU]("filename", parseCsvLine(line), BLPU))
     val lpis = validLinesForLPI.flatMap(line => extractRow[LPI]("filename", parseCsvLine(line), LPI))
     val organisations = validLinesForOrganisation.flatMap(line => extractRow[Organisation]("filename", parseCsvLine(line), Organisation))
     val classifications = validLinesForClassification.flatMap(line => extractRow[Classification]("filename", parseCsvLine(line), Classification))
-    List(streets, blpus, lpis, organisations, classifications).flatten
+    List(streets, streetsDescriptions, blpus, lpis, organisations, classifications).flatten
   }
 
   private lazy val startDate = new DateTime().minusDays(100)
@@ -358,6 +476,9 @@ class ExtractorsTests extends Specification {
     Some(true)
   )
 
+
+  private lazy val street = Street("usrn", Some(StreetRecordTypeCode.numberedStreet), Some(StreetStateCode.open), Some(StreetSurfaceCode.mixed), Some(StreetClassificationCode.allVehicles), startDate, None, lastUpdatedDate)
+  private lazy val streetDescriptor = StreetDescriptor("usrn", "description", Some("locality"), Some("town"), "admin area")
   private lazy val classification = Classification("uprn", "code", startDate, None, lastUpdatedDate)
   private lazy val organisation = Organisation("uprn", "organisation", startDate, None, lastUpdatedDate)
 

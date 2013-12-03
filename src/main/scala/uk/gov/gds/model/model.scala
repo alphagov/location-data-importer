@@ -1,12 +1,19 @@
 package uk.gov.gds.model
 
 import org.joda.time.DateTime
-import uk.gov.gds.model.CodeLists.BlpuStateCode.BlpuStateCode
-import uk.gov.gds.model.CodeLists.BlpuStateCode
-import uk.gov.gds.model.CodeLists.LogicalStatusCode.LogicalStatusCode
-import uk.gov.gds.model.CodeLists.LogicalStatusCode
+import uk.gov.gds.model.CodeLists._
 import com.novus.salat._
 import com.novus.salat.global._
+import uk.gov.gds.model.CodeLists.StreetSurfaceCode.StreetSurfaceCode
+import uk.gov.gds.model.CodeLists.StreetClassificationCode.StreetClassificationCode
+import uk.gov.gds.model.CodeLists.StreetRecordTypeCode.StreetRecordTypeCode
+import uk.gov.gds.model.CodeLists.StreetRecordTypeCode
+import uk.gov.gds.model.CodeLists.LogicalStatusCode.LogicalStatusCode
+import uk.gov.gds.model.CodeLists.LogicalStatusCode
+import uk.gov.gds.model.CodeLists.BlpuStateCode.BlpuStateCode
+import uk.gov.gds.model.CodeLists.BlpuStateCode
+import uk.gov.gds.model.CodeLists.StreetStateCode
+import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
 
 
 /*
@@ -161,6 +168,43 @@ object LPI extends AddressBaseHelpers[LPI] {
 
 }
 
+case class Street(usrn: String,
+                  recordType: Option[StreetRecordTypeCode],
+                  state: Option[StreetStateCode],
+                  surface: Option[StreetSurfaceCode],
+                  classification: Option[StreetClassificationCode],
+                  startDate: DateTime,
+                  endDate: Option[DateTime],
+                  lastUpdated: DateTime
+                   ) extends AddressBase
+
+object Street extends AddressBaseHelpers[Street] {
+  val recordIdentifier = "11"
+  val requiredCsvColumns = 20
+
+  private val usrnIndex = 3
+  private val recordTypeIndex = 4
+  private val stateIndex = 6
+  private val surfaceIndex = 8
+  private val classificationIndex = 9
+  private val startDateIndex = 11
+  private val endDateIndex = 12
+  private val updatedDateIndex = 13
+
+  def fromCsvLine(csvLine: List[String]) = Street(
+    csvLine(usrnIndex),
+    StreetRecordTypeCode.forId(csvLine(recordTypeIndex)),
+    StreetStateCode.forId(csvLine(stateIndex)),
+    StreetSurfaceCode.forId(csvLine(surfaceIndex)),
+    StreetClassificationCode.forId(csvLine(classificationIndex)),
+    csvLine(startDateIndex),
+    csvLine(endDateIndex),
+    csvLine(updatedDateIndex)
+  )
+
+  val mandatoryCsvColumns = List(usrnIndex, recordTypeIndex, startDateIndex, updatedDateIndex)
+}
+
 case class StreetDescriptor(
                              usrn: String,
                              streetDescription: String,
@@ -297,4 +341,18 @@ case class Address(
                     details: Details
                     ) {
   def serialize = grater[Address].asDBObject(this)
+}
+
+case class StreetWithDescription(
+                                  usrn: String,
+                                  streetDescription: String,
+                                  localityName: Option[String],
+                                  townName: Option[String],
+                                  administrativeArea: String,
+                                  recordType: Option[String],
+                                  state: Option[String],
+                                  surface: Option[String],
+                                  classification: Option[String]
+                                  ) {
+  def serialize = grater[StreetWithDescription].asDBObject(this)
 }

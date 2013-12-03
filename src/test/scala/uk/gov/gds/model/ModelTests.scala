@@ -164,6 +164,55 @@ class ModelTests extends Specification {
     }
   }
 
+  "Street" should {
+
+    val completeValidLine = """11,"I",1151,709895,2,9053,2,2010-02-05,1,8,0,2008-01-25,2010-01-01,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
+    val incompleteValidLine = """11,"I",1151,709895,2,9053,,,,,0,2008-01-25,,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
+
+    "be able to identify a valid line" in {
+      Street.isValidCsvLine(parseCsvLine(completeValidLine)) must beTrue
+    }
+
+    "be able to identify an invalid line due to wrong type" in {
+      val wrongRecordIdentifier = """17,"I",1151,709895,2,9053,2,2010-02-05,1,8,0,2008-01-25,2010-01-01,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
+      Street.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
+    }
+
+    "be able to identify an invalid line due to wrong number of columns" in {
+      val wrongNumberOfColumns = """17,"I",709895,2,9053,,,,,0,2008-01-25,,2008-10-09,2008-01-25,347600.00,734728.00,347561.00,734677.00,999"""
+      Street.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to be constructed from a fully populated csv line" in {
+      street(completeValidLine).usrn must beEqualTo("709895")
+      street(completeValidLine).recordType.get must beEqualTo(streetDescription)
+      street(completeValidLine).state.get must beEqualTo(open)
+      street(completeValidLine).surface.get must beEqualTo(metalled)
+      street(completeValidLine).classification.get must beEqualTo(allVehicles)
+      street(completeValidLine).startDate must beEqualTo(new DateTime(2008, 1, 25, 0, 0))
+      street(completeValidLine).endDate.get must beEqualTo(new DateTime(2010, 1, 1, 0, 0))
+      street(completeValidLine).lastUpdated must beEqualTo(new DateTime(2008, 10, 9, 0, 0))
+    }
+
+    "be able to be constructed from a minimum populated csv line" in {
+      street(incompleteValidLine).usrn must beEqualTo("709895")
+      street(incompleteValidLine).recordType.get must beEqualTo(streetDescription)
+      street(incompleteValidLine).state must beEqualTo(None)
+      street(incompleteValidLine).surface must beEqualTo(None)
+      street(incompleteValidLine).classification must beEqualTo(None)
+      street(incompleteValidLine).startDate must beEqualTo(new DateTime(2008, 1, 25, 0, 0))
+      street(incompleteValidLine).endDate must beEqualTo(None)
+      street(incompleteValidLine).lastUpdated must beEqualTo(new DateTime(2008, 10, 9, 0, 0))
+
+    }
+
+    "be able to be made into correct type" in {
+      street(completeValidLine).isInstanceOf[AddressBase] must beTrue
+      street(completeValidLine).isInstanceOf[Street] must beTrue
+    }
+  }
+
+
   "Street Descriptor " should {
 
     val completeValidLine = """15,"I",1142,705576,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","ENG""""
@@ -317,6 +366,8 @@ class ModelTests extends Specification {
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))
 
   private def lpi(line: String) = LPI.fromCsvLine(parseCsvLine(line))
+
+  private def street(line: String) = Street.fromCsvLine(parseCsvLine(line))
 
   private def streetDescriptor(line: String) = StreetDescriptor.fromCsvLine(parseCsvLine(line))
 

@@ -2,17 +2,15 @@ package uk.gov.gds.model
 
 import scalax.io.LongTraversable
 import uk.gov.gds.io._
-import uk.gov.gds.logging.Logging
+import uk.gov.gds.logging._
 import uk.gov.gds.model.AddressBuilder._
 import java.io.File
-import scala.Some
 import uk.gov.gds.MongoConnection
 import uk.gov.gds.logging.Reporter.processedFile
 import uk.gov.gds.logging.Reporter.report
-import uk.gov.gds.logging.RowParseError
-import uk.gov.gds.logging.MissingLpiError
-import uk.gov.gds.logging.MissingClassificationError
 import org.joda.time.DateTime
+import scala.Some
+import uk.gov.gds.io.Result
 
 
 object processors extends Logging {
@@ -25,7 +23,7 @@ object processors extends Logging {
 
     val start = new DateTime()
     try {
-      persistStreetDescriptors(processRowsIntoStreetsDescriptors(file))
+      persistStreetDescriptors(processRowsIntoStreets(file))
       Some(Result(Success, file.getName))
     } catch {
       case e: Exception => {
@@ -46,29 +44,30 @@ object processors extends Logging {
       Some(Result(Success, fileName))
     } catch {
       case e: Exception => {
-        logger.info("Failed to process: [" + file.getName + "]")
+        logger.info("Failed to process: [" + file.getName + "] " + e.getMessage)
         Some(Result(Failure, file.getName))
       }
     } finally {
-      deleteFile(file)
+      //deleteFile(file)
       processedFile("addresses", fileName, (new DateTime().getMillis - start.getMillis).toString)
     }
   }
 
 
-  def processRowsIntoStreetsDescriptors(file: File) = {
+  def processRowsIntoStreets(file: File) = {
 
     def processRow(line: String) = {
 
       val parsed = parseCsvLine(line)
       parsed.head match {
         case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](file.getName, parsed, StreetDescriptor)
+        case Street.recordIdentifier => extractRow[Street](file.getName, parsed, Street)
         case _ => None
       }
     }
 
     val genericRows = processRows(loadFile(file).lines(), processRow)
-    extractStreetDescriptors(genericRows)
+    extractStreetWrappers(file.getName, genericRows)
   }
 
   def processRowsIntoAddressWrappers(file: File) = {
@@ -90,7 +89,7 @@ object processors extends Logging {
 
   private def processRows(lines: LongTraversable[String], f: String => Option[AddressBase]) = lines.flatMap(f(_)).toList
 
-  private def persistStreetDescriptors(streetDescriptors: List[StreetDescriptor])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
+  private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
     mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
   }
 
@@ -112,7 +111,7 @@ object extractors {
   def extractRow[T <: AddressBase](fileName: String, parsed: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsed)) {
       report(fileName, RowParseError, Some(parsed.mkString("|")))
-      throw new Exception("Unable to parse row")
+      throw new Exception("Unable to parse row "  + Some(parsed.mkString("|")))
     }
     else Some(addressBase.fromCsvLine(parsed))
   }
@@ -141,11 +140,17 @@ object extractors {
       case _ => None
     } groupBy (_.uprn)
 
-  def extractStreetDescriptors(raw: List[AddressBase]): List[StreetDescriptor] =
+  def extractStreetDescriptors(raw: List[AddressBase]) =
     raw flatMap {
       case a: StreetDescriptor => Some(a)
       case _ => None
     }
+
+  def extractStreetsByUsrn(raw: List[AddressBase]) =
+    raw flatMap {
+      case a: Street => Some(a)
+      case _ => None
+    } groupBy (_.usrn)
 
   def extractAddressBaseWrappers(fileName: String, rows: List[AddressBase]) = {
 
@@ -158,6 +163,40 @@ object extractors {
       blpu =>
         buildAddressWrapper(fileName, blpu, lpis, classifications, organisations)
     ).toList
+  }
+
+  def extractStreetWrappers(fileName: String, rows: List[AddressBase]) = {
+
+    val streets = extractStreetsByUsrn(rows)
+    val streetDescriptions = extractStreetDescriptors(rows)
+
+    streetDescriptions.flatMap(
+      streetDescription =>
+        buildStreetWrapper(fileName, streets, streetDescription)
+    ).toList
+  }
+
+  def buildStreetWrapper(fileName: String, streets: Map[String, List[Street]], streetDescriptor: StreetDescriptor) = {
+    val street = mostRecentStreetForUsrn(streetDescriptor.usrn, streets)
+
+    if(streets.get(streetDescriptor.usrn).isEmpty) {
+      report(fileName, MissingStreetError, Some(streetDescriptor.usrn))
+      None
+    } else if (!street.isDefined) {
+      report(fileName, MissingActiveStreetError, Some(streetDescriptor.usrn))
+      None
+    } else
+      street.map(s => StreetWithDescription(
+        streetDescriptor.usrn,
+        streetDescriptor.streetDescription,
+        streetDescriptor.localityName,
+        streetDescriptor.townName,
+        streetDescriptor.administrativeArea,
+        s.recordType.map(r => r.toString),
+        s.state.map(r => r.toString),
+        s.surface.map(r => r.toString),
+        s.classification.map(r => r.toString)
+      ))
   }
 
   /*
@@ -213,5 +252,13 @@ object extractors {
       case _ => None
     }
 
+  /*
+    We want one Street per USRN, and there may be several so remove all with an end date, and get the most recently updated
+   */
+  def mostRecentStreetForUsrn(usrn: String, streets: Map[String, List[Street]]): Option[Street] =
+    streets.get(usrn) match {
+      case Some(street) => street.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case _ => None
+    }
 
 }

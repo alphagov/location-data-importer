@@ -13,7 +13,7 @@ class AddressBuilderTests extends Specification with Mockito {
   import uk.gov.gds.model.formatters._
 
   val mongoConnection = mock[uk.gov.gds.MongoConnection]
-  mongoConnection.streetForUsrn(anyString) returns Some(streetDescriptor)
+  mongoConnection.streetForUsrn(anyString) returns Some(streetWithDescription)
 
   "The address builder" should {
 
@@ -176,20 +176,20 @@ class AddressBuilderTests extends Specification with Mockito {
 
     "should construct a street address from the LPI and the street description" in {
       constructStreetAddressFrom(
-        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = Some("a"), paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetDescriptor.copy(streetDescription = "The Street")
-      ) must beEqualTo("10a-11b The Street")
+        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = Some("a"), paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetWithDescription.copy(streetDescription = "The Street")
+      ).get must beEqualTo("10a-11b The Street")
     }
 
     "should construct a street address from the LPI with no pao start suffix and the street description" in {
       constructStreetAddressFrom(
-        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetDescriptor.copy(streetDescription = "The Street")
-      ) must beEqualTo("10-11b The Street")
+        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = Some("11"), paoEndSuffix = Some("b")), streetWithDescription.copy(streetDescription = "The Street")
+      ).get must beEqualTo("10-11b The Street")
     }
 
     "should construct a street address from the LPI with no pao end and the street description" in {
       constructStreetAddressFrom(
-        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = None, paoEndSuffix = None), streetDescriptor.copy(streetDescription = "The Street")
-      ) must beEqualTo("10 The Street")
+        lpi.copy(paoStartNumber = Some("10"), paoStartSuffix = None, paoEndNumber = None, paoEndSuffix = None), streetWithDescription.copy(streetDescription = "The Street")
+      ).get must beEqualTo("10 The Street")
     }
 
     "valid blpus should be marked as valid" in {
@@ -236,7 +236,7 @@ class AddressBuilderTests extends Specification with Mockito {
       details(AddressBaseWrapper(validBlpu.copy(blpuState = Some(BlpuStateCode.inUse)), lpi, classification, None)).status.get must beEqualTo("inUse")
     }
 
-    "make an address object with all the fields set up correctly" in  {
+    "make an address object with all the fields set up correctly" in {
       val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnection), randomFilename).get
 
       /* base object */
@@ -268,8 +268,42 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.streetAddress.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
       address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
-  }
 
+    "make an address object with no street description if street name is not official" in {
+      val mongoConnectionWithNoStreet = mock[uk.gov.gds.MongoConnection]
+      mongoConnectionWithNoStreet.streetForUsrn(anyString) returns Some(streetWithDescription.copy(recordType = Some("unoffical")))
+      val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnectionWithNoStreet), randomFilename).get
+
+      /* base object */
+      address.gssCode must beEqualTo("1234")
+      address.postcode must beEqualTo("postcode")
+      address.houseName.get must beEqualTo("pao text")
+      address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
+
+      /* details */
+      address.details.blpuCreatedAt must beEqualTo(startDate)
+      address.details.blpuUpdatedAt must beEqualTo(lastUpdatedDate)
+      address.details.classification must beEqualTo("code")
+      address.details.isPostalAddress must beEqualTo(true)
+      address.details.isResidential must beEqualTo(false)
+      address.details.usrn must beEqualTo("usrn")
+      address.details.state.get must beEqualTo("approved")
+      address.details.status.get must beEqualTo("inUse")
+
+      /* location */
+      address.location.x must beEqualTo(1.1)
+      address.location.y must beEqualTo(2.2)
+
+      /* presentation */
+      address.presentation.postcode must beEqualTo("postcode")
+      address.presentation.uprn must beEqualTo("uprn")
+      address.presentation.town.get must beEqualTo("town")
+      address.presentation.area.get must beEqualTo("area")
+      address.presentation.locality.get must beEqualTo("locality")
+      address.presentation.streetAddress must beEqualTo(None)
+      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+    }
+  }
 
   private lazy val startDate = new DateTime().minusDays(100)
   private lazy val lastUpdatedDate = new DateTime().minusDays(50)
@@ -327,7 +361,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
   private lazy val classification = Classification("uprn", "code", startDate, None, lastUpdatedDate)
   private lazy val organisation = Organisation("uprn", "organisation", startDate, None, lastUpdatedDate)
-  private lazy val streetDescriptor = StreetDescriptor("usrn", "street name", "locality", "town", "area")
+  private lazy val streetWithDescription = StreetWithDescription("usrn", "street name", "locality", "town", "area", Some("officiallyDesignated"), Some("state"), Some("code"), Some("classification"))
 
 
 }
