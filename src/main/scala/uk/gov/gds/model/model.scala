@@ -317,7 +317,9 @@ case class Details(
                     isPostalAddress: Boolean,
                     isCommercial: Boolean,
                     isResidential: Boolean,
-                    usrn: String
+                    usrn: String,
+                    file: String,
+                    organisation: Option[String]
                     )
 
 case class Presentation(
@@ -352,7 +354,8 @@ case class StreetWithDescription(
                                   recordType: Option[String],
                                   state: Option[String],
                                   surface: Option[String],
-                                  classification: Option[String]
+                                  classification: Option[String],
+                                  file: String
                                   ) {
   def serialize = grater[StreetWithDescription].asDBObject(this)
 }

@@ -213,31 +213,32 @@ class AddressBuilderTests extends Specification with Mockito {
     }
 
     "make a details object containing the correct classification information" in {
-      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "R1"), None)).classification must beEqualTo("R1")
-      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "R1"), None)).isResidential must beEqualTo(true)
-      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "C1"), None)).isCommercial must beEqualTo(true)
+      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "R1"), None), "filename").classification must beEqualTo("R1")
+      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "R1"), None), "filename").isResidential must beEqualTo(true)
+      details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "C1"), None), "filename").isCommercial must beEqualTo(true)
     }
 
     "make a detail object that correctly interprets the postal address" in {
-      details(AddressBaseWrapper(validBlpu.copy(receivesPost = "N"), lpi, classification, None)).isPostalAddress must beEqualTo(false)
+      details(AddressBaseWrapper(validBlpu.copy(receivesPost = "N"), lpi, classification, None), "filename").isPostalAddress must beEqualTo(false)
     }
 
     "make a detail object that correctly set the usrn" in {
-      details(AddressBaseWrapper(validBlpu, lpi.copy(usrn = "USRN"), classification, None)).usrn must beEqualTo("USRN")
+      details(AddressBaseWrapper(validBlpu, lpi.copy(usrn = "USRN"), classification, None), "filename").usrn must beEqualTo("USRN")
     }
 
     "make a detail object that correctly contains the updated and created dates from the BLPU" in {
-      details(AddressBaseWrapper(validBlpu.copy(startDate = startDate), lpi, classification, None)).blpuCreatedAt must beEqualTo(startDate)
-      details(AddressBaseWrapper(validBlpu.copy(lastUpdated = lastUpdatedDate), lpi, classification, None)).blpuUpdatedAt must beEqualTo(lastUpdatedDate)
+      details(AddressBaseWrapper(validBlpu.copy(startDate = startDate), lpi, classification, None), "filename").blpuCreatedAt must beEqualTo(startDate)
+      details(AddressBaseWrapper(validBlpu.copy(lastUpdated = lastUpdatedDate), lpi, classification, None), "filename").blpuUpdatedAt must beEqualTo(lastUpdatedDate)
     }
 
     "make a detail object that correctly contains the BLPU logical status and state codes" in {
-      details(AddressBaseWrapper(validBlpu.copy(logicalState = Some(LogicalStatusCode.approved)), lpi, classification, None)).state.get must beEqualTo("approved")
-      details(AddressBaseWrapper(validBlpu.copy(blpuState = Some(BlpuStateCode.inUse)), lpi, classification, None)).status.get must beEqualTo("inUse")
+      details(AddressBaseWrapper(validBlpu.copy(logicalState = Some(LogicalStatusCode.approved)), lpi, classification, None), "filename").state.get must beEqualTo("approved")
+      details(AddressBaseWrapper(validBlpu.copy(blpuState = Some(BlpuStateCode.inUse)), lpi, classification, None), "filename").status.get must beEqualTo("inUse")
     }
 
     "make an address object with all the fields set up correctly" in {
-      val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnection), randomFilename).get
+      val filename = randomFilename
+      val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnection), filename).get
 
       /* base object */
       address.gssCode must beEqualTo("1234")
@@ -254,6 +255,8 @@ class AddressBuilderTests extends Specification with Mockito {
       address.details.usrn must beEqualTo("usrn")
       address.details.state.get must beEqualTo("approved")
       address.details.status.get must beEqualTo("inUse")
+      address.details.file must beEqualTo(filename)
+      address.details.organisation.get must beEqualTo("organisation")
 
       /* location */
       address.location.x must beEqualTo(1.1)
@@ -269,7 +272,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
 
-    "make an address object with no street description if street name is not official" in {
+    "make an address object with no street description if street name is not official and no organistaion if none set" in {
       val mongoConnectionWithNoStreet = mock[uk.gov.gds.MongoConnection]
       mongoConnectionWithNoStreet.streetForUsrn(anyString) returns Some(streetWithDescription.copy(recordType = Some("unoffical")))
       val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnectionWithNoStreet), randomFilename).get
@@ -289,6 +292,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.details.usrn must beEqualTo("usrn")
       address.details.state.get must beEqualTo("approved")
       address.details.status.get must beEqualTo("inUse")
+      address.details.organisation must beEqualTo(None)
 
       /* location */
       address.location.x must beEqualTo(1.1)
@@ -361,7 +365,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
   private lazy val classification = Classification("uprn", "code", startDate, None, lastUpdatedDate)
   private lazy val organisation = Organisation("uprn", "organisation", startDate, None, lastUpdatedDate)
-  private lazy val streetWithDescription = StreetWithDescription("usrn", "street name", "locality", "town", "area", Some("officiallyDesignated"), Some("state"), Some("code"), Some("classification"))
+  private lazy val streetWithDescription = StreetWithDescription("usrn", "street name", "locality", "town", "area", Some("officiallyDesignated"), Some("state"), Some("code"), Some("classification"), "file")
 
 
 }

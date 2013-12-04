@@ -111,7 +111,7 @@ object extractors {
   def extractRow[T <: AddressBase](fileName: String, parsed: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsed)) {
       report(fileName, RowParseError, Some(parsed.mkString("|")))
-      throw new Exception("Unable to parse row "  + Some(parsed.mkString("|")))
+      throw new Exception("Unable to parse row " + Some(parsed.mkString("|")))
     }
     else Some(addressBase.fromCsvLine(parsed))
   }
@@ -179,7 +179,7 @@ object extractors {
   def buildStreetWrapper(fileName: String, streets: Map[String, List[Street]], streetDescriptor: StreetDescriptor) = {
     val street = mostRecentStreetForUsrn(streetDescriptor.usrn, streets)
 
-    if(streets.get(streetDescriptor.usrn).isEmpty) {
+    if (streets.get(streetDescriptor.usrn).isEmpty) {
       report(fileName, MissingStreetError, Some(streetDescriptor.usrn))
       None
     } else if (!street.isDefined) {
@@ -195,7 +195,8 @@ object extractors {
         s.recordType.map(r => r.toString),
         s.state.map(r => r.toString),
         s.surface.map(r => r.toString),
-        s.classification.map(r => r.toString)
+        s.classification.map(r => r.toString),
+        fileName
       ))
   }
 
@@ -214,8 +215,11 @@ object extractors {
     val classification = mostRecentClassificationForUprn(blpu.uprn, classifications)
     val organisation = mostRecentOrganisationForUprn(blpu.uprn, organisations)
 
-    if (!lpi.isDefined) {
+    if(lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
       report(fileName, MissingLpiError, Some(blpu.uprn))
+      None
+    } else if (!lpi.isDefined) {
+      report(fileName, MissingActiveLpiError, Some(blpu.uprn))
       None
     } else if (!classification.isDefined) {
       report(fileName, MissingClassificationError, Some(blpu.uprn))

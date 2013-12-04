@@ -2,7 +2,6 @@ package uk.gov.gds
 
 
 import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.conversions.scala._
 import uk.gov.gds.logging.Logging
 import com.novus.salat._
 import com.novus.salat.global._
@@ -37,8 +36,8 @@ class MongoConnection(username: Option[String] = None, password: Option[String] 
   }
 
   def addIndexes() {
-    logger.info("indexing lcpostcode")
-    db.getCollection("address").ensureIndex(DBObject("lcPostcode" -> 1))
+    logger.info("indexing postcode")
+    db.getCollection("address").ensureIndex(DBObject("postcode" -> 1))
     logger.info("indexing uprn")
     db.getCollection("address").ensureIndex(DBObject("uprn" -> 1))
   }

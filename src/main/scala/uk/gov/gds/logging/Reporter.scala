@@ -14,7 +14,9 @@ object NoStreetForBlpuError extends Error("no-street-for-blpu")
 
 object RowParseError extends Error("row-parse-error")
 
-object MissingLpiError extends Error("no-active-lpi-for-uprn")
+object MissingLpiError extends Error("no-lpi-for-uprn")
+
+object MissingActiveLpiError extends Error("no-active-lpi-for-uprn")
 
 object MissingActiveStreetError extends Error("no-active-street-for-usrn")
 
