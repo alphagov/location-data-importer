@@ -9,6 +9,5 @@
 
 - test mongo auth
 
-- use street record type code to try and skip the strange street names
 
-- log whether LPI / street missing as in not there are as in not active
+

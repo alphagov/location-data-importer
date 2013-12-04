@@ -320,6 +320,17 @@ class ExtractorsTests extends Specification {
 
     "should not build an address wrapper, returning None if no valid LPI" in {
       val filename = randomFilename
+      val classification1 = classification.copy(lastUpdated = new DateTime().minusDays(3))
+
+      val addressWrapper = buildAddressWrapper(filename, validBlpu, Map.empty, Map("uprn" -> List(classification1)), Map.empty[String, List[Organisation]])
+      addressWrapper must be(None)
+      reportLineToTest(filename) must not be None
+      reportLineToTest(filename).get must contain("no-lpi-for-uprn")
+      reportLineToTest(filename).get must contain("uprn")
+    }
+
+    "should not build an address wrapper, returning None if no active valid LPI" in {
+      val filename = randomFilename
       val lpi1 = lpi.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
       val classification1 = classification.copy(lastUpdated = new DateTime().minusDays(3))
 
@@ -345,8 +356,9 @@ class ExtractorsTests extends Specification {
       val street1 = street.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
       val street2 = street.copy(lastUpdated = new DateTime().minusDays(2))
       val street3 = street.copy(lastUpdated = new DateTime().minusDays(3))
+      val filename = randomFilename
 
-      val streetWrapper = buildStreetWrapper(randomFilename, Map("usrn" -> List(street1, street2, street3)), streetDescriptor)
+      val streetWrapper = buildStreetWrapper(filename, Map("usrn" -> List(street1, street2, street3)), streetDescriptor)
       streetWrapper must not be (None)
       streetWrapper.get.usrn must beEqualTo("usrn")
       streetWrapper.get.localityName must beEqualTo(streetDescriptor.localityName)
@@ -357,6 +369,7 @@ class ExtractorsTests extends Specification {
       streetWrapper.get.surface must beEqualTo(Some("mixed"))
       streetWrapper.get.recordType must beEqualTo(Some("numberedStreet"))
       streetWrapper.get.classification must beEqualTo(Some("allVehicles"))
+      streetWrapper.get.file must beEqualTo(filename)
     }
 
     "should not build an street wrapper, returning None if no valid Street" in {

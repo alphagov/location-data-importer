@@ -30,7 +30,7 @@ object AddressBuilder extends Logging {
             postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
             presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
             location = location(addressWrapper.blpu),
-            details = details(addressWrapper)
+            details = details(addressWrapper, fileName)
           ))
       case _ => {
         report(fileName, NoStreetForBlpuError, addressWrapper.uprn)
@@ -43,7 +43,7 @@ object AddressBuilder extends Logging {
   /*
     Model class builders
    */
-  def details(addressWrapper: AddressBaseWrapper) = Details(
+  def details(addressWrapper: AddressBaseWrapper, filename: String) = Details(
     blpuCreatedAt = addressWrapper.blpu.startDate,
     blpuUpdatedAt = addressWrapper.blpu.lastUpdated,
     classification = addressWrapper.classification.classificationCode,
@@ -52,7 +52,9 @@ object AddressBuilder extends Logging {
     isPostalAddress = addressWrapper.blpu.canReceivePost,
     isResidential = addressWrapper.classification.isResidential,
     isCommercial = !addressWrapper.classification.isResidential,
-    usrn = addressWrapper.lpi.usrn
+    usrn = addressWrapper.lpi.usrn,
+    file = filename,
+    organisation = addressWrapper.organisation.map(org => org.organistation)
   )
 
   def location(blpu: BLPU) = Location(blpu.xCoordinate, blpu.yCoordinate)
