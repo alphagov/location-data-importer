@@ -6,19 +6,25 @@ import uk.gov.gds.MongoConnection
 
 object ProcessAddressBaseFiles extends Logging {
 
-  def streets(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
+  def streets(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processForStreets(filePath)
     }
-  }
 
-  def addresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
+  def addresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processForAddresses(filePath)
     }
-  }
+
+  def codePoints(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
+    filePathHasErrors(filePath) match {
+      case Some(error) => error
+      case _ => processForCodePoints(filePath)
+    }
+
+  private def processForCodePoints(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("codepoint", directoryContents(filePath).par.flatMap(processRowsIntoCodePoints(_)).toList)
 
   private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("streets", directoryContents(filePath).par.flatMap(processStreets(_)).toList)
 

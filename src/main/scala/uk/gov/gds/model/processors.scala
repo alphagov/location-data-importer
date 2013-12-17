@@ -17,6 +17,18 @@ object processors extends Logging {
 
   import extractors._
 
+  def processRowsIntoCodePoints(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
+    logger.info("Processing codepoint: " + file.getName)
+    val start = new DateTime()
+
+    try {
+      persistCodePoint(processRowsIntoCodePoint(file))
+      Some(Result(Success, file.getName))
+    } finally {
+      processedFile("codepoint", file.getName, (new DateTime().getMillis - start.getMillis).toString)
+    }
+  }
+
   def processStreets(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
     implicit val fileName = file.getName
     logger.info("Processing streets in: " + fileName)
@@ -53,6 +65,17 @@ object processors extends Logging {
     }
   }
 
+  def processRowsIntoCodePoint(file: File) = {
+    def processRow(line: String) = {
+      val parsed = parseCsvLine(line)
+      CodePoint.isValidCsvLine(parsed) match {
+        case true => Some(CodePoint.fromCsvLine(parsed))
+        case _ => None
+      }
+    }
+
+    loadFile(file).lines().flatMap(processRow).toList
+  }
 
   def processRowsIntoStreets(file: File) = {
 
@@ -89,12 +112,16 @@ object processors extends Logging {
 
   private def processRows(lines: LongTraversable[String], f: String => Option[AddressBase]) = lines.flatMap(f(_)).toList
 
+  private def persistCodePoint(codePoints: List[CodePoint])(implicit mongoConnection: Option[MongoConnection]) {
+    mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
+  }
+
   private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
     mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
   }
 
   private def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
-    mongoConnection.foreach(_.insert(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
+    mongoConnection.foreach(_.insertAddresses(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
   }
 
 }
@@ -215,7 +242,10 @@ object extractors {
     val classification = mostRecentClassificationForUprn(blpu.uprn, classifications)
     val organisation = mostRecentOrganisationForUprn(blpu.uprn, organisations)
 
-    if(lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
+    if (!isValidBLPU(blpu)) {
+      report(fileName, InvalidBlpuError, blpu.uprn)
+      None
+    } else if (lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
       report(fileName, MissingLpiError, Some(blpu.uprn))
       None
     } else if (!lpi.isDefined) {
@@ -228,6 +258,17 @@ object extractors {
       Some(AddressBaseWrapper(blpu, lpi.get, classification.get, organisation))
     }
   }
+
+  /*
+   BLPU checker
+  */
+  def isValidBLPU(blpu: BLPU) = !List(
+    // blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
+    // blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
+    !blpu.endDate.isDefined // MUST not have an end date
+    // blpu.canReceivePost // must be able to receive post
+  ).contains(false)
+
 
   /*
      We want one LPI per BLPU, and there may be several so remove all with an end date, and get the most recently updated

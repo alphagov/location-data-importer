@@ -54,17 +54,37 @@ class ExtractorsTests extends Specification {
   import uk.gov.gds.io.parseCsvLine
 
   "Processers" should {
+
+    "correctly process a file for code point rows" in {
+      processRowsIntoCodePoints(new File("testdata/codepoint/good-file.csv"))(None).size must beEqualTo(1)
+      val result = processRowsIntoCodePoints(new File("testdata/codepoint/good-file.csv"))(None)
+
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).postcode must beEqualTo("dd97yx")
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).country must beEqualTo("S92000003")
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).county must beEqualTo(None)
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).district must beEqualTo("S12000041")
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).ward must beEqualTo("S13002509")
+    }
+
+    "correctly process a file for with many code point rows" in {
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file-with-many-rows.csv")).size must beEqualTo(13)
+    }
+
+    "correctly process a file for with many code point rows - excluding rows that are invalid" in {
+      processRowsIntoCodePoint(new File("testdata/codepoint/file-with-one-bad-row.csv")).size must beEqualTo(12)
+    }
+
     "correctly process a file for streets" in {
-      processRowsIntoStreets(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
-      processRowsIntoStreets(new File("testdata/single-good-file/good-file.csv"))(0).usrn must beEqualTo("7803555")
+      processRowsIntoStreets(new File("testdata/addressbase/single-good-file/good-file.csv")).size must beEqualTo(1)
+      processRowsIntoStreets(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).usrn must beEqualTo("7803555")
     }
 
     "correctly process a file for addresses" in {
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).blpu.uprn must beEqualTo("9059007610")
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).lpi.paoStartNumber.get must beEqualTo("2")
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).classification.classificationCode must beEqualTo("RD")
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).organisation.get.organistation must beEqualTo("Party Time")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv")).size must beEqualTo(1)
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).blpu.uprn must beEqualTo("9059007610")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).lpi.paoStartNumber.get must beEqualTo("2")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).classification.classificationCode must beEqualTo("RD")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).organisation.get.organistation must beEqualTo("Party Time")
 
     }
   }

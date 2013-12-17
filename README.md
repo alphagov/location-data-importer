@@ -30,6 +30,9 @@ Address Formats:
 
 (1) Standard: British Standard BS7666. "These addresses are used to provide an accurate geographic locator for an object to aid for example, service delivery, asset management, or command and control operations. They also represent the legal form of addresses as created under street naming and numbering legislation."
 
+LA Names
+
+https://geoportal.statistics.gov.uk/geoportal/catalog/search/resource/details.page?uuid=%7BD7F9B24A-8964-4FA1-8F0C-1EC85313DD3F%7D
 
 Process:
 

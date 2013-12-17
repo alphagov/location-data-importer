@@ -12,6 +12,8 @@ object InvalidBlpuError extends Error("invalid-blpu")
 
 object NoStreetForBlpuError extends Error("no-street-for-blpu")
 
+object NoCodePointForPostcode extends Error("no-code-point-for-postcode")
+
 object RowParseError extends Error("row-parse-error")
 
 object MissingLpiError extends Error("no-lpi-for-uprn")

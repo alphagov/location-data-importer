@@ -10,7 +10,7 @@ import org.joda.time.DateTime
 
 object LocationDataImporter extends Logging {
 
-  case class Config(dir: String = "", persist: Boolean = false, cleanReport: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
+  case class Config(dir: String = "", codePoint: String = "", persist: Boolean = false, cleanReport: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
 
@@ -18,8 +18,11 @@ object LocationDataImporter extends Logging {
 
     val opts = new OptionParser[Config]("Location Data Importer") {
       head("Parse and import location data", "0.1")
-      opt[String]('d', "dir") text "Location of address base files files" action {
+      opt[String]('d', "dir") required() text "Location of address base files files" action {
         (dir: String, c: Config) => c.copy(dir = dir)
+      }
+      opt[String]('f', "code point") required() text "Location of code point files)" action {
+        (file: String, c: Config) => c.copy(codePoint = file)
       }
       opt[Unit]('p', "persist") text "Persist the data" action {
         (_, c: Config) => c.copy(persist = true)
@@ -57,6 +60,28 @@ object LocationDataImporter extends Logging {
           case true if !config.username.isEmpty && !config.password.isEmpty => Some(new MongoConnection(Some(config.username), Some(config.password)))
           case true => Some(new MongoConnection)
           case false => None
+        }
+
+
+        /*
+          Process Code Points for LA lookups
+         */
+        val resultForCodePoint = ProcessAddressBaseFiles.codePoints(config.codePoint)
+        /*
+          Log result summary
+        */
+        resultForCodePoint.outcome match {
+          case Success => logger.info("Completed processing codepoint: \n" + resultForCodePoint.message)
+          case Failure => logger.info("Failed processing codepoint: \n" + resultForCodePoint.message)
+          case _ => logger.info("Failed processing: Unable to generate a result]")
+        }
+
+        /*
+          Add indexes on codepoints
+         */
+        if (config.index) {
+          logger.info("adding codepoint indexes")
+          mongoConnection.foreach(_.addCodePointIndexes())
         }
 
         /*

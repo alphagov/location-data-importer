@@ -1,11 +1,10 @@
 package uk.gov.gds.model
 
-import uk.gov.gds.model.CodeLists.{BlpuStateCode, LogicalStatusCode}
 import uk.gov.gds.logging.Logging
 import uk.gov.gds.MongoConnection
 import uk.gov.gds.logging.Reporter.report
-import uk.gov.gds.logging.InvalidBlpuError
 import uk.gov.gds.logging.NoStreetForBlpuError
+import uk.gov.gds.logging.NoCodePointForPostcode
 
 
 object AddressBuilder extends Logging {
@@ -15,23 +14,29 @@ object AddressBuilder extends Logging {
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection], fileName: String) = {
     val streetDescriptor: Option[StreetWithDescription] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
 
-    streetDescriptor match {
 
-      case Some(street) =>
-        if (!isValidBLPU(addressWrapper.blpu)) {
-          report(fileName, InvalidBlpuError, addressWrapper.uprn)
-          None
+    streetDescriptor match {
+      case Some(street) => {
+        val codePoint: Option[CodePoint] = mongo.flatMap(_.codePointForPostcode(addressWrapper.blpu.postcode))
+
+        codePoint match {
+          case Some(code) =>
+            Some(Address(
+              houseName = addressWrapper.lpi.paoText,
+              houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
+              gssCode = code.district,
+              countryCode = code.country,
+              postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
+              presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
+              location = location(addressWrapper.blpu),
+              details = details(addressWrapper, fileName)
+            ))
+          case _ => {
+            report(fileName, NoCodePointForPostcode, addressWrapper.uprn)
+            None
+          }
         }
-        else
-          Some(Address(
-            houseName = addressWrapper.lpi.paoText,
-            houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
-            gssCode = addressWrapper.blpu.localCustodianCode.toString,
-            postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
-            presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
-            location = location(addressWrapper.blpu),
-            details = details(addressWrapper, fileName)
-          ))
+      }
       case _ => {
         report(fileName, NoStreetForBlpuError, addressWrapper.uprn)
         None
@@ -70,17 +75,6 @@ object AddressBuilder extends Logging {
       uprn = blpu.uprn
     )
   }
-
-  /*
-    BLPU checker
-   */
-  def isValidBLPU(blpu: BLPU) = !List(
-    // blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
-    // blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
-    !blpu.endDate.isDefined // MUST not have an end date
-    // blpu.canReceivePost // must be able to receive post
-  ).contains(false)
-
 }
 
 object formatters {

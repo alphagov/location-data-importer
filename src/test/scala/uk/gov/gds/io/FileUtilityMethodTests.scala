@@ -14,19 +14,19 @@ class FileUtilityMethodTests extends Specification  {
 
     "be able to be identify a directory" in {
       isDirectory("testdata") must beEqualTo(true)
-      isDirectory("testdata/single-good-file/good-file.csv") must beEqualTo(false)
+      isDirectory("testdata/addressbase/single-good-file/good-file.csv") must beEqualTo(false)
     }
 
     "be able to create a list of all files in a directory" in {
-      directoryContents("testdata").size must beEqualTo(6)
-      directoryContents("testdata").map {
+      directoryContents("testdata/addressbase").size must beEqualTo(5)
+      directoryContents("testdata/addressbase").map {
         _.getName
-      } must contain("good-and-bad-files", "single-good-file", "multiple-good-files", "single-bad-file", "multiple-bad-files", "README.md").exactly
+      } must contain("good-and-bad-files", "single-good-file", "multiple-good-files", "single-bad-file", "multiple-bad-files").exactly
     }
 
     "be able to filter the list of files in a directory" in {
-      filteredDirectoryContents("testdata/single-good-file", (file: File) => file.getName.endsWith(".csv")).size must beEqualTo(1)
-      filteredDirectoryContents("testdata/single-good-file", (file: File) => file.getName.endsWith(".csv")).head.getName must beEqualTo("good-file.csv")
+      filteredDirectoryContents("testdata/addressbase/single-good-file", (file: File) => file.getName.endsWith(".csv")).size must beEqualTo(1)
+      filteredDirectoryContents("testdata/addressbase/single-good-file", (file: File) => file.getName.endsWith(".csv")).head.getName must beEqualTo("good-file.csv")
     }
   }
 
