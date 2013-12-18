@@ -70,7 +70,6 @@ object AddressBuilder extends Logging {
       streetAddress = constructStreetAddressFrom(lpi, street),
       locality = street.localityName,
       town = street.townName,
-    // TODO TEST THIS (town as opton compared to area as string)
       area = if (street.townName.isDefined && !street.townName.get.equals(street.administrativeArea)) Some(street.administrativeArea) else None,
       postcode = blpu.postcode,
       uprn = blpu.uprn

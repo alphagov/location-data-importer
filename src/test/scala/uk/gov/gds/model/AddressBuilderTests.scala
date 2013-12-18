@@ -237,6 +237,26 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
 
+    "make an address object with no area name if area name and town are identical" in {
+      val filename = randomFilename
+      val mongoConnectionWithTownAndAreaTheSame = mock[uk.gov.gds.MongoConnection]
+      mongoConnectionWithTownAndAreaTheSame.codePointForPostcode(validBlpu.postcode) returns Some(codePoint)
+
+      mongoConnectionWithTownAndAreaTheSame.streetForUsrn(anyString) returns Some(streetWithDescription.copy(townName = Some("something"), administrativeArea = "something"))
+
+      val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithTownAndAreaTheSame), filename).get
+
+      /* presentation */
+      address.presentation.postcode must beEqualTo("postcode")
+      address.presentation.uprn must beEqualTo("uprn")
+      address.presentation.town.get must beEqualTo("something")
+      address.presentation.area must beEqualTo(None)
+      address.presentation.locality.get must beEqualTo("locality")
+      address.presentation.streetAddress.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
+      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+    }
+
+
     "make an address object with no street description if street name is not official" in {
       val mongoConnectionWithNoStreet = mock[uk.gov.gds.MongoConnection]
       mongoConnectionWithNoStreet.streetForUsrn(anyString) returns Some(streetWithDescription.copy(recordType = Some("unoffical")))
@@ -366,7 +386,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
   private lazy val classification = Classification("uprn", "code", startDate, None, lastUpdatedDate)
   private lazy val organisation = Organisation("uprn", "organisation", startDate, None, lastUpdatedDate)
-  private lazy val streetWithDescription = StreetWithDescription("usrn", "street name", "locality", "town", "area", Some("officiallyDesignated"), Some("state"), Some("code"), Some("classification"), "file")
+  private lazy val streetWithDescription = StreetWithDescription("usrn", "street name", Some("locality"), Some("town"), "area", Some("officiallyDesignated"), Some("state"), Some("code"), Some("classification"), "file")
   private lazy val codePoint = CodePoint("postcode", "countrycode", "countycode", "districtcode", "wardcode")
 
 }

@@ -10,7 +10,7 @@ import org.joda.time.DateTime
 
 object LocationDataImporter extends Logging {
 
-  case class Config(dir: String = "", codePoint: String = "", persist: Boolean = false, cleanReport: Boolean = false, index: Boolean = false, username: String = "", password: String = "")
+  case class Config(dir: String = "", codePoint: String = "", cleanReport: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
 
@@ -24,13 +24,7 @@ object LocationDataImporter extends Logging {
       opt[String]('c', "codepoint") required() text "Location of code point files)" action {
         (file: String, c: Config) => c.copy(codePoint = file)
       }
-      opt[Unit]('p', "persist") text "Persist the data (default don't)" action {
-        (_, c: Config) => c.copy(persist = true)
-      }
-      opt[Unit]('i', "index") text "Index mongo (default don't)" action {
-        (_, c: Config) => c.copy(index = true)
-      }
-      opt[Unit]('c', "cleanReport") text "Clean the report. (Default don't)" action {
+      opt[Unit]('r', "removeReport") text "Remove the reports. (Default don't)" action {
         (_, c: Config) => c.copy(cleanReport = true)
       }
       opt[String]('p', "password") text "Password for the mongo (default none)" action {
@@ -46,9 +40,8 @@ object LocationDataImporter extends Logging {
     opts.parse(args, Config()) map {
       config => {
         val start = new DateTime
-        logger.info("Started processing: " + config.dir + " Persisting: " + config.persist)
 
-        if(config.cleanReport) {
+        if (config.cleanReport) {
           new File(Reporter.reportFile).delete()
           new File(Reporter.processed).delete()
         }
@@ -56,12 +49,10 @@ object LocationDataImporter extends Logging {
         /*
           Initialize the mongo connection
          */
-        implicit val mongoConnection = config.persist match {
-          case true if !config.username.isEmpty && !config.password.isEmpty => Some(new MongoConnection(Some(config.username), Some(config.password)))
-          case true => Some(new MongoConnection)
-          case false => None
-        }
-
+        implicit val mongoConnection =
+          if (!config.username.isEmpty && !config.password.isEmpty)
+            Some(new MongoConnection(Some(config.username), Some(config.password)))
+          else Some(new MongoConnection)
 
         /*
           Process Code Points for LA lookups
@@ -72,17 +63,21 @@ object LocationDataImporter extends Logging {
         */
         resultForCodePoint.outcome match {
           case Success => logger.info("Completed processing codepoint: \n" + resultForCodePoint.message)
-          case Failure => logger.info("Failed processing codepoint: \n" + resultForCodePoint.message)
-          case _ => logger.info("Failed processing: Unable to generate a result]")
+          case Failure => {
+            logger.info("Failed processing codepoint: \n" + resultForCodePoint.message)
+            sys.exit()
+          }
+          case _ => {
+            logger.info("Failed processing: Unable to generate a result]")
+            sys.exit()
+          }
         }
 
         /*
           Add indexes on codepoints
          */
-        if (config.index) {
-          logger.info("adding codepoint indexes")
-          mongoConnection.foreach(_.addCodePointIndexes())
-        }
+        logger.info("adding codepoint indexes")
+        mongoConnection.foreach(_.addCodePointIndexes())
 
         /*
           Process all streets into mongo first for reference
@@ -94,17 +89,21 @@ object LocationDataImporter extends Logging {
          */
         resultForStreets.outcome match {
           case Success => logger.info("Completed processing streets: \n" + resultForStreets.message)
-          case Failure => logger.info("Failed processing streets: \n" + resultForStreets.message)
-          case _ => logger.info("Failed processing: Unable to generate a result]")
+          case Failure => {
+            logger.info("Failed processing streets: \n" + resultForStreets.message)
+            sys.exit()
+          }
+          case _ => {
+            logger.info("Failed processing: Unable to generate a result]")
+            sys.exit()
+          }
         }
 
         /*
           Add indexes on streets
          */
-        if (config.index) {
-          logger.info("adding street indexes")
-          mongoConnection.foreach(_.addStreetIndexes())
-        }
+        logger.info("adding street indexes")
+        mongoConnection.foreach(_.addStreetIndexes())
 
         /*
           Process files a second time, now for address objects
@@ -115,18 +114,22 @@ object LocationDataImporter extends Logging {
         /*
           Add indexes to address rows
          */
-        if (config.index) {
-          logger.info("adding indexes")
-          mongoConnection.foreach(_.addIndexes())
-        }
+        logger.info("adding indexes")
+        mongoConnection.foreach(_.addIndexes())
 
         /*
           Log result summary
          */
         resultForAddresses.outcome match {
           case Success => logger.info("Completed processing: \n" + resultForAddresses.message)
-          case Failure => logger.info("Failed processing: \n" + resultForAddresses.message)
-          case _ => logger.info("Failed processing: Unable to generate a result]")
+          case Failure => {
+            logger.info("Failed processing: \n" + resultForAddresses.message)
+            sys.exit()
+          }
+          case _ => {
+            logger.info("Failed processing: Unable to generate a result]")
+            sys.exit()
+          }
         }
 
         logger.info("Finshed Processing: " + config.dir + " in " + ((new DateTime).getMillis - start.getMillis) / 1000 / 60 + " minutes")

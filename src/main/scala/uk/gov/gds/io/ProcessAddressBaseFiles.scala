@@ -24,11 +24,11 @@ object ProcessAddressBaseFiles extends Logging {
       case _ => processForCodePoints(filePath)
     }
 
-  private def processForCodePoints(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("codepoint", directoryContents(filePath).par.flatMap(processRowsIntoCodePoints(_)).toList)
+  private def processForCodePoints(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("codepoint", directoryContents(filePath).flatMap(processRowsIntoCodePoints(_)).toList)
 
-  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("streets", directoryContents(filePath).par.flatMap(processStreets(_)).toList)
+  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("streets", directoryContents(filePath).flatMap(processStreets(_)).toList)
 
-  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("addresses", directoryContents(filePath).par.flatMap(processAddresses(_)).toList)
+  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("addresses", directoryContents(filePath).flatMap(processAddresses(_)).toList)
 
   private def resultOf(pass: String, fileResult: List[Result]) = {
 
