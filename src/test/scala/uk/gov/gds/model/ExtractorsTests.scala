@@ -15,9 +15,9 @@ import scala.Some
 class ExtractorsTests extends Specification {
 
   private val validLinesForBLPU = List(
-    """21,"I",94755,9059007610,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BX",0""",
-    """21,"I",94755,9059007611,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BY",0""",
-    """21,"I",94755,9059007612,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BZ",0"""
+    """21,"I",94755,9059007610,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BX",0""",
+    """21,"I",94755,9059007611,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BY",0""",
+    """21,"I",94755,9059007612,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BZ",0"""
   )
 
   private val validLinesForLPI = List(
@@ -439,6 +439,17 @@ class ExtractorsTests extends Specification {
     "should extract address base wrappers from list of address base objects" in {
       val addressWrappers = extractAddressBaseWrappers(randomFilename, buildListOfAddressBaseObjects)
       addressWrappers.size must beEqualTo(3)
+    }
+
+    "should extract address base wrappers from list of address base objects - excluding those with an end date" in {
+
+      val blpus = validLinesForBLPU.flatMap(line => extractRow[BLPU]("filename", parseCsvLine(line), BLPU)).map(blpu => blpu.copy(endDate = Some(new DateTime)))
+      val lpis = validLinesForLPI.flatMap(line => extractRow[LPI]("filename", parseCsvLine(line), LPI))
+      val organisations = validLinesForOrganisation.flatMap(line => extractRow[Organisation]("filename", parseCsvLine(line), Organisation))
+      val classifications = validLinesForClassification.flatMap(line => extractRow[Classification]("filename", parseCsvLine(line), Classification))
+
+      val addressWrappers = extractAddressBaseWrappers(randomFilename, List(blpus, lpis, organisations, classifications).flatten)
+      addressWrappers.size must beEqualTo(0)
     }
 
     "should extract address base wrappers from list of address base objects" in {
