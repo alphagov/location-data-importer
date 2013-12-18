@@ -18,26 +18,26 @@ object LocationDataImporter extends Logging {
 
     val opts = new OptionParser[Config]("Location Data Importer") {
       head("Parse and import location data", "0.1")
-      opt[String]('d', "dir") required() text "Location of address base files files" action {
+      opt[String]('a', "addresses") required() text "Location of address base files files" action {
         (dir: String, c: Config) => c.copy(dir = dir)
       }
-      opt[String]('f', "code point") required() text "Location of code point files)" action {
+      opt[String]('c', "codepoint") required() text "Location of code point files)" action {
         (file: String, c: Config) => c.copy(codePoint = file)
       }
-      opt[Unit]('p', "persist") text "Persist the data" action {
+      opt[Unit]('p', "persist") text "Persist the data (default don't)" action {
         (_, c: Config) => c.copy(persist = true)
       }
-      opt[Unit]('i', "index") text "Index the mongo" action {
+      opt[Unit]('i', "index") text "Index mongo (default don't)" action {
         (_, c: Config) => c.copy(index = true)
       }
-      opt[String]('u', "username") text "Username for the mongo" action {
-        (p: String, c: Config) => c.copy(username = p)
-      }
-      opt[Unit]('c', "cleanReport") text "Clean the report. Default false" action {
+      opt[Unit]('c', "cleanReport") text "Clean the report. (Default don't)" action {
         (_, c: Config) => c.copy(cleanReport = true)
       }
-      opt[String]('p', "password") text "Password for the mongo" action {
+      opt[String]('p', "password") text "Password for the mongo (default none)" action {
         (p: String, c: Config) => c.copy(password = p)
+      }
+      opt[String]('u', "username") text "Username for the mongo (default none)" action {
+        (p: String, c: Config) => c.copy(username = p)
       }
       help("help") text "use -d or -dir to identify source directory containing files to parse"
       version("version") text "0.1"
