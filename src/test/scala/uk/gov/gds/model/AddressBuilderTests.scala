@@ -54,7 +54,7 @@ class AddressBuilderTests extends Specification with Mockito {
     }
 
     "include the pao text from the LPI on the root address object as houseName" in {
-      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi.copy(paoText = "house name"), classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseName.get must beEqualTo("house name")
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi.copy(paoText = "house name"), classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseName.get must beEqualTo("House Name")
     }
 
     "not include house name if the pao text from the LPI is absent" in {
@@ -221,7 +221,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.details.state.get must beEqualTo("approved")
       address.details.status.get must beEqualTo("inUse")
       address.details.file must beEqualTo(filename)
-      address.details.organisation.get must beEqualTo("organisation")
+      address.details.organisation.get must beEqualTo("Organisation")
 
       /* location */
       address.location.x must beEqualTo(1.1)
@@ -230,11 +230,11 @@ class AddressBuilderTests extends Specification with Mockito {
       /* presentation */
       address.presentation.postcode must beEqualTo("postcode")
       address.presentation.uprn must beEqualTo("uprn")
-      address.presentation.town.get must beEqualTo("town")
-      address.presentation.area.get must beEqualTo("area")
-      address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.street.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
-      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      address.presentation.town.get must beEqualTo("Town")
+      address.presentation.area.get must beEqualTo("Area")
+      address.presentation.locality.get must beEqualTo("Locality")
+      address.presentation.street.get must beEqualTo("Pao Start Numberpao Start Suffix-pao End Numberpao End Suffix Street Name")
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
     }
 
     "make an address object with no area name if area name and town are identical" in {
@@ -251,9 +251,9 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.uprn must beEqualTo("uprn")
       address.presentation.town.get must beEqualTo("Something")
       address.presentation.area must beEqualTo(None)
-      address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.street.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
-      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      address.presentation.locality.get must beEqualTo("Locality")
+      address.presentation.street.get must beEqualTo("Pao Start Numberpao Start Suffix-pao End Numberpao End Suffix Street Name")
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
     }
 
 
@@ -287,11 +287,11 @@ class AddressBuilderTests extends Specification with Mockito {
       /* presentation */
       address.presentation.postcode must beEqualTo("postcode")
       address.presentation.uprn must beEqualTo("uprn")
-      address.presentation.town.get must beEqualTo("town")
-      address.presentation.area.get must beEqualTo("area")
-      address.presentation.locality.get must beEqualTo("locality")
+      address.presentation.town.get must beEqualTo("Town")
+      address.presentation.area.get must beEqualTo("Area")
+      address.presentation.locality.get must beEqualTo("Locality")
       address.presentation.street must beEqualTo(None)
-      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
     }
 
 
@@ -322,11 +322,18 @@ class AddressBuilderTests extends Specification with Mockito {
       /* presentation */
       address.presentation.postcode must beEqualTo("postcode")
       address.presentation.uprn must beEqualTo("uprn")
-      address.presentation.town.get must beEqualTo("town")
-      address.presentation.area.get must beEqualTo("area")
-      address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.street must beEqualTo(Some("pao start numberpao start suffix-pao end numberpao end suffix street name"))
-      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      address.presentation.town.get must beEqualTo("Town")
+      address.presentation.area.get must beEqualTo("Area")
+      address.presentation.locality.get must beEqualTo("Locality")
+      address.presentation.street must beEqualTo(Some("Pao Start Numberpao Start Suffix-pao End Numberpao End Suffix Street Name"))
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
+    }
+
+    "convert strings to sentence case" in {
+      toSentenceCase("THIS IS NOT IN SENTENCE CASE").get must beEqualTo("This Is Not In Sentence Case")
+      toSentenceCase("THIS ÎS NÔT IN SENTENCE CASE").get must beEqualTo("This Îs Nôt In Sentence Case")
+      toSentenceCase("123 THIS IS NOT IN SENTENCE CASE").get must beEqualTo("123 This Is Not In Sentence Case")
+      toSentenceCase("123 THIS, IS, NOT, IN, SENTENCE CASE").get must beEqualTo("123 This, Is, Not, In, Sentence Case")
     }
   }
 

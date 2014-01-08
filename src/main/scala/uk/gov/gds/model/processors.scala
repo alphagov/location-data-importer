@@ -207,7 +207,7 @@ object extractors {
     val street = mostRecentStreetForUsrn(streetDescriptor.usrn, streets)
 
     if (streets.get(streetDescriptor.usrn).isEmpty) {
-      report(fileName, MissingStreetError, Some(streetDescriptor.usrn))
+      report(fileName, MissingStreetError, List(streetDescriptor.usrn))
       None
     } else if (!street.isDefined) {
       report(fileName, MissingActiveStreetError, Some(streetDescriptor.usrn))
@@ -243,16 +243,16 @@ object extractors {
     val organisation = mostRecentOrganisationForUprn(blpu.uprn, organisations)
 
     if (!isValidBLPU(blpu)) {
-      report(fileName, InvalidBlpuError, blpu.uprn)
+      report(fileName, InvalidBlpuError, List(blpu.uprn, blpu.postcode))
       None
     } else if (lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
-      report(fileName, MissingLpiError, Some(blpu.uprn))
+      report(fileName, MissingLpiError, List(blpu.uprn, blpu.postcode))
       None
     } else if (!lpi.isDefined) {
-      report(fileName, MissingActiveLpiError, Some(blpu.uprn))
+      report(fileName, MissingActiveLpiError, List(blpu.uprn, blpu.postcode))
       None
     } else if (!classification.isDefined) {
-      report(fileName, MissingClassificationError, Some(blpu.uprn))
+      report(fileName, MissingClassificationError, List(blpu.uprn, blpu.postcode))
       None
     } else {
       Some(AddressBaseWrapper(blpu, lpi.get, classification.get, organisation))

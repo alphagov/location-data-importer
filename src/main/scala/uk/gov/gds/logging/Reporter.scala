@@ -36,6 +36,11 @@ object Reporter {
 
   writer(reportFile).writeStrings(List("\n", "=== Starting Run at " + new DateTime + " ===\n"))
 
+  def report(fileName: String, errorType: Error, errorData: List[String]) {
+    report((List(fileName, errorType) ++ errorData).mkString(",") + "\n")
+  }
+
+
   def report(fileName: String, errorType: Error, errorData: Option[String] = None) {
     report(List(fileName, errorType, errorData.getOrElse("")).mkString(",") + "\n")
   }

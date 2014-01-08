@@ -32,13 +32,13 @@ object AddressBuilder extends Logging {
               details = details(addressWrapper, fileName)
             ))
           case _ => {
-            report(fileName, NoCodePointForPostcode, addressWrapper.uprn)
+            report(fileName, NoCodePointForPostcode, List(addressWrapper.uprn, addressWrapper.blpu.postcode))
             None
           }
         }
       }
       case _ => {
-        report(fileName, NoStreetForBlpuError, addressWrapper.uprn)
+        report(fileName, NoStreetForBlpuError, List(addressWrapper.uprn, addressWrapper.blpu.postcode))
         None
       }
 
