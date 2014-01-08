@@ -208,7 +208,7 @@ class AddressBuilderTests extends Specification with Mockito {
       /* base object */
       address.gssCode must beEqualTo("districtcode")
       address.postcode must beEqualTo("postcode")
-      address.houseName.get must beEqualTo("pao text")
+      address.houseName.get must beEqualTo("Pao Text")
       address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
 
       /* details */
@@ -249,7 +249,7 @@ class AddressBuilderTests extends Specification with Mockito {
       /* presentation */
       address.presentation.postcode must beEqualTo("postcode")
       address.presentation.uprn must beEqualTo("uprn")
-      address.presentation.town.get must beEqualTo("something")
+      address.presentation.town.get must beEqualTo("Something")
       address.presentation.area must beEqualTo(None)
       address.presentation.locality.get must beEqualTo("locality")
       address.presentation.street.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
@@ -266,7 +266,7 @@ class AddressBuilderTests extends Specification with Mockito {
       /* base object */
       address.gssCode must beEqualTo("districtcode")
       address.postcode must beEqualTo("postcode")
-      address.houseName.get must beEqualTo("pao text")
+      address.houseName.get must beEqualTo("Pao Text")
       address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
 
       /* details */
@@ -301,7 +301,7 @@ class AddressBuilderTests extends Specification with Mockito {
       /* base object */
       address.gssCode must beEqualTo("districtcode")
       address.postcode must beEqualTo("postcode")
-      address.houseName.get must beEqualTo("pao text")
+      address.houseName.get must beEqualTo("Pao Text")
       address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
 
       /* details */
