@@ -33,7 +33,7 @@ object LocationDataImporter extends Logging {
       opt[String]('u', "username") text "Username for the mongo (default none)" action {
         (p: String, c: Config) => c.copy(username = p)
       }
-      help("help") text "use -d or -dir to identify source directory containing files to parse"
+      help("help") text "use -a or --address to identify source directory containing address files to parse and -c or --codepoint to select the directory containing the codepoint file to parse"
       version("version") text "0.1"
     }
 
