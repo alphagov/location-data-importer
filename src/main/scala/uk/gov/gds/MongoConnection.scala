@@ -11,7 +11,7 @@ class MongoConnection(username: Option[String] = None, password: Option[String] 
 
   private val mongoClient = MongoClient()
 
-  private val db = mongoClient("location")
+  private val db = mongoClient("locate")
 
   private val addresses = db.getCollection("address")
   private val streets = db.getCollection("streets")
@@ -50,6 +50,8 @@ class MongoConnection(username: Option[String] = None, password: Option[String] 
   def addIndexes() {
     logger.info("indexing postcode")
     db.getCollection("address").ensureIndex(DBObject("postcode" -> 1))
+    logger.info("indexing postcode, postal address, residential")
+    db.getCollection("address").ensureIndex(DBObject("postcode" -> 1,"details.isPostalAddress" -> 1, "details.isResidential" -> 1))
     logger.info("indexing uprn")
     db.getCollection("address").ensureIndex(DBObject("uprn" -> 1))
   }

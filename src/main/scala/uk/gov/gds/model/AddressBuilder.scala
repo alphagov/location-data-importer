@@ -59,18 +59,18 @@ object AddressBuilder extends Logging {
     isCommercial = !addressWrapper.classification.isResidential,
     usrn = addressWrapper.lpi.usrn,
     file = filename,
-    organisation = addressWrapper.organisation.map(org => org.organistation)
+    organisation = toSentenceCase(addressWrapper.organisation.map(org => org.organistation))
   )
 
   def location(blpu: BLPU) = Location(blpu.xCoordinate, blpu.yCoordinate)
 
   def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription) = {
     Presentation(
-      property = constructPropertyFrom(lpi),
-      streetAddress = constructStreetAddressFrom(lpi, street),
-      locality = street.localityName,
-      town = street.townName,
-      area = if (street.townName.isDefined && !street.townName.get.equals(street.administrativeArea)) Some(street.administrativeArea) else None,
+      property = toSentenceCase(constructPropertyFrom(lpi)) ,
+      street = toSentenceCase(constructStreetAddressFrom(lpi, street)),
+      locality = toSentenceCase(street.localityName),
+      town = toSentenceCase(street.townName),
+      area = if (street.townName.isDefined && !street.townName.get.equals(street.administrativeArea)) toSentenceCase(Some(street.administrativeArea)) else None,
       postcode = blpu.postcode,
       uprn = blpu.uprn
     )
@@ -78,6 +78,9 @@ object AddressBuilder extends Logging {
 }
 
 object formatters {
+
+  def toSentenceCase(field: Option[String]) = field.map( f => (f toLowerCase) split(" ") map (_.capitalize) mkString (" "))
+
   /*
     Various address field formatters
    */

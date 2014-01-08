@@ -358,7 +358,7 @@ case class Details(
 
 case class Presentation(
                          property: Option[String] = None,
-                         streetAddress: Option[String],
+                         street: Option[String],
                          locality: Option[String] = None,
                          town: Option[String] = None,
                          area: Option[String] = None,

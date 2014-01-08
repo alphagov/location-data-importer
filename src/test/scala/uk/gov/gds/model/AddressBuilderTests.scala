@@ -233,7 +233,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.town.get must beEqualTo("town")
       address.presentation.area.get must beEqualTo("area")
       address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.streetAddress.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
+      address.presentation.street.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
       address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
 
@@ -252,7 +252,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.town.get must beEqualTo("something")
       address.presentation.area must beEqualTo(None)
       address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.streetAddress.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
+      address.presentation.street.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
       address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
 
@@ -290,7 +290,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.town.get must beEqualTo("town")
       address.presentation.area.get must beEqualTo("area")
       address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.streetAddress must beEqualTo(None)
+      address.presentation.street must beEqualTo(None)
       address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
 
@@ -325,7 +325,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.presentation.town.get must beEqualTo("town")
       address.presentation.area.get must beEqualTo("area")
       address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.streetAddress must beEqualTo(Some("pao start numberpao start suffix-pao end numberpao end suffix street name"))
+      address.presentation.street must beEqualTo(Some("pao start numberpao start suffix-pao end numberpao end suffix street name"))
       address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
     }
   }
