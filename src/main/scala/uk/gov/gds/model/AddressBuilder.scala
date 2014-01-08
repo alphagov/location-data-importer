@@ -22,7 +22,7 @@ object AddressBuilder extends Logging {
         codePoint match {
           case Some(code) =>
             Some(Address(
-              houseName = addressWrapper.lpi.paoText,
+              houseName = toSentenceCase(addressWrapper.lpi.paoText),
               houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
               gssCode = code.district,
               countryCode = code.country,
