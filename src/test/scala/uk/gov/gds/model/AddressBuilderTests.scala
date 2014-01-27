@@ -14,6 +14,11 @@ class AddressBuilderTests extends Specification with Mockito {
 
   val mongoConnection = mock[uk.gov.gds.MongoConnection]
   mongoConnection.streetForUsrn(anyString) returns Some(streetWithDescription)
+  mongoConnection.codePointForPostcode(anyString) returns Some(codePoint)
+
+
+  // TODO errors in file check
+
 
   "The address builder" should {
 
@@ -29,48 +34,27 @@ class AddressBuilderTests extends Specification with Mockito {
       reportLineToTest(file).get must contain("no-street-for-blpu")
     }
 
-    "not create an address if no eligible BLPU (logical status not approved)" in {
-      val file = randomFilename
-      geographicAddressToSimpleAddress(AddressBaseWrapper(blpuProvisonal, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
-
-      reportLineToTest(file) must not be None
-      reportLineToTest(file).get must contain("invalid-blpu")
-    }.pendingUntilFixed("Adding all logical states currently")
-
-    "not create an address if no eligible BLPU ( state not in use)" in {
-      val file = randomFilename
-      geographicAddressToSimpleAddress(AddressBaseWrapper(invalidBlpuDueToBlpuStatus, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
-
-      reportLineToTest(file) must not be None
-      reportLineToTest(file).get must contain("invalid-blpu")
-    }.pendingUntilFixed("Adding all BLPU states currently")
-
-    "not create an address if no eligible BLPU ( end date present)" in {
-      val file = randomFilename
-
-      geographicAddressToSimpleAddress(AddressBaseWrapper(invalidBlpuDueToEndDates, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
-
-      reportLineToTest(file) must not be None
-      reportLineToTest(file).get must contain("invalid-blpu")
-    }
-
-    "not create an address if no eligible BLPU ( can't receieve post)" in {
-      val file = randomFilename
-      geographicAddressToSimpleAddress(AddressBaseWrapper(invalidBlpuDueToPostalStatus, lpi, classification, Some(organisation)))(Some(mongoConnection), file) must beEqualTo(None)
-      reportLineToTest(file) must not be None
-      reportLineToTest(file).get must contain("invalid-blpu")
-    }.pendingUntilFixed("Adding all non-postal addresses states currently")
-
     "include the postcode from the BLPU all lowercased on the root address object" in {
       geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu.copy(postcode = "SE45 0PP"), lpi, classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.postcode must beEqualTo("se450pp")
     }
 
-    "include the local custodian code from the BLPU on the root address object as gss code" in {
-      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu.copy(localCustodianCode = "1234"), lpi, classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.gssCode must beEqualTo("1234")
+    "include the gss code and country code from the codepoint table on the root address object" in {
+      val mongoConnectionWithSpecificCodePoint = mock[uk.gov.gds.MongoConnection]
+      mongoConnectionWithSpecificCodePoint.streetForUsrn(anyString) returns Some(streetWithDescription)
+      mongoConnectionWithSpecificCodePoint.codePointForPostcode(validBlpu.postcode) returns Some(CodePoint("postcode", "specific country", "countycode", "specific district", "wardcode"))
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithSpecificCodePoint), randomFilename).get.gssCode must beEqualTo("specific district")
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithSpecificCodePoint), randomFilename).get.countryCode must beEqualTo("specific country")
+    }
+
+    "return no address if no code point available for the postcode" in {
+      val mongoConnectionWithNoCodePoint = mock[uk.gov.gds.MongoConnection]
+      mongoConnectionWithNoCodePoint.streetForUsrn(anyString) returns Some(streetWithDescription)
+      mongoConnectionWithNoCodePoint.codePointForPostcode(anyString) returns None
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithNoCodePoint), randomFilename) must beEqualTo(None)
     }
 
     "include the pao text from the LPI on the root address object as houseName" in {
-      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi.copy(paoText = "house name"), classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseName.get must beEqualTo("house name")
+      geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi.copy(paoText = "house name"), classification, Some(organisation)))(Some(mongoConnection), randomFilename).get.houseName.get must beEqualTo("House Name")
     }
 
     "not include house name if the pao text from the LPI is absent" in {
@@ -192,25 +176,6 @@ class AddressBuilderTests extends Specification with Mockito {
       ).get must beEqualTo("10 The Street")
     }
 
-    "valid blpus should be marked as valid" in {
-      isValidBLPU(validBlpu) must beTrue
-    }
-
-    "invalid blpu due to recieve post must be marked invalid" in {
-      isValidBLPU(invalidBlpuDueToPostalStatus) must beFalse
-    }.pendingUntilFixed("allowing non-postal addreses at the momemnt")
-
-    "invalid blpu due to blpu status must be marked invalid" in {
-      isValidBLPU(invalidBlpuDueToLogicalStatus) must beFalse
-    }.pendingUntilFixed("allowing all logical states at the momemnt")
-
-    "invalid blpu due to logical state must be marked invalid" in {
-      isValidBLPU(invalidBlpuDueToBlpuStatus) must beFalse
-    }.pendingUntilFixed("allowing all statues at the momemnt")
-
-    "invalid blpu due to end date must be marked invalid" in {
-      isValidBLPU(invalidBlpuDueToEndDates) must beFalse
-    }
 
     "make a details object containing the correct classification information" in {
       details(AddressBaseWrapper(validBlpu, lpi, classification.copy(classificationCode = "R1"), None), "filename").classification must beEqualTo("R1")
@@ -241,9 +206,9 @@ class AddressBuilderTests extends Specification with Mockito {
       val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnection), filename).get
 
       /* base object */
-      address.gssCode must beEqualTo("1234")
+      address.gssCode must beEqualTo("districtcode")
       address.postcode must beEqualTo("postcode")
-      address.houseName.get must beEqualTo("pao text")
+      address.houseName.get must beEqualTo("Pao Text")
       address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
 
       /* details */
@@ -256,7 +221,7 @@ class AddressBuilderTests extends Specification with Mockito {
       address.details.state.get must beEqualTo("approved")
       address.details.status.get must beEqualTo("inUse")
       address.details.file must beEqualTo(filename)
-      address.details.organisation.get must beEqualTo("organisation")
+      address.details.organisation.get must beEqualTo("Organisation")
 
       /* location */
       address.location.x must beEqualTo(1.1)
@@ -265,22 +230,43 @@ class AddressBuilderTests extends Specification with Mockito {
       /* presentation */
       address.presentation.postcode must beEqualTo("postcode")
       address.presentation.uprn must beEqualTo("uprn")
-      address.presentation.town.get must beEqualTo("town")
-      address.presentation.area.get must beEqualTo("area")
-      address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.streetAddress.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix street name")
-      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      address.presentation.town.get must beEqualTo("Town")
+      address.presentation.area.get must beEqualTo("Area")
+      address.presentation.locality.get must beEqualTo("Locality")
+      address.presentation.street.get must beEqualTo("Pao Start Numberpao Start Suffix-pao End Numberpao End Suffix Street Name")
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
     }
 
-    "make an address object with no street description if street name is not official and no organistaion if none set" in {
+    "make an address object with no area name if area name and town are identical" in {
+      val filename = randomFilename
+      val mongoConnectionWithTownAndAreaTheSame = mock[uk.gov.gds.MongoConnection]
+      mongoConnectionWithTownAndAreaTheSame.codePointForPostcode(validBlpu.postcode) returns Some(codePoint)
+
+      mongoConnectionWithTownAndAreaTheSame.streetForUsrn(anyString) returns Some(streetWithDescription.copy(townName = Some("something"), administrativeArea = "something"))
+
+      val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithTownAndAreaTheSame), filename).get
+
+      /* presentation */
+      address.presentation.postcode must beEqualTo("postcode")
+      address.presentation.uprn must beEqualTo("uprn")
+      address.presentation.town.get must beEqualTo("Something")
+      address.presentation.area must beEqualTo(None)
+      address.presentation.locality.get must beEqualTo("Locality")
+      address.presentation.street.get must beEqualTo("Pao Start Numberpao Start Suffix-pao End Numberpao End Suffix Street Name")
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
+    }
+
+
+    "make an address object with no street description if street name is not official" in {
       val mongoConnectionWithNoStreet = mock[uk.gov.gds.MongoConnection]
       mongoConnectionWithNoStreet.streetForUsrn(anyString) returns Some(streetWithDescription.copy(recordType = Some("unoffical")))
+      mongoConnectionWithNoStreet.codePointForPostcode(anyString) returns Some(codePoint)
       val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnectionWithNoStreet), randomFilename).get
 
       /* base object */
-      address.gssCode must beEqualTo("1234")
+      address.gssCode must beEqualTo("districtcode")
       address.postcode must beEqualTo("postcode")
-      address.houseName.get must beEqualTo("pao text")
+      address.houseName.get must beEqualTo("Pao Text")
       address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
 
       /* details */
@@ -301,11 +287,53 @@ class AddressBuilderTests extends Specification with Mockito {
       /* presentation */
       address.presentation.postcode must beEqualTo("postcode")
       address.presentation.uprn must beEqualTo("uprn")
-      address.presentation.town.get must beEqualTo("town")
-      address.presentation.area.get must beEqualTo("area")
-      address.presentation.locality.get must beEqualTo("locality")
-      address.presentation.streetAddress must beEqualTo(None)
-      address.presentation.property.get must beEqualTo("sao start numbersao start suffix-sao end numbersao end suffix sao text pao text")
+      address.presentation.town.get must beEqualTo("Town")
+      address.presentation.area.get must beEqualTo("Area")
+      address.presentation.locality.get must beEqualTo("Locality")
+      address.presentation.street must beEqualTo(None)
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
+    }
+
+
+    "make an address object with  no organistaion if none set" in {
+      val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnection), randomFilename).get
+
+      /* base object */
+      address.gssCode must beEqualTo("districtcode")
+      address.postcode must beEqualTo("postcode")
+      address.houseName.get must beEqualTo("Pao Text")
+      address.houseNumber.get must beEqualTo("pao start numberpao start suffix-pao end numberpao end suffix")
+
+      /* details */
+      address.details.blpuCreatedAt must beEqualTo(startDate)
+      address.details.blpuUpdatedAt must beEqualTo(lastUpdatedDate)
+      address.details.classification must beEqualTo("code")
+      address.details.isPostalAddress must beEqualTo(true)
+      address.details.isResidential must beEqualTo(false)
+      address.details.usrn must beEqualTo("usrn")
+      address.details.state.get must beEqualTo("approved")
+      address.details.status.get must beEqualTo("inUse")
+      address.details.organisation must beEqualTo(None)
+
+      /* location */
+      address.location.x must beEqualTo(1.1)
+      address.location.y must beEqualTo(2.2)
+
+      /* presentation */
+      address.presentation.postcode must beEqualTo("postcode")
+      address.presentation.uprn must beEqualTo("uprn")
+      address.presentation.town.get must beEqualTo("Town")
+      address.presentation.area.get must beEqualTo("Area")
+      address.presentation.locality.get must beEqualTo("Locality")
+      address.presentation.street must beEqualTo(Some("Pao Start Numberpao Start Suffix-pao End Numberpao End Suffix Street Name"))
+      address.presentation.property.get must beEqualTo("Sao Start Numbersao Start Suffix-sao End Numbersao End Suffix Sao Text Pao Text")
+    }
+
+    "convert strings to sentence case" in {
+      toSentenceCase("THIS IS NOT IN SENTENCE CASE").get must beEqualTo("This Is Not In Sentence Case")
+      toSentenceCase("THIS ÎS NÔT IN SENTENCE CASE").get must beEqualTo("This Îs Nôt In Sentence Case")
+      toSentenceCase("123 THIS IS NOT IN SENTENCE CASE").get must beEqualTo("123 This Is Not In Sentence Case")
+      toSentenceCase("123 THIS, IS, NOT, IN, SENTENCE CASE").get must beEqualTo("123 This, Is, Not, In, Sentence Case")
     }
   }
 
@@ -365,7 +393,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
   private lazy val classification = Classification("uprn", "code", startDate, None, lastUpdatedDate)
   private lazy val organisation = Organisation("uprn", "organisation", startDate, None, lastUpdatedDate)
-  private lazy val streetWithDescription = StreetWithDescription("usrn", "street name", "locality", "town", "area", Some("officiallyDesignated"), Some("state"), Some("code"), Some("classification"), "file")
-
+  private lazy val streetWithDescription = StreetWithDescription("usrn", "street name", Some("locality"), Some("town"), "area", Some("officiallyDesignated"), Some("state"), Some("code"), Some("classification"), "file")
+  private lazy val codePoint = CodePoint("postcode", "countrycode", "countycode", "districtcode", "wardcode")
 
 }

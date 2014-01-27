@@ -68,22 +68,22 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
     }
 
     "correctly process a 'good' file returning count of processed files" in {
-      ProcessAddressBaseFiles.addresses("testdata/single-good-file")(None).outcome must beEqualTo(Success)
-      ProcessAddressBaseFiles.addresses("testdata/single-good-file")(None).message must beEqualTo("processed addresses: [1] files")
-      ProcessAddressBaseFiles.streets("testdata/single-good-file")(None).outcome must beEqualTo(Success)
-      ProcessAddressBaseFiles.streets("testdata/single-good-file")(None).message must beEqualTo("processed streets: [1] files")
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/single-good-file")(None).outcome must beEqualTo(Success)
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/single-good-file")(None).message must beEqualTo("processed addresses: [1] files")
+      ProcessAddressBaseFiles.streets("testdata/addressbase/single-good-file")(None).outcome must beEqualTo(Success)
+      ProcessAddressBaseFiles.streets("testdata/addressbase/single-good-file")(None).message must beEqualTo("processed streets: [1] files")
     }
 
     "correctly process a number 'good' files returning count of all processed files" in {
-      ProcessAddressBaseFiles.addresses("testdata/multiple-good-files")(None).outcome must beEqualTo(Success)
-      ProcessAddressBaseFiles.addresses("testdata/multiple-good-files")(None).message must beEqualTo("processed addresses: [2] files")
-      ProcessAddressBaseFiles.streets("testdata/multiple-good-files")(None).outcome must beEqualTo(Success)
-      ProcessAddressBaseFiles.streets("testdata/multiple-good-files")(None).message must beEqualTo("processed streets: [2] files")
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/multiple-good-files")(None).outcome must beEqualTo(Success)
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/multiple-good-files")(None).message must beEqualTo("processed addresses: [2] files")
+      ProcessAddressBaseFiles.streets("testdata/addressbase/multiple-good-files")(None).outcome must beEqualTo(Success)
+      ProcessAddressBaseFiles.streets("testdata/addressbase/multiple-good-files")(None).message must beEqualTo("processed streets: [2] files")
     }
 
     "correctly process a 'bad' file returning error message against file name when processing streets" in {
-      ProcessAddressBaseFiles.streets("testdata/single-bad-file")(None).outcome must beEqualTo(Failure)
-      ProcessAddressBaseFiles.streets("testdata/single-bad-file")(None).message must beEqualTo("processed streets: 0 files successfully and 1 files with errors")
+      ProcessAddressBaseFiles.streets("testdata/addressbase/single-bad-file")(None).outcome must beEqualTo(Failure)
+      ProcessAddressBaseFiles.streets("testdata/addressbase/single-bad-file")(None).message must beEqualTo("processed streets: 0 files successfully and 1 files with errors")
       reportLineToTest("bad-file.csv") must not be None
       reportLineToTest("bad-file.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file.csv").get must contain("15|BADSTREET-1")
@@ -92,8 +92,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
     }
 
     "correctly process a 'bad' file returning error message against file name when processing addresses" in {
-      ProcessAddressBaseFiles.addresses("testdata/single-bad-file")(None).outcome must beEqualTo(Failure)
-      ProcessAddressBaseFiles.addresses("testdata/single-bad-file")(None).message must beEqualTo("processed addresses: 0 files successfully and 1 files with errors")
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/single-bad-file")(None).outcome must beEqualTo(Failure)
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/single-bad-file")(None).message must beEqualTo("processed addresses: 0 files successfully and 1 files with errors")
       reportLineToTest("bad-file.csv") must not be None
       reportLineToTest("bad-file.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file.csv").get must contain("32|BADROW")
@@ -102,8 +102,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
     }
 
     "correctly process a set of 'bad' files returning errors by file name when processing streets" in {
-      ProcessAddressBaseFiles.streets("testdata/multiple-bad-files")(None).outcome must beEqualTo(Failure)
-      ProcessAddressBaseFiles.streets("testdata/multiple-bad-files")(None).message must beEqualTo("processed streets: 0 files successfully and 2 files with errors")
+      ProcessAddressBaseFiles.streets("testdata/addressbase/multiple-bad-files")(None).outcome must beEqualTo(Failure)
+      ProcessAddressBaseFiles.streets("testdata/addressbase/multiple-bad-files")(None).message must beEqualTo("processed streets: 0 files successfully and 2 files with errors")
       reportLineToTest("bad-file-1.csv") must not be None
       reportLineToTest("bad-file-1.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-1.csv").get must contain("15|BADSTREET-2")
@@ -117,8 +117,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
     }
 
     "correctly process a set of 'bad' files returning errors by file name when processing addresses" in {
-      ProcessAddressBaseFiles.addresses("testdata/multiple-bad-files")(None).outcome must beEqualTo(Failure)
-      ProcessAddressBaseFiles.addresses("testdata/multiple-bad-files")(None).message must beEqualTo("processed addresses: 0 files successfully and 2 files with errors")
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/multiple-bad-files")(None).outcome must beEqualTo(Failure)
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/multiple-bad-files")(None).message must beEqualTo("processed addresses: 0 files successfully and 2 files with errors")
       reportLineToTest("bad-file-1.csv") must not be None
       reportLineToTest("bad-file-1.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-1.csv").get must contain("21|BADROW-1")
@@ -132,8 +132,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
     }
 
     "correctly process a set of 'good' and 'bad' files returning errors by file name when processing streets" in {
-      ProcessAddressBaseFiles.streets("testdata/good-and-bad-files")(None).outcome must beEqualTo(Failure)
-      ProcessAddressBaseFiles.streets("testdata/good-and-bad-files")(None).message must beEqualTo("processed streets: 1 files successfully and 1 files with errors")
+      ProcessAddressBaseFiles.streets("testdata/addressbase/good-and-bad-files")(None).outcome must beEqualTo(Failure)
+      ProcessAddressBaseFiles.streets("testdata/addressbase/good-and-bad-files")(None).message must beEqualTo("processed streets: 1 files successfully and 1 files with errors")
       reportLineToTest("bad-file-3.csv") must not be None
       reportLineToTest("bad-file-3.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-3.csv").get must contain("15|BADSTREET-3")
@@ -142,8 +142,8 @@ class ProcessAddressBaseFilesTests extends Specification with AfterExample with 
     }
 
     "correctly process a set of 'good' and 'bad' files returning errors by file name when processing addresses" in {
-      ProcessAddressBaseFiles.addresses("testdata/good-and-bad-files")(None).outcome must beEqualTo(Failure)
-      ProcessAddressBaseFiles.addresses("testdata/good-and-bad-files")(None).message must beEqualTo("processed addresses: 1 files successfully and 1 files with errors")
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/good-and-bad-files")(None).outcome must beEqualTo(Failure)
+      ProcessAddressBaseFiles.addresses("testdata/addressbase/good-and-bad-files")(None).message must beEqualTo("processed addresses: 1 files successfully and 1 files with errors")
       reportLineToTest("bad-file-3.csv") must not be None
       reportLineToTest("bad-file-3.csv").get must contain("row-parse-error")
       reportLineToTest("bad-file-3.csv").get must contain("32|BADROW-1")

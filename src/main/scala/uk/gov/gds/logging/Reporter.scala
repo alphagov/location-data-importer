@@ -12,6 +12,8 @@ object InvalidBlpuError extends Error("invalid-blpu")
 
 object NoStreetForBlpuError extends Error("no-street-for-blpu")
 
+object NoCodePointForPostcode extends Error("no-code-point-for-postcode")
+
 object RowParseError extends Error("row-parse-error")
 
 object MissingLpiError extends Error("no-lpi-for-uprn")
@@ -33,6 +35,11 @@ object Reporter {
   val processed = "/tmp/location-data-file-list.txt"
 
   writer(reportFile).writeStrings(List("\n", "=== Starting Run at " + new DateTime + " ===\n"))
+
+  def report(fileName: String, errorType: Error, errorData: List[String]) {
+    report((List(fileName, errorType) ++ errorData).mkString(",") + "\n")
+  }
+
 
   def report(fileName: String, errorType: Error, errorData: Option[String] = None) {
     report(List(fileName, errorType, errorData.getOrElse("")).mkString(",") + "\n")

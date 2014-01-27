@@ -16,8 +16,10 @@ import uk.gov.gds.model.CodeLists.StreetStateCode
 import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
 
 
-/*
-  Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to simple model
+
+
+/**
+ *  Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to simple model
  */
 case class AddressBaseWrapper(blpu: BLPU, lpi: LPI, classification: Classification, organisation: Option[Organisation]) {
   lazy val uprn = blpu.uprn
@@ -41,6 +43,38 @@ trait AddressBaseHelpers[T <: AddressBase] {
 
   def fromCsvLine(csvLine: List[String]): T
 
+}
+
+
+/**
+ * Code point model
+ */
+case class CodePoint(postcode: String, country: String, county: Option[String], district: String, ward: String) extends AddressBase {
+  def serialize = grater[CodePoint].asDBObject(this)
+}
+
+object CodePoint extends AddressBaseHelpers[CodePoint]{
+  private val postcodeIndex = 0
+  private val countryIndex = 12
+  private val countyIndex = 15
+  private val districtIndex = 16
+  private val wardIndex = 17
+
+  def fromCsvLine(csvLine: List[String]) = {
+    CodePoint(
+      csvLine(postcodeIndex).toLowerCase.replaceAll(" ", ""),
+      csvLine(countryIndex),
+      csvLine(countyIndex),
+      csvLine(districtIndex),
+      csvLine(wardIndex)
+    )
+  }
+
+  override def isValidCsvLine(csvLine: List[String]) = csvLine.size == requiredCsvColumns && !isMissingAMandatoryField(csvLine)
+
+  val recordIdentifier = "" // not relevant for these rows
+  val requiredCsvColumns = 19
+  val mandatoryCsvColumns = List(postcodeIndex,countryIndex,wardIndex,districtIndex)
 }
 
 /* Basic Land and Property Unit */
@@ -324,7 +358,7 @@ case class Details(
 
 case class Presentation(
                          property: Option[String] = None,
-                         streetAddress: Option[String],
+                         street: Option[String],
                          locality: Option[String] = None,
                          town: Option[String] = None,
                          area: Option[String] = None,
@@ -337,6 +371,7 @@ case class Address(
                     houseName: Option[String],
                     postcode: String,
                     gssCode: String,
+                    countryCode: String,
                     createdAt: DateTime = new DateTime,
                     presentation: Presentation,
                     location: Location,

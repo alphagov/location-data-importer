@@ -15,9 +15,9 @@ import scala.Some
 class ExtractorsTests extends Specification {
 
   private val validLinesForBLPU = List(
-    """21,"I",94755,9059007610,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BX",0""",
-    """21,"I",94755,9059007611,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BY",0""",
-    """21,"I",94755,9059007612,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BZ",0"""
+    """21,"I",94755,9059007610,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BX",0""",
+    """21,"I",94755,9059007611,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BY",0""",
+    """21,"I",94755,9059007612,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BZ",0"""
   )
 
   private val validLinesForLPI = List(
@@ -54,17 +54,37 @@ class ExtractorsTests extends Specification {
   import uk.gov.gds.io.parseCsvLine
 
   "Processers" should {
+
+    "correctly process a file for code point rows" in {
+      processRowsIntoCodePoints(new File("testdata/codepoint/good-file.csv"))(None).size must beEqualTo(1)
+      val result = processRowsIntoCodePoints(new File("testdata/codepoint/good-file.csv"))(None)
+
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).postcode must beEqualTo("dd97yx")
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).country must beEqualTo("S92000003")
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).county must beEqualTo(None)
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).district must beEqualTo("S12000041")
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file.csv"))(0).ward must beEqualTo("S13002509")
+    }
+
+    "correctly process a file for with many code point rows" in {
+      processRowsIntoCodePoint(new File("testdata/codepoint/good-file-with-many-rows.csv")).size must beEqualTo(13)
+    }
+
+    "correctly process a file for with many code point rows - excluding rows that are invalid" in {
+      processRowsIntoCodePoint(new File("testdata/codepoint/file-with-one-bad-row.csv")).size must beEqualTo(12)
+    }
+
     "correctly process a file for streets" in {
-      processRowsIntoStreets(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
-      processRowsIntoStreets(new File("testdata/single-good-file/good-file.csv"))(0).usrn must beEqualTo("7803555")
+      processRowsIntoStreets(new File("testdata/addressbase/single-good-file/good-file.csv")).size must beEqualTo(1)
+      processRowsIntoStreets(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).usrn must beEqualTo("7803555")
     }
 
     "correctly process a file for addresses" in {
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv")).size must beEqualTo(1)
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).blpu.uprn must beEqualTo("9059007610")
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).lpi.paoStartNumber.get must beEqualTo("2")
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).classification.classificationCode must beEqualTo("RD")
-      processRowsIntoAddressWrappers(new File("testdata/single-good-file/good-file.csv"))(0).organisation.get.organistation must beEqualTo("Party Time")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv")).size must beEqualTo(1)
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).blpu.uprn must beEqualTo("9059007610")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).lpi.paoStartNumber.get must beEqualTo("2")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).classification.classificationCode must beEqualTo("RD")
+      processRowsIntoAddressWrappers(new File("testdata/addressbase/single-good-file/good-file.csv"))(0).organisation.get.organistation must beEqualTo("Party Time")
 
     }
   }
@@ -419,6 +439,17 @@ class ExtractorsTests extends Specification {
     "should extract address base wrappers from list of address base objects" in {
       val addressWrappers = extractAddressBaseWrappers(randomFilename, buildListOfAddressBaseObjects)
       addressWrappers.size must beEqualTo(3)
+    }
+
+    "should extract address base wrappers from list of address base objects - excluding those with an end date" in {
+
+      val blpus = validLinesForBLPU.flatMap(line => extractRow[BLPU]("filename", parseCsvLine(line), BLPU)).map(blpu => blpu.copy(endDate = Some(new DateTime)))
+      val lpis = validLinesForLPI.flatMap(line => extractRow[LPI]("filename", parseCsvLine(line), LPI))
+      val organisations = validLinesForOrganisation.flatMap(line => extractRow[Organisation]("filename", parseCsvLine(line), Organisation))
+      val classifications = validLinesForClassification.flatMap(line => extractRow[Classification]("filename", parseCsvLine(line), Classification))
+
+      val addressWrappers = extractAddressBaseWrappers(randomFilename, List(blpus, lpis, organisations, classifications).flatten)
+      addressWrappers.size must beEqualTo(0)
     }
 
     "should extract address base wrappers from list of address base objects" in {

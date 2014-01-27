@@ -6,23 +6,29 @@ import uk.gov.gds.MongoConnection
 
 object ProcessAddressBaseFiles extends Logging {
 
-  def streets(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
+  def streets(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processForStreets(filePath)
     }
-  }
 
-  def addresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result = {
+  def addresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processForAddresses(filePath)
     }
-  }
 
-  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("streets", directoryContents(filePath).par.flatMap(processStreets(_)).toList)
+  def codePoints(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
+    filePathHasErrors(filePath) match {
+      case Some(error) => error
+      case _ => processForCodePoints(filePath)
+    }
 
-  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("addresses", directoryContents(filePath).par.flatMap(processAddresses(_)).toList)
+  private def processForCodePoints(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("codepoint", directoryContents(filePath).flatMap(processRowsIntoCodePoints(_)).toList)
+
+  private def processForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("streets", directoryContents(filePath).flatMap(processStreets(_)).toList)
+
+  private def processForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]) = resultOf("addresses", directoryContents(filePath).flatMap(processAddresses(_)).toList)
 
   private def resultOf(pass: String, fileResult: List[Result]) = {
 
