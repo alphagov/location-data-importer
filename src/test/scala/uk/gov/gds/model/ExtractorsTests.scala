@@ -3,7 +3,7 @@ package uk.gov.gds.model
 import org.specs2.mutable.Specification
 import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable}
 import scalax.io.Line.Terminators.NewLine
-import processors._
+import Processors._
 import scala.collection.mutable
 import uk.gov.gds.io._
 import uk.gov.gds.testutils.ReporterTestUtils._
@@ -50,7 +50,7 @@ class ExtractorsTests extends Specification {
     """15,"I",1150,7803243,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG""""
   )
 
-  import extractors._
+  import Extractors._
   import uk.gov.gds.io.parseCsvLine
 
   "Processers" should {

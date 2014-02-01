@@ -5,17 +5,17 @@ import uk.gov.gds.io._
 import uk.gov.gds.logging._
 import uk.gov.gds.model.AddressBuilder._
 import java.io.File
-import uk.gov.gds.MongoConnection
 import uk.gov.gds.logging.Reporter.processedFile
 import uk.gov.gds.logging.Reporter.report
 import org.joda.time.DateTime
 import scala.Some
 import uk.gov.gds.io.Result
+import uk.gov.gds.mongo.MongoConnection
 
 
-object processors extends Logging {
+object Processors extends Logging {
 
-  import extractors._
+  import Extractors._
 
   def processRowsIntoCodePoints(file: File)(implicit mongoConnection: Option[MongoConnection]) = {
     logger.info("Processing codepoint: " + file.getName)
@@ -66,6 +66,7 @@ object processors extends Logging {
   }
 
   def processRowsIntoCodePoint(file: File) = {
+
     def processRow(line: String) = {
       val parsed = parseCsvLine(line)
       CodePoint.isValidCsvLine(parsed) match {
@@ -126,7 +127,12 @@ object processors extends Logging {
 
 }
 
-object extractors {
+/**
+ * Object to take lists of generic address base type and convert to indidivudal types
+ */
+object Extractors {
+
+  import Builders._
 
   implicit object LastUpdatedOrdering extends Ordering[DateTime] {
     def compare(a: DateTime, b: DateTime) = b compareTo a
@@ -202,9 +208,15 @@ object extractors {
         buildStreetWrapper(fileName, streets, streetDescription)
     ).toList
   }
+}
+
+/**
+ * Object to take lists of address base types and convert to our address / street model
+ */
+object Builders {
 
   def buildStreetWrapper(fileName: String, streets: Map[String, List[Street]], streetDescriptor: StreetDescriptor) = {
-    val street = mostRecentStreetForUsrn(streetDescriptor.usrn, streets)
+    val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
 
     if (streets.get(streetDescriptor.usrn).isEmpty) {
       report(fileName, MissingStreetError, List(streetDescriptor.usrn))
@@ -239,8 +251,8 @@ object extractors {
                            organisations: Map[String, List[Organisation]]) = {
 
     val lpi = mostRecentLPIForUprn(blpu.uprn, lpis)
-    val classification = mostRecentClassificationForUprn(blpu.uprn, classifications)
-    val organisation = mostRecentOrganisationForUprn(blpu.uprn, organisations)
+    val classification = mostRecentActiveClassificationForUprn(blpu.uprn, classifications)
+    val organisation = mostRecentActiveOrganisationForUprn(blpu.uprn, organisations)
 
     if (!isValidBLPU(blpu)) {
       report(fileName, InvalidBlpuError, List(blpu.uprn, blpu.postcode))
@@ -260,14 +272,9 @@ object extractors {
   }
 
   /*
-   BLPU checker
+   BLPU checker - all BLPUs must NOT have an end date - indicates an active property
   */
-  def isValidBLPU(blpu: BLPU) = !List(
-    // blpu.logicalState.getOrElse(false).equals(LogicalStatusCode.approved), // MUST have a logical state and it MUST be 'approved'
-    // blpu.blpuState.getOrElse(false).equals(BlpuStateCode.inUse), // MUST have a BLPU state and it MUST be 'in use'
-    !blpu.endDate.isDefined // MUST not have an end date
-    // blpu.canReceivePost // must be able to receive post
-  ).contains(false)
+  def isValidBLPU(blpu: BLPU) = !List(!blpu.endDate.isDefined).contains(false)
 
 
   /*
@@ -282,7 +289,7 @@ object extractors {
   /*
      We want one Classification per BLPU, and there may be several so remove all with an end date, and get the most recently updated
     */
-  def mostRecentClassificationForUprn(uprn: String, classifications: Map[String, List[Classification]]): Option[Classification] =
+  def mostRecentActiveClassificationForUprn(uprn: String, classifications: Map[String, List[Classification]]): Option[Classification] =
     classifications.get(uprn) match {
       case Some(classification) => classification.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
       case _ => None
@@ -291,7 +298,7 @@ object extractors {
   /*
      We want one Organisation per BLPU, and there may be several so remove all with an end date, and get the most recently updated
     */
-  def mostRecentOrganisationForUprn(uprn: String, organisations: Map[String, List[Organisation]]): Option[Organisation] =
+  def mostRecentActiveOrganisationForUprn(uprn: String, organisations: Map[String, List[Organisation]]): Option[Organisation] =
     organisations.get(uprn) match {
       case Some(organisation) => organisation.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
       case _ => None
@@ -300,10 +307,9 @@ object extractors {
   /*
     We want one Street per USRN, and there may be several so remove all with an end date, and get the most recently updated
    */
-  def mostRecentStreetForUsrn(usrn: String, streets: Map[String, List[Street]]): Option[Street] =
+  def mostRecentActiveStreetForUsrn(usrn: String, streets: Map[String, List[Street]]): Option[Street] =
     streets.get(usrn) match {
       case Some(street) => street.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
       case _ => None
     }
-
 }

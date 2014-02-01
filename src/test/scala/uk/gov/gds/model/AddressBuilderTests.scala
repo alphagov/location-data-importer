@@ -6,13 +6,14 @@ import org.joda.time.DateTime
 import scala.Some
 import org.specs2.mock.Mockito
 import uk.gov.gds.testutils.ReporterTestUtils._
+import uk.gov.gds.mongo.MongoConnection
 
 class AddressBuilderTests extends Specification with Mockito {
 
   import AddressBuilder._
   import uk.gov.gds.model.formatters._
 
-  val mongoConnection = mock[uk.gov.gds.MongoConnection]
+  val mongoConnection = mock[MongoConnection]
   mongoConnection.streetForUsrn(anyString) returns Some(streetWithDescription)
   mongoConnection.codePointForPostcode(anyString) returns Some(codePoint)
 
@@ -25,7 +26,7 @@ class AddressBuilderTests extends Specification with Mockito {
     "not create an address if no street available for the usrn" in {
       val file = randomFilename
 
-      val mongoConnectionWithNoStreet = mock[uk.gov.gds.MongoConnection]
+      val mongoConnectionWithNoStreet = mock[MongoConnection]
       mongoConnectionWithNoStreet.streetForUsrn(anyString) returns None
 
       geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithNoStreet), file) must beEqualTo(None)
@@ -39,7 +40,7 @@ class AddressBuilderTests extends Specification with Mockito {
     }
 
     "include the gss code and country code from the codepoint table on the root address object" in {
-      val mongoConnectionWithSpecificCodePoint = mock[uk.gov.gds.MongoConnection]
+      val mongoConnectionWithSpecificCodePoint = mock[MongoConnection]
       mongoConnectionWithSpecificCodePoint.streetForUsrn(anyString) returns Some(streetWithDescription)
       mongoConnectionWithSpecificCodePoint.codePointForPostcode(validBlpu.postcode) returns Some(CodePoint("postcode", "specific country", "countycode", "specific district", "wardcode"))
       geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithSpecificCodePoint), randomFilename).get.gssCode must beEqualTo("specific district")
@@ -47,7 +48,7 @@ class AddressBuilderTests extends Specification with Mockito {
     }
 
     "return no address if no code point available for the postcode" in {
-      val mongoConnectionWithNoCodePoint = mock[uk.gov.gds.MongoConnection]
+      val mongoConnectionWithNoCodePoint = mock[MongoConnection]
       mongoConnectionWithNoCodePoint.streetForUsrn(anyString) returns Some(streetWithDescription)
       mongoConnectionWithNoCodePoint.codePointForPostcode(anyString) returns None
       geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, Some(organisation)))(Some(mongoConnectionWithNoCodePoint), randomFilename) must beEqualTo(None)
@@ -239,7 +240,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
     "make an address object with no area name if area name and town are identical" in {
       val filename = randomFilename
-      val mongoConnectionWithTownAndAreaTheSame = mock[uk.gov.gds.MongoConnection]
+      val mongoConnectionWithTownAndAreaTheSame = mock[MongoConnection]
       mongoConnectionWithTownAndAreaTheSame.codePointForPostcode(validBlpu.postcode) returns Some(codePoint)
 
       mongoConnectionWithTownAndAreaTheSame.streetForUsrn(anyString) returns Some(streetWithDescription.copy(townName = Some("something"), administrativeArea = "something"))
@@ -258,7 +259,7 @@ class AddressBuilderTests extends Specification with Mockito {
 
 
     "make an address object with no street description if street name is not official" in {
-      val mongoConnectionWithNoStreet = mock[uk.gov.gds.MongoConnection]
+      val mongoConnectionWithNoStreet = mock[MongoConnection]
       mongoConnectionWithNoStreet.streetForUsrn(anyString) returns Some(streetWithDescription.copy(recordType = Some("unoffical")))
       mongoConnectionWithNoStreet.codePointForPostcode(anyString) returns Some(codePoint)
       val address = geographicAddressToSimpleAddress(AddressBaseWrapper(validBlpu, lpi, classification, None))(Some(mongoConnectionWithNoStreet), randomFilename).get

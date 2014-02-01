@@ -1,24 +1,24 @@
 package uk.gov.gds.io
 
 import uk.gov.gds.logging.Logging
-import uk.gov.gds.model.processors._
-import uk.gov.gds.MongoConnection
+import uk.gov.gds.model.Processors._
+import uk.gov.gds.mongo.MongoConnection
 
 object ProcessAddressBaseFiles extends Logging {
 
-  def streets(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
+  def processAddressBaseFilesForStreets(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processForStreets(filePath)
     }
 
-  def addresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
+  def processAddressBaseFilesForAddresses(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processForAddresses(filePath)
     }
 
-  def codePoints(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
+  def processCodePointFiles(filePath: String)(implicit mongoConnection: Option[MongoConnection]): Result =
     filePathHasErrors(filePath) match {
       case Some(error) => error
       case _ => processForCodePoints(filePath)

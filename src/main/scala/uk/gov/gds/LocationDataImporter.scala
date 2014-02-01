@@ -7,10 +7,11 @@ import uk.gov.gds.io.{Failure, Success}
 import java.io.File
 import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
 import org.joda.time.DateTime
+import uk.gov.gds.mongo.MongoConnection
 
 object LocationDataImporter extends Logging {
 
-  case class Config(dir: String = "", codePoint: String = "", cleanReport: Boolean = false, username: String = "", password: String = "")
+  case class Config(dir: String = "", codePoint: String = "", addressOnly: Boolean = false, cleanReport: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
 
@@ -26,6 +27,9 @@ object LocationDataImporter extends Logging {
       }
       opt[Unit]('r', "removeReport") text "Remove the reports. (Default don't)" action {
         (_, c: Config) => c.copy(cleanReport = true)
+      }
+      opt[Unit]('o', "addressOnly") text "Only do address import stage. (Default process all stages)" action {
+        (_, c: Config) => c.copy(addressOnly = true)
       }
       opt[String]('p', "password") text "Password for the mongo (default none)" action {
         (p: String, c: Config) => c.copy(password = p)
@@ -54,87 +58,105 @@ object LocationDataImporter extends Logging {
             Some(new MongoConnection(Some(config.username), Some(config.password)))
           else Some(new MongoConnection)
 
-        /*
-          Process Code Points for LA lookups
-         */
-        val resultForCodePoint = ProcessAddressBaseFiles.codePoints(config.codePoint)
-        /*
-          Log result summary
-        */
-        resultForCodePoint.outcome match {
-          case Success => logger.info("Completed processing codepoint: \n" + resultForCodePoint.message)
-          case Failure => {
-            logger.info("Failed processing codepoint: \n" + resultForCodePoint.message)
-            sys.exit()
-          }
-          case _ => {
-            logger.info("Failed processing: Unable to generate a result]")
-            sys.exit()
-          }
+        // Only process streets and code points if required.
+        if (!config.addressOnly) {
+          processCodePoint(config)
+          processStreets(config)
         }
-
-        /*
-          Add indexes on codepoints
-         */
-        logger.info("adding codepoint indexes")
-        mongoConnection.foreach(_.addCodePointIndexes())
-
-        /*
-          Process all streets into mongo first for reference
-         */
-        val resultForStreets = ProcessAddressBaseFiles.streets(config.dir)
-
-        /*
-          Log result summary
-         */
-        resultForStreets.outcome match {
-          case Success => logger.info("Completed processing streets: \n" + resultForStreets.message)
-          case Failure => {
-            logger.info("Failed processing streets: \n" + resultForStreets.message)
-            sys.exit()
-          }
-          case _ => {
-            logger.info("Failed processing: Unable to generate a result]")
-            sys.exit()
-          }
-        }
-
-        /*
-          Add indexes on streets
-         */
-        logger.info("adding street indexes")
-        mongoConnection.foreach(_.addStreetIndexes())
 
         /*
           Process files a second time, now for address objects
-          This requires the streets to be in mongo already
-         */
-        val resultForAddresses = ProcessAddressBaseFiles.addresses(config.dir)
-
-        /*
-          Add indexes to address rows
-         */
-        logger.info("adding indexes")
-        mongoConnection.foreach(_.addIndexes())
-
-        /*
-          Log result summary
-         */
-        resultForAddresses.outcome match {
-          case Success => logger.info("Completed processing: \n" + resultForAddresses.message)
-          case Failure => {
-            logger.info("Failed processing: \n" + resultForAddresses.message)
-            sys.exit()
-          }
-          case _ => {
-            logger.info("Failed processing: Unable to generate a result]")
-            sys.exit()
-          }
-        }
+          This requires the streets and code point files to be in mongo already
+        */
+        processAddresses(config)
 
         logger.info("Finshed Processing: " + config.dir + " in " + ((new DateTime).getMillis - start.getMillis) / 1000 / 60 + " minutes")
 
       }
     }
   }
+
+
+  private def processAddresses(config: Config)(implicit mongoConnection: Option[MongoConnection]) = {
+
+    val resultForAddresses = ProcessAddressBaseFiles.processAddressBaseFilesForAddresses(config.dir)
+
+    /*
+      Add indexes to address rows
+     */
+    logger.info("adding indexes")
+    mongoConnection.foreach(_.addIndexes())
+
+    /*
+      Log result summary
+     */
+    resultForAddresses.outcome match {
+      case Success => logger.info("Completed processing: \n" + resultForAddresses.message)
+      case Failure => {
+        logger.info("Failed processing: \n" + resultForAddresses.message)
+        sys.exit()
+      }
+      case _ => {
+        logger.info("Failed processing: Unable to generate a result]")
+        sys.exit()
+      }
+    }
+  }
+
+  private def processStreets(config: Config)(implicit mongoConnection: Option[MongoConnection]) = {
+    /*
+       Process all addressbase files for street data
+      */
+    val resultForStreets = ProcessAddressBaseFiles.processAddressBaseFilesForStreets(config.dir)
+
+    /*
+      Log result summary
+     */
+    resultForStreets.outcome match {
+      case Success => logger.info("Completed processing streets: \n" + resultForStreets.message)
+      case Failure => {
+        logger.info("Failed processing streets: \n" + resultForStreets.message)
+        sys.exit()
+      }
+      case _ => {
+        logger.info("Failed processing: Unable to generate a result]")
+        sys.exit()
+      }
+    }
+
+    /*
+      Add indexes on streets
+     */
+    logger.info("adding street indexes")
+    mongoConnection.foreach(_.addStreetIndexes())
+  }
+
+  private def processCodePoint(config: Config)(implicit mongoConnection: Option[MongoConnection]) = {
+    /*
+       Process Code Points for Local Authority code lookups
+      */
+    val resultForCodePoint = ProcessAddressBaseFiles.processCodePointFiles(config.codePoint)
+
+    /*
+      Log result summary
+    */
+    resultForCodePoint.outcome match {
+      case Success => logger.info("Completed processing codepoint: \n" + resultForCodePoint.message)
+      case Failure => {
+        logger.info("Failed processing codepoint: \n" + resultForCodePoint.message)
+        sys.exit()
+      }
+      case _ => {
+        logger.info("Failed processing: Unable to generate a result]")
+        sys.exit()
+      }
+    }
+
+    /*
+      Add indexes on codepoints
+     */
+    logger.info("adding codepoint indexes")
+    mongoConnection.foreach(_.addCodePointIndexes())
+  }
+
 }
