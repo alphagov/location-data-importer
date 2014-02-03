@@ -4,6 +4,8 @@ import org.specs2.mutable.Specification
 import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable}
 import scalax.io.Line.Terminators.NewLine
 import Processors._
+import Extractors._
+import Builders._
 import scala.collection.mutable
 import uk.gov.gds.io._
 import uk.gov.gds.testutils.ReporterTestUtils._
@@ -264,7 +266,7 @@ class ExtractorsTests extends Specification {
       val classification1 = classification.copy(lastUpdated = new DateTime().minusDays(1))
       val classification2 = classification.copy(lastUpdated = new DateTime().minusDays(2))
 
-      mostRecentClassificationForUprn("uprn", Map("uprn" -> List(classification1, classification2))).get must beEqualTo(classification1)
+      mostRecentActiveClassificationForUprn("uprn", Map("uprn" -> List(classification1, classification2))).get must beEqualTo(classification1)
     }
 
     "should be get most recently updated Classification from a list of Classifications excluding those with an end date" in {
@@ -272,20 +274,20 @@ class ExtractorsTests extends Specification {
       val classification2 = classification.copy(lastUpdated = new DateTime().minusDays(2))
       val classification3 = classification.copy(lastUpdated = new DateTime().minusDays(3))
 
-      mostRecentClassificationForUprn("uprn", Map("uprn" -> List(classification1, classification2, classification3))).get must beEqualTo(classification2)
+      mostRecentActiveClassificationForUprn("uprn", Map("uprn" -> List(classification1, classification2, classification3))).get must beEqualTo(classification2)
     }
 
     "should be returning none if no valid Classification available" in {
       val classification1 = classification.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
 
-      mostRecentClassificationForUprn("uprn", Map("uprn" -> List(classification1))) must beEqualTo(None)
+      mostRecentActiveClassificationForUprn("uprn", Map("uprn" -> List(classification1))) must beEqualTo(None)
     }
 
     "should be get most recently updated Organisation from a list of Organisations" in {
       val organisation1 = organisation.copy(lastUpdated = new DateTime().minusDays(1))
       val organisation2 = organisation.copy(lastUpdated = new DateTime().minusDays(2))
 
-      mostRecentOrganisationForUprn("uprn", Map("uprn" -> List(organisation1, organisation2))).get must beEqualTo(organisation1)
+      mostRecentActiveOrganisationForUprn("uprn", Map("uprn" -> List(organisation1, organisation2))).get must beEqualTo(organisation1)
     }
 
     "should be get most recently updated Organisation from a list of Organisations excluding those with an end date" in {
@@ -293,20 +295,20 @@ class ExtractorsTests extends Specification {
       val organisation2 = organisation.copy(lastUpdated = new DateTime().minusDays(2))
       val organisation3 = organisation.copy(lastUpdated = new DateTime().minusDays(3))
 
-      mostRecentOrganisationForUprn("uprn", Map("uprn" -> List(organisation1, organisation2, organisation3))).get must beEqualTo(organisation2)
+      mostRecentActiveOrganisationForUprn("uprn", Map("uprn" -> List(organisation1, organisation2, organisation3))).get must beEqualTo(organisation2)
     }
 
     "should be returning none if no valid Organisation available" in {
       val organisation1 = organisation.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
 
-      mostRecentOrganisationForUprn("uprn", Map("uprn" -> List(organisation1))) must beEqualTo(None)
+      mostRecentActiveOrganisationForUprn("uprn", Map("uprn" -> List(organisation1))) must beEqualTo(None)
     }
 
     "should be get most recently updated Street from a list of street" in {
       val street1 = street.copy(lastUpdated = new DateTime().minusDays(1))
       val street2 = street.copy(lastUpdated = new DateTime().minusDays(2))
 
-      mostRecentStreetForUsrn("usrn", Map("usrn" -> List(street1, street2))).get must beEqualTo(street1)
+      mostRecentActiveStreetForUsrn("usrn", Map("usrn" -> List(street1, street2))).get must beEqualTo(street1)
     }
 
     "should be get most recently updated Street from a list of Street excluding those with an end date" in {
@@ -314,13 +316,13 @@ class ExtractorsTests extends Specification {
       val street2 = street.copy(lastUpdated = new DateTime().minusDays(2))
       val street3 = street.copy(lastUpdated = new DateTime().minusDays(3))
 
-      mostRecentStreetForUsrn("usrn", Map("usrn" -> List(street1, street2, street3))).get must beEqualTo(street2)
+      mostRecentActiveStreetForUsrn("usrn", Map("usrn" -> List(street1, street2, street3))).get must beEqualTo(street2)
     }
 
     "should be returning none if no valid Street available" in {
       val street1 = street.copy(lastUpdated = new DateTime().minusDays(1), endDate = Some(new DateTime))
 
-      mostRecentStreetForUsrn("usrn", Map("usrn" -> List(street1))) must beEqualTo(None)
+      mostRecentActiveStreetForUsrn("usrn", Map("usrn" -> List(street1))) must beEqualTo(None)
     }
 
     "should build an address wrapper linking the blpu to the correct LPI and classification" in {
