@@ -134,9 +134,6 @@ object Extractors {
 
   import Builders._
 
-  implicit object LastUpdatedOrdering extends Ordering[DateTime] {
-    def compare(a: DateTime, b: DateTime) = b compareTo a
-  }
 
   /*
     if any file contains an invalid row the we throw an exception and fail the whole file
@@ -214,6 +211,11 @@ object Extractors {
  * Object to take lists of address base types and convert to our address / street model
  */
 object Builders {
+
+  implicit object LastUpdatedOrdering extends Ordering[DateTime] {
+    def compare(a: DateTime, b: DateTime) = b compareTo a
+  }
+
 
   def buildStreetWrapper(fileName: String, streets: Map[String, List[Street]], streetDescriptor: StreetDescriptor) = {
     val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
