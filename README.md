@@ -27,6 +27,13 @@ The jar runs with command line options. Help is available:
 
      $ java -jar target/scala-2.10/location-data-importer.jar --help
 
+Example run:
+
+    $ java -jar target/scala-2.10/location-data-importer.jar -a docs/examples/addressbase/ -c docs/examples/codepoint/
+
+Mongo:
+
+    - uses a mongo database: installed via ./scripts/mongo/mongo-replica-set.sh
 
 ### Command Line Options
 
@@ -61,7 +68,7 @@ The jar runs with command line options. Help is available:
     - user guide for code point.
     - user gurdes for boundary line.
     - number of address base premimum documentation, incuding introductory powerpoint.
-    - example CSV file for an address base file.
+    - example CSV files for an address base file and a code point file.
     
 
 ### Process:
