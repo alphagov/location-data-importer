@@ -21,15 +21,23 @@ object AddressBuilder extends Logging {
 
         codePoint match {
           case Some(code) =>
+
+            val p = presentation(addressWrapper.blpu, addressWrapper.lpi, street)
+
             Some(Address(
               houseName = toSentenceCase(addressWrapper.lpi.paoText),
               houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
               gssCode = code.district,
               countryCode = code.country,
               postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
-              presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
+              presentation = p,
               location = location(addressWrapper.blpu),
-              details = details(addressWrapper, fileName)
+              details = details(addressWrapper, fileName),
+              propertyStringSize = p.property.getOrElse("").length,
+              streetStringSize = p.street.getOrElse("").length,
+              localityStringSize = p.locality.getOrElse("").length,
+              townStringSize = p.town.getOrElse("").length,
+              areaStringSize = p.area.getOrElse("").length
             ))
           case _ => {
             report(fileName, NoCodePointForPostcode, List(addressWrapper.uprn, addressWrapper.blpu.postcode))
@@ -66,7 +74,7 @@ object AddressBuilder extends Logging {
 
   def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription) = {
     Presentation(
-      property = toSentenceCase(constructPropertyFrom(lpi)) ,
+      property = toSentenceCase(constructPropertyFrom(lpi)),
       street = toSentenceCase(constructStreetAddressFrom(lpi, street)),
       locality = toSentenceCase(street.localityName),
       town = toSentenceCase(street.townName),
@@ -79,7 +87,7 @@ object AddressBuilder extends Logging {
 
 object formatters {
 
-  def toSentenceCase(field: Option[String]) = field.map( f => (f toLowerCase) split(" ") map (_.capitalize) mkString (" "))
+  def toSentenceCase(field: Option[String]) = field.map(f => (f toLowerCase) split (" ") map (_.capitalize) mkString (" "))
 
   /*
     Various address field formatters

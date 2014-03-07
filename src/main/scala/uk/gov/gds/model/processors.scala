@@ -60,7 +60,6 @@ object processors extends Logging {
         Some(Result(Failure, file.getName))
       }
     } finally {
-      deleteFile(file)
       processedFile("addresses", fileName, (new DateTime().getMillis - start.getMillis).toString)
     }
   }
