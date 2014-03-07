@@ -1,10 +1,10 @@
 package uk.gov.gds.model
 
 import uk.gov.gds.logging.Logging
-import uk.gov.gds.MongoConnection
 import uk.gov.gds.logging.Reporter.report
 import uk.gov.gds.logging.NoStreetForBlpuError
 import uk.gov.gds.logging.NoCodePointForPostcode
+import uk.gov.gds.mongo.MongoConnection
 
 
 object AddressBuilder extends Logging {

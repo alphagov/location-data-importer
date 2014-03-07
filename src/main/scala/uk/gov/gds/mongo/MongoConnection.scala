@@ -1,5 +1,4 @@
-package uk.gov.gds
-
+package uk.gov.gds.mongo
 
 import com.mongodb.casbah.Imports._
 import uk.gov.gds.logging.Logging
