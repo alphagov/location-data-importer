@@ -32,12 +32,7 @@ object AddressBuilder extends Logging {
               postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
               presentation = p,
               location = location(addressWrapper.blpu),
-              details = details(addressWrapper, fileName),
-              propertyStringSize = p.property.getOrElse("").length,
-              streetStringSize = p.street.getOrElse("").length,
-              localityStringSize = p.locality.getOrElse("").length,
-              townStringSize = p.town.getOrElse("").length,
-              areaStringSize = p.area.getOrElse("").length
+              details = details(addressWrapper, fileName)
             ))
           case _ => {
             report(fileName, NoCodePointForPostcode, List(addressWrapper.uprn, addressWrapper.blpu.postcode))
