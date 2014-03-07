@@ -27,6 +27,13 @@ The jar runs with command line options. Help is available:
 
      $ java -jar target/scala-2.10/location-data-importer.jar --help
 
+Example run:
+
+    $ java -jar target/scala-2.10/location-data-importer.jar -a docs/examples/addressbase/ -c docs/examples/codepoint/
+
+Mongo:
+
+    - uses a mongo database: installed via ./scripts/mongo/mongo-replica-set.sh
 
 ### Command Line Options
 
@@ -61,7 +68,7 @@ The jar runs with command line options. Help is available:
     - user guide for code point.
     - user gurdes for boundary line.
     - number of address base premimum documentation, incuding introductory powerpoint.
-    - example CSV file for an address base file.
+    - example CSV files for an address base file and a code point file.
     
 
 ### Process:
@@ -188,3 +195,20 @@ The jar runs with command line options. Help is available:
         - No classification for BLPU
 
         This file will list the filename, the UPRN and the reason to allow for investigation.
+
+
+### Boundary line
+[Boundary line](http://www.ordnancesurvey.co.uk/business-and-government/products/boundary-line.html) is the polygon data set outlining the various administrative boundaries in the UK. This is required to give the correct granular mapping between an address and the area in which it sits.
+
+
+Boundary line comes as shape files. Processing shape files into mongo can be done with [GDAL](http://www.gdal.org/).
+
+        brew install gdal
+        ogr2ogr -f "GeoJSON" ~/unit.json unitary_electoral_division_region.shp unitary_electoral_division_region
+        ogr2ogr -f "GeoJSON" ~/district.json district_borough_unitary_region.shp district_borough_unitary_region
+
+Data sets currently used are:
+
+        unitary_electoral_division_region
+        district_borough_unitary_region
+

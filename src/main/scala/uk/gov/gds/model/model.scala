@@ -17,6 +17,16 @@ import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
 
 
 
+object AllTheCodePoints {
+  import scala.collection.mutable.{Map => MutableMap}
+
+  var codePoints = MutableMap.empty[String,String]
+
+  def add(codePointsToAdd: List[CodePoint]) {
+    codePointsToAdd.map(c => codePoints.put(c.postcode, c.district))
+  }
+}
+
 
 /**
  *  Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to simple model
@@ -378,6 +388,7 @@ case class Address(
                     details: Details
                     ) {
   def serialize = grater[Address].asDBObject(this)
+
 }
 
 case class StreetWithDescription(
