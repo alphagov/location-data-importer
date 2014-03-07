@@ -114,6 +114,8 @@ object Processors extends Logging {
   private def processRows(lines: LongTraversable[String], f: String => Option[AddressBase]) = lines.flatMap(f(_)).toList
 
   private def persistCodePoint(codePoints: List[CodePoint])(implicit mongoConnection: Option[MongoConnection]) {
+    AllTheCodePoints.add(codePoints)
+    println("HOW MANY ???? " + AllTheCodePoints.codePoints.size)
     mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
   }
 
@@ -122,7 +124,11 @@ object Processors extends Logging {
   }
 
   private def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
-    mongoConnection.foreach(_.insertAddresses(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
+    val fileNameAsJson  = fileName.replace(".csv",".json")
+    val s = rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize).map(_.toString)
+    writer(fileNameAsJson).writeStrings(s, ",\n")
+
+    //mongoConnection.foreach(_.insertAddresses(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
   }
 
 }
