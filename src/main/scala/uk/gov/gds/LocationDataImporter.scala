@@ -8,12 +8,18 @@ import java.io.File
 import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
 import org.joda.time.DateTime
 import uk.gov.gds.mongo.MongoConnection
+import org.geotools.referencing.ReferencingFactoryFinder
+import org.geotools.referencing.operation.DefaultCoordinateOperationFactory
+import org.geotools.geometry.GeneralDirectPosition
+import uk.gov.gds.conversions.PointConvertor
 
 object LocationDataImporter extends Logging {
 
   case class Config(dir: String = "", codePoint: String = "", addressOnly: Boolean = false, cleanReport: Boolean = false, username: String = "", password: String = "")
 
   def main(args: Array[String]) {
+
+    PointConvertor.gridReferenceToLatLong(518841.2, 168688.3)
 
     RegisterJodaTimeConversionHelpers()
 

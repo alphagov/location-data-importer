@@ -114,12 +114,14 @@ object Processors extends Logging {
 
   private def persistCodePoint(codePoints: List[CodePoint])(implicit mongoConnection: Option[MongoConnection]) {
     AllTheCodePoints.add(codePoints)
-    println("HOW MANY ???? " + AllTheCodePoints.codePoints.size)
-    mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
+    println("HOW MANY codes ???? " + AllTheCodePoints.codePoints.size)
+   // mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
   }
 
   private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
-    mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
+    AllTheStreets.add(streetDescriptors)
+    println("HOW MANY Streets ???? " + AllTheStreets.allTheStreets.size)
+    //mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
   }
 
   private def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
@@ -127,7 +129,7 @@ object Processors extends Logging {
     val s = rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize).map(_.toString)
     writer(fileNameAsJson).writeStrings(s, ",\n")
 
-    //mongoConnection.foreach(_.insertAddresses(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
+    mongoConnection.foreach(_.insertAddresses(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
   }
 
 }

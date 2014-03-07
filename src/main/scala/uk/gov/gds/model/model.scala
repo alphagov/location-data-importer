@@ -14,22 +14,33 @@ import uk.gov.gds.model.CodeLists.BlpuStateCode.BlpuStateCode
 import uk.gov.gds.model.CodeLists.BlpuStateCode
 import uk.gov.gds.model.CodeLists.StreetStateCode
 import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
-
-
+import uk.gov.gds.conversions.PointConvertor.gridReferenceToLatLong
 
 object AllTheCodePoints {
+
   import scala.collection.mutable.{Map => MutableMap}
 
-  var codePoints = MutableMap.empty[String,String]
+  var codePoints = MutableMap.empty[String, (String, String)]
 
   def add(codePointsToAdd: List[CodePoint]) {
-    codePointsToAdd.map(c => codePoints.put(c.postcode, c.district))
+    codePointsToAdd.map(c => codePoints.put(c.postcode, (c.district, c.country)))
+  }
+}
+
+object AllTheStreets {
+
+  import scala.collection.mutable.{Map => MutableMap}
+
+  var allTheStreets = MutableMap.empty[String, StreetWithDescription]
+
+  def add(streets: List[StreetWithDescription]) {
+    streets.map(s => allTheStreets.put(s.usrn, s))
   }
 }
 
 
 /**
- *  Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to simple model
+ * Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to simple model
  */
 case class AddressBaseWrapper(blpu: BLPU, lpi: LPI, classification: Classification, organisation: Option[Organisation]) {
   lazy val uprn = blpu.uprn
@@ -63,7 +74,7 @@ case class CodePoint(postcode: String, country: String, county: Option[String], 
   def serialize = grater[CodePoint].asDBObject(this)
 }
 
-object CodePoint extends AddressBaseHelpers[CodePoint]{
+object CodePoint extends AddressBaseHelpers[CodePoint] {
   private val postcodeIndex = 0
   private val countryIndex = 12
   private val countyIndex = 15
@@ -82,9 +93,10 @@ object CodePoint extends AddressBaseHelpers[CodePoint]{
 
   override def isValidCsvLine(csvLine: List[String]) = csvLine.size == requiredCsvColumns && !isMissingAMandatoryField(csvLine)
 
-  val recordIdentifier = "" // not relevant for these rows
+  val recordIdentifier = ""
+  // not relevant for these rows
   val requiredCsvColumns = 19
-  val mandatoryCsvColumns = List(postcodeIndex,countryIndex,wardIndex,districtIndex)
+  val mandatoryCsvColumns = List(postcodeIndex, countryIndex, wardIndex, districtIndex)
 }
 
 /* Basic Land and Property Unit */
@@ -92,8 +104,8 @@ case class BLPU(
                  uprn: String,
                  blpuState: Option[BlpuStateCode],
                  logicalState: Option[LogicalStatusCode],
-                 xCoordinate: Double,
-                 yCoordinate: Double,
+                 easting: Double,
+                 northing: Double,
                  localCustodianCode: String,
                  startDate: DateTime,
                  endDate: Option[DateTime],
@@ -106,14 +118,16 @@ case class BLPU(
 }
 
 object BLPU extends AddressBaseHelpers[BLPU] {
+
+
   val recordIdentifier = "21"
   val requiredCsvColumns = 19
 
   private val uprnIndex = 3
   private val logicalStateIndex = 4
   private val blpuStateIndex = 5
-  private val xCoordinateIndex = 8
-  private val yCoordinateIndex = 9
+  private val eastingIndex = 8
+  private val northingIndex = 9
   private val localCustodianCodeIndex = 11
   private val startDateIndex = 12
   private val endDateIndex = 13
@@ -122,12 +136,15 @@ object BLPU extends AddressBaseHelpers[BLPU] {
   private val postcodeIndex = 17
 
   def fromCsvLine(csvLine: List[String]) = {
+
+    val latLong = gridReferenceToLatLong(csvLine(eastingIndex), csvLine(northingIndex))
+
     BLPU(
       csvLine(uprnIndex),
       BlpuStateCode.forId(csvLine(blpuStateIndex)),
       LogicalStatusCode.forId(csvLine(logicalStateIndex)),
-      csvLine(xCoordinateIndex),
-      csvLine(yCoordinateIndex),
+      latLong.getCoordinate()(0),
+      latLong.getCoordinate()(1),
       csvLine(localCustodianCodeIndex),
       csvLine(startDateIndex),
       csvLine(endDateIndex),
@@ -137,7 +154,7 @@ object BLPU extends AddressBaseHelpers[BLPU] {
     )
   }
 
-  val mandatoryCsvColumns = List(uprnIndex, logicalStateIndex, xCoordinateIndex, yCoordinateIndex, localCustodianCodeIndex, startDateIndex, updatedDateIndex, postcodeIndex)
+  val mandatoryCsvColumns = List(uprnIndex, logicalStateIndex, eastingIndex, northingIndex, localCustodianCodeIndex, startDateIndex, updatedDateIndex, postcodeIndex)
 }
 
 /* Land and Property Identitifier */
@@ -353,8 +370,8 @@ object Classification extends AddressBaseHelpers[Classification] {
 case class Location(x: Double, y: Double)
 
 case class Details(
-                    blpuCreatedAt: DateTime,
-                    blpuUpdatedAt: DateTime,
+                    blpuCreatedAt: Long,
+                    blpuUpdatedAt: Long,
                     classification: String,
                     status: Option[String] = None,
                     state: Option[String] = None,

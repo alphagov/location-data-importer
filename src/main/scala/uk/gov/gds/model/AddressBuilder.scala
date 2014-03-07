@@ -12,12 +12,14 @@ object AddressBuilder extends Logging {
   import formatters._
 
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection], fileName: String) = {
-    val streetDescriptor: Option[StreetWithDescription] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
-
+    // val streetDescriptor: Option[StreetWithDescription] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
+    val streetDescriptor = AllTheStreets.allTheStreets.get(addressWrapper.lpi.usrn)
 
     streetDescriptor match {
       case Some(street) => {
-        val codePoint: Option[CodePoint] = mongo.flatMap(_.codePointForPostcode(addressWrapper.blpu.postcode))
+        // val codePoint: Option[CodePoint] = mongo.flatMap(_.codePointForPostcode(addressWrapper.blpu.postcode))
+
+        val codePoint = AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""))
 
         codePoint match {
           case Some(code) =>
@@ -27,8 +29,8 @@ object AddressBuilder extends Logging {
             Some(Address(
               houseName = toSentenceCase(addressWrapper.lpi.paoText),
               houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
-              gssCode = code.district,
-              countryCode = code.country,
+              gssCode = code._1,
+              countryCode = code._2,
               postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
               presentation = p,
               location = location(addressWrapper.blpu),
@@ -52,8 +54,8 @@ object AddressBuilder extends Logging {
     Model class builders
    */
   def details(addressWrapper: AddressBaseWrapper, filename: String) = Details(
-    blpuCreatedAt = addressWrapper.blpu.startDate,
-    blpuUpdatedAt = addressWrapper.blpu.lastUpdated,
+    blpuCreatedAt = addressWrapper.blpu.startDate.getMillis,
+    blpuUpdatedAt = addressWrapper.blpu.lastUpdated.getMillis,
     classification = addressWrapper.classification.classificationCode,
     status = addressWrapper.blpu.blpuState.map(pp => pp.toString),
     state = addressWrapper.blpu.logicalState.map(pp => pp.toString),
@@ -65,7 +67,7 @@ object AddressBuilder extends Logging {
     organisation = toSentenceCase(addressWrapper.organisation.map(org => org.organistation))
   )
 
-  def location(blpu: BLPU) = Location(blpu.xCoordinate, blpu.yCoordinate)
+  def location(blpu: BLPU) = Location(blpu.easting, blpu.northing)
 
   def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription) = {
     Presentation(
