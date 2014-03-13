@@ -1,10 +1,9 @@
 package uk.gov.gds.model
 
-import uk.gov.gds.logging.Logging
+import uk.gov.gds.logging._
 import uk.gov.gds.logging.Reporter.report
-import uk.gov.gds.logging.NoStreetForBlpuError
-import uk.gov.gds.logging.NoCodePointForPostcode
 import uk.gov.gds.mongo.MongoConnection
+import scala.Some
 
 
 object AddressBuilder extends Logging {
@@ -12,30 +11,40 @@ object AddressBuilder extends Logging {
   import formatters._
 
   def geographicAddressToSimpleAddress(addressWrapper: AddressBaseWrapper)(implicit mongo: Option[MongoConnection], fileName: String) = {
-    // val streetDescriptor: Option[StreetWithDescription] = mongo.flatMap(_.streetForUsrn(addressWrapper.lpi.usrn))
     val streetDescriptor = AllTheStreets.allTheStreets.get(addressWrapper.lpi.usrn)
 
     streetDescriptor match {
       case Some(street) => {
-        // val codePoint: Option[CodePoint] = mongo.flatMap(_.codePointForPostcode(addressWrapper.blpu.postcode))
 
         val codePoint = AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""))
 
         codePoint match {
-          case Some(code) =>
+          case Some(code) => {
+            // query LA code against lat long
+            val boundaryLine = mongo.flatMap(_.boundaryLineForGssCode(codePoint.get._1, addressWrapper.blpu.northing, addressWrapper.blpu.easting))
 
-            val p = presentation(addressWrapper.blpu, addressWrapper.lpi, street)
+            // This code point object has the correct LA
+            if (boundaryLine.isDefined) {
+              address(addressWrapper, code._2, code._1, street, fileName)
+            } else {
+              report(fileName, IncorrectGssCodeFromCodePoint, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1))
+              val boundaryLine = mongo.flatMap(_.boundaryLineForLatLong(addressWrapper.blpu.northing, addressWrapper.blpu.easting))
 
-            Some(Address(
-              houseName = toSentenceCase(addressWrapper.lpi.paoText),
-              houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
-              gssCode = code._1,
-              countryCode = code._2,
-              postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
-              presentation = p,
-              location = location(addressWrapper.blpu),
-              details = details(addressWrapper, fileName)
-            ))
+              boundaryLine match {
+                // Found an LA by geo, use this LA code
+                case Some(bl) => {
+                  report(fileName, FoundGssCodeFromBoundaryLine, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1, bl.properties.CODE, addressWrapper.blpu.northing.toString, addressWrapper.blpu.easting.toString))
+                  address(addressWrapper, code._2, bl.properties.CODE, street, fileName)
+                }
+                // No LA found at all
+                case _ => {
+                  report(fileName, NoGssCodeFromBoundaryLine, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1, addressWrapper.blpu.northing.toString, addressWrapper.blpu.easting.toString))
+                  None
+                }
+              }
+            }
+
+          }
           case _ => {
             report(fileName, NoCodePointForPostcode, List(addressWrapper.uprn, addressWrapper.blpu.postcode))
             None
@@ -48,6 +57,19 @@ object AddressBuilder extends Logging {
       }
 
     }
+  }
+
+  def address(addressWrapper: AddressBaseWrapper, country: String, gssCode: String, street: StreetWithDescription, fileName: String) = {
+    Some(Address(
+      houseName = toSentenceCase(addressWrapper.lpi.paoText),
+      houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
+      gssCode = gssCode,
+      countryCode = country,
+      postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
+      presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
+      location = location(addressWrapper.blpu),
+      details = details(addressWrapper, fileName)
+    ))
   }
 
   /*

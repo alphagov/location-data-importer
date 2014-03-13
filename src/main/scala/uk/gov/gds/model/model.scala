@@ -422,3 +422,12 @@ case class StreetWithDescription(
                                   ) {
   def serialize = grater[StreetWithDescription].asDBObject(this)
 }
+
+case class Properties(NAME: String, CODE: String)
+
+case class BoundaryLine(
+                         properties: Properties
+                         ) {
+  def serialize = grater[BoundaryLine].asDBObject(this)
+}
+

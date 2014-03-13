@@ -10,9 +10,17 @@ sealed abstract class Error(errorType: String) {
 
 object InvalidBlpuError extends Error("invalid-blpu")
 
+object ExpiredBlpuError extends Error("expired-blpu")
+
 object NoStreetForBlpuError extends Error("no-street-for-blpu")
 
 object NoCodePointForPostcode extends Error("no-code-point-for-postcode")
+
+object IncorrectGssCodeFromCodePoint extends Error("incorrect-gsscode-from-codepoint")
+
+object FoundGssCodeFromBoundaryLine extends Error("found-gsscode-from-boundary-line")
+
+object NoGssCodeFromBoundaryLine extends Error("no-gsscode-from-boundary-line")
 
 object RowParseError extends Error("row-parse-error")
 

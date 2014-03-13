@@ -12,7 +12,7 @@ object PointConvertor {
   private val op = new DefaultCoordinateOperationFactory().createOperation(osbgr, egs84crs)
 
   def gridReferenceToLatLong(easting: Double, northing: Double) = {
-    val eastNorth = new GeneralDirectPosition(518841.2, 168688.3)
+    val eastNorth = new GeneralDirectPosition(easting, northing)
     op.getMathTransform().transform(eastNorth, eastNorth)
   }
 

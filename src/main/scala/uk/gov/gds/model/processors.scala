@@ -115,7 +115,7 @@ object Processors extends Logging {
   private def persistCodePoint(codePoints: List[CodePoint])(implicit mongoConnection: Option[MongoConnection]) {
     AllTheCodePoints.add(codePoints)
     println("HOW MANY codes ???? " + AllTheCodePoints.codePoints.size)
-   // mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
+    // mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
   }
 
   private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
@@ -125,11 +125,7 @@ object Processors extends Logging {
   }
 
   private def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
-    val fileNameAsJson  = fileName.replace(".csv",".json")
-    val s = rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize).map(_.toString)
-    writer(fileNameAsJson).writeStrings(s, ",\n")
-
-    mongoConnection.foreach(_.insertAddresses(rows.flatMap(geographicAddressToSimpleAddress(_)).map(_.serialize)))
+    mongoConnection.foreach(_.insertAddresses(rows.flatMap(geographicAddressToSimpleAddress(_)).par.map(_.serialize).toList))
   }
 
 }
@@ -263,8 +259,8 @@ object Builders {
     val classification = mostRecentActiveClassificationForUprn(blpu.uprn, classifications)
     val organisation = mostRecentActiveOrganisationForUprn(blpu.uprn, organisations)
 
-    if (!isValidBLPU(blpu)) {
-      report(fileName, InvalidBlpuError, List(blpu.uprn, blpu.postcode))
+    if (!blpuIsActive(blpu)) {
+      report(fileName, ExpiredBlpuError, List(blpu.uprn, blpu.postcode))
       None
     } else if (lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
       report(fileName, MissingLpiError, List(blpu.uprn, blpu.postcode))
@@ -283,7 +279,7 @@ object Builders {
   /*
    BLPU checker - all BLPUs must NOT have an end date - indicates an active property
   */
-  def isValidBLPU(blpu: BLPU) = !List(!blpu.endDate.isDefined).contains(false)
+  def blpuIsActive(blpu: BLPU) = !blpu.endDate.isDefined
 
 
   /*
