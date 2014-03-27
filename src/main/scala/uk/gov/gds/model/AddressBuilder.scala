@@ -4,6 +4,7 @@ import uk.gov.gds.logging._
 import uk.gov.gds.logging.Reporter.report
 import uk.gov.gds.mongo.MongoConnection
 import scala.Some
+import uk.gov.gds.model.formatters
 
 
 object AddressBuilder extends Logging {
@@ -21,28 +22,28 @@ object AddressBuilder extends Logging {
         codePoint match {
           case Some(code) => {
             // query LA code against lat long
-            val boundaryLine = mongo.flatMap(_.boundaryLineForGssCode(codePoint.get._1, addressWrapper.blpu.northing, addressWrapper.blpu.easting))
-
-            // This code point object has the correct LA
-            if (boundaryLine.isDefined) {
+//            val boundaryLine = mongo.flatMap(_.boundaryLineForGssCode(codePoint.get._1, addressWrapper.blpu.northing, addressWrapper.blpu.easting))
+//
+//            // This code point object has the correct LA
+//            if (boundaryLine.isDefined) {
               address(addressWrapper, code._2, code._1, street, fileName)
-            } else {
-              report(fileName, IncorrectGssCodeFromCodePoint, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1))
-              val boundaryLine = mongo.flatMap(_.boundaryLineForLatLong(addressWrapper.blpu.northing, addressWrapper.blpu.easting))
-
-              boundaryLine match {
-                // Found an LA by geo, use this LA code
-                case Some(bl) => {
-                  report(fileName, FoundGssCodeFromBoundaryLine, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1, bl.properties.CODE, addressWrapper.blpu.northing.toString, addressWrapper.blpu.easting.toString))
-                  address(addressWrapper, code._2, bl.properties.CODE, street, fileName)
-                }
-                // No LA found at all
-                case _ => {
-                  report(fileName, NoGssCodeFromBoundaryLine, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1, addressWrapper.blpu.northing.toString, addressWrapper.blpu.easting.toString))
-                  None
-                }
-              }
-            }
+//            } else {
+//              report(fileName, IncorrectGssCodeFromCodePoint, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1))
+//              val boundaryLine = mongo.flatMap(_.boundaryLineForLatLong(addressWrapper.blpu.northing, addressWrapper.blpu.easting))
+//
+//              boundaryLine match {
+//                // Found an LA by geo, use this LA code
+//                case Some(bl) => {
+//                  report(fileName, FoundGssCodeFromBoundaryLine, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1, bl.properties.CODE, addressWrapper.blpu.northing.toString, addressWrapper.blpu.easting.toString))
+//                  address(addressWrapper, code._2, bl.properties.CODE, street, fileName)
+//                }
+//                // No LA found at all
+//                case _ => {
+//                  report(fileName, NoGssCodeFromBoundaryLine, List(addressWrapper.uprn, addressWrapper.blpu.postcode, code._1, addressWrapper.blpu.northing.toString, addressWrapper.blpu.easting.toString))
+//                  None
+//                }
+//              }
+//            }
 
           }
           case _ => {
@@ -68,13 +69,21 @@ object AddressBuilder extends Logging {
       postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
       presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
       location = location(addressWrapper.blpu),
-      details = details(addressWrapper, fileName)
+      details = details(addressWrapper, fileName),
+      ordering = Some(ordering(addressWrapper))
     ))
   }
 
   /*
     Model class builders
    */
+
+  def ordering(addressWrapper: AddressBaseWrapper) = OrderingHelpers(
+    startHouseNumber = addressWrapper.lpi.paoStartNumber.map(n => Integer.valueOf(n)),
+    endHouseNumber = addressWrapper.lpi.paoEndNumber.map(n => Integer.valueOf(n)),
+    houseName = toSentenceCase(addressWrapper.lpi.paoText)
+  )
+
   def details(addressWrapper: AddressBaseWrapper, filename: String) = Details(
     blpuCreatedAt = addressWrapper.blpu.startDate.getMillis,
     blpuUpdatedAt = addressWrapper.blpu.lastUpdated.getMillis,

@@ -115,13 +115,13 @@ object Processors extends Logging {
   private def persistCodePoint(codePoints: List[CodePoint])(implicit mongoConnection: Option[MongoConnection]) {
     AllTheCodePoints.add(codePoints)
     println("HOW MANY codes ???? " + AllTheCodePoints.codePoints.size)
-    // mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
+    mongoConnection.foreach(_.insertCodePoints(codePoints.map(_.serialize)))
   }
 
   private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription])(implicit mongoConnection: Option[MongoConnection], fileName: String) {
     AllTheStreets.add(streetDescriptors)
     println("HOW MANY Streets ???? " + AllTheStreets.allTheStreets.size)
-    //mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
+    mongoConnection.foreach(_.insertStreets(streetDescriptors.map(_.serialize)))
   }
 
   private def persistAddresses(rows: List[AddressBaseWrapper])(implicit mongoConnection: Option[MongoConnection], fileName: String) {

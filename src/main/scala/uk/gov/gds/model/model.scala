@@ -393,6 +393,12 @@ case class Presentation(
                          uprn: String
                          )
 
+case class OrderingHelpers(
+                     startHouseNumber: Option[Int] = None,
+                     endHouseNumber: Option[Int] = None,
+                     houseName: Option[String] = None
+                     )
+
 case class Address(
                     houseNumber: Option[String],
                     houseName: Option[String],
@@ -402,7 +408,8 @@ case class Address(
                     createdAt: DateTime = new DateTime,
                     presentation: Presentation,
                     location: Location,
-                    details: Details
+                    details: Details,
+                    ordering: Option[OrderingHelpers] = None
                     ) {
   def serialize = grater[Address].asDBObject(this)
 
