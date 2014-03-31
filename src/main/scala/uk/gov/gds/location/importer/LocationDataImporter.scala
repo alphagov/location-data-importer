@@ -49,6 +49,7 @@ object LocationDataImporter extends Logging {
 
     opts.parse(args, Config()) map {
       config => {
+        logStartOfRun()
         val start = new DateTime
 
         val mongoConnection = new MongoConnection
@@ -64,26 +65,30 @@ object LocationDataImporter extends Logging {
          */
         mongoConnection.dropAll()
 
-        val processors = new AddressBaseFileProcessors(mongoConnection)
-        val addressBaseProcessor = new ProcessAddressBaseFiles(processors)
+        /*
+          Create main processors
+         */
+        val addressBaseProcessor = new ProcessAddressBaseFiles(
+          new AddressBaseFileProcessors(mongoConnection)
+        )
 
-        logStartOfRun()
-
-        // Only process streets and code points if required.
+        /*
+          Only process streets and code points if required.
+          */
         if (!config.addressOnly) {
           processCodePoint(config, addressBaseProcessor, mongoConnection)
           processStreets(config, addressBaseProcessor, mongoConnection)
         }
 
         /*
-          Process files a second time, now for address objects
+          Process files for address objects
           This requires the streets and code point files to be in the database already
         */
         processAddresses(config, addressBaseProcessor, mongoConnection)
 
         logEndOfRun()
 
-        logger.info("Finished Processing: " + config.dir + " in " + ((new DateTime).getMillis - start.getMillis) / 1000 / 60 + " minutes")
+        logger.info("Finished Processing in " + ((new DateTime).getMillis - start.getMillis) / 1000 / 60 + " minutes")
       }
     }
   }
@@ -102,45 +107,26 @@ object LocationDataImporter extends Logging {
     /*
       Log result summary
      */
-    resultForAddresses.outcome match {
-      case Success => logger.info("Completed processing: " + resultForAddresses.message)
-      case Failure => {
-        logger.info("Failed processing: " + resultForAddresses.message)
-        sys.exit()
-      }
-      case _ => {
-        logger.info("Failed processing: Unable to generate a result]")
-        sys.exit()
-      }
-    }
+    logResults("addresses", resultForAddresses)
   }
 
   private def processStreets(config: Config, processors: ProcessAddressBaseFiles, mongoConnection: MongoConnection) = {
     /*
-       Process all addressbase files for street data
-      */
+      Process all addressbase files for street data
+    */
     val resultForStreets = processors.processAddressBaseFilesForStreets(config.dir)
-
-    /*
-      Log result summary
-     */
-    resultForStreets.outcome match {
-      case Success => logger.info("Completed processing streets: " + resultForStreets.message)
-      case Failure => {
-        logger.info("Failed processing streets: " + resultForStreets.message)
-        sys.exit()
-      }
-      case _ => {
-        logger.info("Failed processing: Unable to generate a result]")
-        sys.exit()
-      }
-    }
 
     /*
       Add indexes on streets
      */
     logger.info("adding street indexes")
     mongoConnection.addStreetIndexes()
+
+    /*
+     Log result summary
+    */
+    logResults("streets", resultForStreets)
+
   }
 
   private def processCodePoint(config: Config, processors: ProcessAddressBaseFiles, mongoConnection: MongoConnection) = {
@@ -150,26 +136,33 @@ object LocationDataImporter extends Logging {
     val resultForCodePoint = processors.processCodePointFiles(config.codePoint)
 
     /*
-      Log result summary
-    */
-    resultForCodePoint.outcome match {
-      case Success => logger.info("Completed processing codepoint: " + resultForCodePoint.message)
-      case Failure => {
-        logger.info("Failed processing codepoint: " + resultForCodePoint.message)
-        sys.exit()
-      }
-      case _ => {
-        logger.info("Failed processing: Unable to generate a result]")
-        sys.exit()
-      }
-    }
-
-    /*
       Add indexes on codepoints
      */
     logger.info("adding codepoint indexes")
     mongoConnection.addCodePointIndexes()
+
+    /*
+      Log result summary
+    */
+    logResults("codepoint", resultForCodePoint)
   }
 
+  /**
+   * Log the results of the run
+   * @param result
+   */
+  private def logResults(description: String, result: Result) {
+    result.outcome match {
+      case Success => logger.info(String.format("Completed processing %s %s", description, result.message))
+      case Failure => {
+        logger.error(String.format("Failed processing %s %s", description, result.message))
+        sys.exit()
+      }
+      case _ => {
+        logger.error(String.format("Failed processing %s: Unable to generate a result", description))
+        sys.exit()
+      }
+    }
+  }
 
 }

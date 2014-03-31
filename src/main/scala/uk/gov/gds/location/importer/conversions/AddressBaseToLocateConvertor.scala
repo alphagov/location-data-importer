@@ -103,7 +103,9 @@ object AddressBaseToLocateConvertor extends Logging {
     isCommercial = !addressWrapper.classification.isResidential,
     usrn = addressWrapper.lpi.usrn,
     file = filename,
-    organisation = toSentenceCase(addressWrapper.organisation.map(org => org.organistation))
+    organisation = toSentenceCase(addressWrapper.organisation.map(org => org.organistation)),
+    primaryClassification = addressWrapper.classification.primaryUse,
+    secondaryClassification =  addressWrapper.classification.secondaryUse
   )
 
   def location(blpu: BLPU) = Location(blpu.easting, blpu.northing)

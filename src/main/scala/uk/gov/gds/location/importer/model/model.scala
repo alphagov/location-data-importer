@@ -4,6 +4,7 @@ import org.joda.time.DateTime
 import uk.gov.gds.location.importer.model.CodeLists._
 import com.novus.salat._
 import com.novus.salat.global._
+import uk.gov.gds.location.importer.model.ClassificationCodes._
 import uk.gov.gds.location.importer.model.CodeLists.StreetSurfaceCode.StreetSurfaceCode
 import uk.gov.gds.location.importer.model.CodeLists.StreetClassificationCode.StreetClassificationCode
 import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode.StreetRecordTypeCode
@@ -340,7 +341,9 @@ case class Classification(
                            classificationCode: String,
                            startDate: DateTime,
                            endDate: Option[DateTime],
-                           lastUpdated: DateTime
+                           lastUpdated: DateTime,
+                           primaryUse: String,
+                           secondaryUse: Option[String]
                            ) extends AddressBase {
   /*
    * R means residential, but RC means residential parking not dwelling!
@@ -364,8 +367,21 @@ object Classification extends AddressBaseHelpers[Classification] {
     csvLine(classificationCodeIndex),
     csvLine(startDateIndex),
     csvLine(endDateIndex),
-    csvLine(updatedDateIndex)
+    csvLine(updatedDateIndex),
+    primaryCodeFor(csvLine(classificationCodeIndex)).get,
+    secondaryCodeFor(csvLine(classificationCodeIndex))
   )
+
+
+  /**
+   * Must have a valid, mapped primary classification to be valid
+   * @param csvLine
+   * @return
+   */
+  override def isValidCsvLine(csvLine: List[String]) = {
+    super.isValidCsvLine(csvLine) && primaryCodeFor(csvLine(classificationCodeIndex)).isDefined
+  }
+
 
   val mandatoryCsvColumns = List(uprnIndex, classificationCodeIndex, startDateIndex, updatedDateIndex)
 }
@@ -386,7 +402,9 @@ case class Details(
                     isResidential: Boolean,
                     usrn: String,
                     file: String,
-                    organisation: Option[String]
+                    organisation: Option[String],
+                    primaryClassification: String,
+                    secondaryClassification: Option[String]
                     )
 
 case class Presentation(
@@ -400,10 +418,10 @@ case class Presentation(
                          )
 
 case class OrderingHelpers(
-                     startHouseNumber: Option[Int] = None,
-                     endHouseNumber: Option[Int] = None,
-                     houseName: Option[String] = None
-                     )
+                            startHouseNumber: Option[Int] = None,
+                            endHouseNumber: Option[Int] = None,
+                            houseName: Option[String] = None
+                            )
 
 case class Address(
                     houseNumber: Option[String],
