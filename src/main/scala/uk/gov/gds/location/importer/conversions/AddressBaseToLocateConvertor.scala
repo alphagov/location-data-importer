@@ -55,13 +55,13 @@ object AddressBaseToLocateConvertor extends Logging {
 
           }
           case _ => {
-            logger.error(String.format("No codepoint found for address: BLPU %s POSTCODE %s FILENAME %s", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
+            logger.error(String.format("No codepoint found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
             None
           }
         }
       }
       case _ => {
-        logger.error(String.format("No street found for address: BLPU %s POSTCODE %s FILENAME %s", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
+        logger.error(String.format("No street found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
         None
       }
 
@@ -130,10 +130,10 @@ object AddressBaseToLocateConvertor extends Logging {
     val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
 
     if (streets.get(streetDescriptor.usrn).isEmpty) {
-      logger.error(String.format("No street found for USRN: USRN %s", streetDescriptor.usrn, fileName))
+      logger.error(String.format("No street found for USRN [%s]", streetDescriptor.usrn, fileName))
       None
     } else if (!street.isDefined) {
-      logger.error(String.format("No active street found for USRN: USRN %s", streetDescriptor.usrn, fileName))
+      logger.error(String.format("No active street found for USRN [%s]", streetDescriptor.usrn, fileName))
       None
     } else
       street.map(s => StreetWithDescription(
@@ -166,16 +166,16 @@ object AddressBaseToLocateConvertor extends Logging {
     val organisation = mostRecentActiveOrganisationForUprn(blpu.uprn, organisations)
 
     if (!blpuIsActive(blpu)) {
-      logger.error(String.format("BLPU is inactive BLPU %s POSTCODE %s FILENAME %s", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("BLPU is inactive BLPU [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
-      logger.error(String.format("BLPU has no matching LPI %s POSTCODE %s FILENAME %s", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("BLPU has no matching LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (!lpi.isDefined) {
-      logger.error(String.format("BLPU has no matching active LPI %s POSTCODE %s FILENAME %s", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("BLPU has no matching active LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (!classification.isDefined) {
-      logger.error(String.format("BLPU has no classification %s POSTCODE %s FILENAME %s", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("BLPU has no classification UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else {
       Some(AddressBaseWrapper(blpu, lpi.get, classification.get, organisation))

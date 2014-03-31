@@ -24,6 +24,24 @@ class MongoConnection extends Logging {
     db.authenticate(username, password)
   }
 
+  def dropAll() {
+    dropAddresses()
+    dropStreets()
+    dropCodePoint()
+  }
+
+  def dropAddresses() {
+    addresses.drop()
+  }
+
+  def dropCodePoint() {
+    streets.drop()
+  }
+
+  def dropStreets() {
+    codePoints.drop()
+  }
+
   def insertAddresses(things: List[DBObject]) = addresses.insert(things.toArray, WriteConcern.Normal)
 
   def insertStreets(things: List[DBObject]) = streets.insert(things.toArray, WriteConcern.Normal)

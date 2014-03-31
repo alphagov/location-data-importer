@@ -27,7 +27,7 @@ object Extractors extends Logging {
       CodePoint.isValidCsvLine(parsed) match {
         case true => Some(CodePoint.fromCsvLine(parsed))
         case _ => {
-          logger.error(String.format("Invalid codepoint row FILENAME %s DATA %s", file.getName, parsed.mkString("|")))
+          logger.error(String.format("Invalid codepoint row FILENAME [%s] DATA [%s]", file.getName, parsed.mkString("|")))
           None
         }
       }
@@ -96,7 +96,7 @@ object Extractors extends Logging {
    */
   def extractRow[T <: AddressBase](fileName: String, parsedCsvLine: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsedCsvLine)) {
-      logger.error(String.format("Invalid row TYPE %s FILENAME %s DATA %s", fileName, addressBase.getClass.getName, parsedCsvLine.mkString("|")))
+      logger.error(String.format("Invalid row TYPE [%s] FILENAME [%s] DATA [%s]", fileName, addressBase.getClass.getName, parsedCsvLine.mkString("|")))
       throw new Exception("Unable to parse row " + Some(parsedCsvLine.mkString("|")))
     }
     else Some(addressBase.fromCsvLine(parsedCsvLine))

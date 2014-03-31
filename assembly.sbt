@@ -20,7 +20,7 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) {
   }
 }
 
-mainClass in assembly := Some("uk.gov.gds.LocationDataImporter")
+mainClass in assembly := Some("uk.gov.gds.location.importer.LocationDataImporter")
 
 
 

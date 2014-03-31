@@ -16,11 +16,11 @@ object LocationDataImporter extends Logging {
   case class Config(dir: String = "", codePoint: String = "", addressOnly: Boolean = false, username: String = "", password: String = "")
 
   def logStartOfRun() {
-    logger.info("=== Starting Run at " + new DateTime + " ===\n")
+    logger.info("=== Starting Run at " + new DateTime + " ===")
   }
 
   def logEndOfRun() {
-    logger.info("=== Ending Run at " + new DateTime + " ===\n")
+    logger.info("=== Ending Run at " + new DateTime + " ===")
   }
 
   def main(args: Array[String]) {
@@ -58,6 +58,11 @@ object LocationDataImporter extends Logging {
          */
         if (!config.username.isEmpty && !config.password.isEmpty)
           mongoConnection.authenticate(config.username, config.password)
+
+        /*
+          Drops existing collections prior to new run
+         */
+        mongoConnection.dropAll()
 
         val processors = new AddressBaseFileProcessors(mongoConnection)
         val addressBaseProcessor = new ProcessAddressBaseFiles(processors)
@@ -98,9 +103,9 @@ object LocationDataImporter extends Logging {
       Log result summary
      */
     resultForAddresses.outcome match {
-      case Success => logger.info("Completed processing: \n" + resultForAddresses.message)
+      case Success => logger.info("Completed processing: " + resultForAddresses.message)
       case Failure => {
-        logger.info("Failed processing: \n" + resultForAddresses.message)
+        logger.info("Failed processing: " + resultForAddresses.message)
         sys.exit()
       }
       case _ => {
@@ -120,9 +125,9 @@ object LocationDataImporter extends Logging {
       Log result summary
      */
     resultForStreets.outcome match {
-      case Success => logger.info("Completed processing streets: \n" + resultForStreets.message)
+      case Success => logger.info("Completed processing streets: " + resultForStreets.message)
       case Failure => {
-        logger.info("Failed processing streets: \n" + resultForStreets.message)
+        logger.info("Failed processing streets: " + resultForStreets.message)
         sys.exit()
       }
       case _ => {
@@ -148,9 +153,9 @@ object LocationDataImporter extends Logging {
       Log result summary
     */
     resultForCodePoint.outcome match {
-      case Success => logger.info("Completed processing codepoint: \n" + resultForCodePoint.message)
+      case Success => logger.info("Completed processing codepoint: " + resultForCodePoint.message)
       case Failure => {
-        logger.info("Failed processing codepoint: \n" + resultForCodePoint.message)
+        logger.info("Failed processing codepoint: " + resultForCodePoint.message)
         sys.exit()
       }
       case _ => {

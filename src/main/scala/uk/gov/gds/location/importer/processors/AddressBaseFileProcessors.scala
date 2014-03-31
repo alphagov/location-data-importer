@@ -33,11 +33,11 @@ class AddressBaseFileProcessors(mongoConnection: MongoConnection) extends Loggin
 
     try {
       persistCodePoint(processRowsIntoCodePoint(file))
-      logger.info(String.format("Successfully processed %s in %s", file.getName, (new DateTime().getMillis - start.getMillis).toString))
+      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
       case e: Exception => {
-        logger.error(String.format("Failed to process %s in %s", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
+        logger.error(String.format("Failed to process [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
         false
       }
     }
@@ -56,11 +56,11 @@ class AddressBaseFileProcessors(mongoConnection: MongoConnection) extends Loggin
     val start = new DateTime()
     try {
       persistStreetDescriptors(processRowsIntoStreets(file))
-      logger.info(String.format("Successfully processed %s in %s", file.getName, (new DateTime().getMillis - start.getMillis).toString))
+      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
       case e: Exception => {
-        logger.error(String.format("Failed to process %s in %s", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
+        logger.error(String.format("Failed to process [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
         false
       }
     }
@@ -80,11 +80,11 @@ class AddressBaseFileProcessors(mongoConnection: MongoConnection) extends Loggin
     val start = new DateTime()
     try {
       persistAddresses(processRowsIntoAddressWrappers(file), fileName)
-      logger.info(String.format("Successfully processed %s in %s", file.getName, (new DateTime().getMillis - start.getMillis).toString))
+      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
       case e: Exception => {
-        logger.error(String.format("Failed to process %s in %s", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
+        logger.error(String.format("Failed to process [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
         false
       }
     }

@@ -5,13 +5,13 @@
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>/tmp/location-data-importer.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%date{ISO8601} logger=[%logger] message=[%message]</pattern>
+            <pattern>%date{ISO8601} logger=[%logger] message=[%message]\n</pattern>
         </encoder>
     </appender>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%date{ISO8601} logger=[%logger] message=[%message]</pattern>
+            <pattern>%date{ISO8601} logger=[%logger] message=[%message]\n</pattern>
         </encoder>
     </appender>
 
@@ -19,5 +19,7 @@
 
     <root level="INFO">
         <appender-ref ref="FILE"/>
+        <appender-ref ref="CONSOLE"/>
     </root>
+
 </configuration>
