@@ -40,7 +40,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessors) extends Log
       case (file, index) => {
         val toGo = files.size - index
         val done = index
-        print("|" + "*" * done + "-" * toGo)
+        println("|" + "*" * done + "-" * toGo)
         processors.processCodePointFile(file)
       }
     }.toList)
