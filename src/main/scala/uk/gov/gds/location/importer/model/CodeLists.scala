@@ -1,6 +1,8 @@
-package uk.gov.gds.model
+package uk.gov.gds.location.importer.model
 
-
+/**
+ * Representation of various enum style address base data types
+ */
 object CodeLists {
 
   object BlpuStateCode extends Enumeration {
@@ -81,4 +83,5 @@ object CodeLists {
       case _ => None
     }
   }
+
 }

@@ -1,17 +1,17 @@
-package uk.gov.gds.model
+package uk.gov.gds.location.importer.model
 
 import org.specs2.mutable.Specification
-import uk.gov.gds.model.CodeLists._
+import uk.gov.gds.location.importer.model.CodeLists._
 import org.joda.time.DateTime
 import scala.Some
 import org.specs2.mock.Mockito
 import uk.gov.gds.testutils.ReporterTestUtils._
-import uk.gov.gds.mongo.MongoConnection
+import uk.gov.gds.location.importer.mongo.MongoConnection
+import uk.gov.gds.location.importer.conversions.formatters
 
 class AddressBuilderTests extends Specification with Mockito {
 
-  import AddressBuilder._
-  import uk.gov.gds.model.formatters._
+  import formatters._
 
   val mongoConnection = mock[MongoConnection]
   mongoConnection.streetForUsrn(anyString) returns Some(streetWithDescription)

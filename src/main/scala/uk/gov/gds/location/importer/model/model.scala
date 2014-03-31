@@ -1,21 +1,24 @@
-package uk.gov.gds.model
+package uk.gov.gds.location.importer.model
 
 import org.joda.time.DateTime
-import uk.gov.gds.model.CodeLists._
+import uk.gov.gds.location.importer.model.CodeLists._
 import com.novus.salat._
 import com.novus.salat.global._
-import uk.gov.gds.model.CodeLists.StreetSurfaceCode.StreetSurfaceCode
-import uk.gov.gds.model.CodeLists.StreetClassificationCode.StreetClassificationCode
-import uk.gov.gds.model.CodeLists.StreetRecordTypeCode.StreetRecordTypeCode
-import uk.gov.gds.model.CodeLists.StreetRecordTypeCode
-import uk.gov.gds.model.CodeLists.LogicalStatusCode.LogicalStatusCode
-import uk.gov.gds.model.CodeLists.LogicalStatusCode
-import uk.gov.gds.model.CodeLists.BlpuStateCode.BlpuStateCode
-import uk.gov.gds.model.CodeLists.BlpuStateCode
-import uk.gov.gds.model.CodeLists.StreetStateCode
-import uk.gov.gds.model.CodeLists.StreetStateCode.StreetStateCode
-import uk.gov.gds.conversions.PointConvertor.gridReferenceToLatLong
+import uk.gov.gds.location.importer.model.CodeLists.StreetSurfaceCode.StreetSurfaceCode
+import uk.gov.gds.location.importer.model.CodeLists.StreetClassificationCode.StreetClassificationCode
+import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode.StreetRecordTypeCode
+import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode
+import uk.gov.gds.location.importer.model.CodeLists.LogicalStatusCode.LogicalStatusCode
+import uk.gov.gds.location.importer.model.CodeLists.LogicalStatusCode
+import uk.gov.gds.location.importer.model.CodeLists.BlpuStateCode.BlpuStateCode
+import uk.gov.gds.location.importer.model.CodeLists.BlpuStateCode
+import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode
+import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode.StreetStateCode
+import uk.gov.gds.location.importer.conversions.EastingNorthingToLatLongConvertor.gridReferenceToLatLong
 
+/**
+ * Keeps all code point objects in memory as an optimisation
+ */
 object AllTheCodePoints {
 
   import scala.collection.mutable.{Map => MutableMap}
@@ -27,6 +30,9 @@ object AllTheCodePoints {
   }
 }
 
+/**
+ * Keeps all street objects in memory as an optimisation
+ */
 object AllTheStreets {
 
   import scala.collection.mutable.{Map => MutableMap}
@@ -48,7 +54,7 @@ case class AddressBaseWrapper(blpu: BLPU, lpi: LPI, classification: Classificati
 }
 
 /*
-  These are the models we create from the address base raw data
+  These are the models to capture raw address base data
  */
 
 trait AddressBase
@@ -430,6 +436,9 @@ case class StreetWithDescription(
   def serialize = grater[StreetWithDescription].asDBObject(this)
 }
 
+/**
+ * Boundary line model
+ */
 case class Properties(NAME: String, CODE: String)
 
 case class BoundaryLine(

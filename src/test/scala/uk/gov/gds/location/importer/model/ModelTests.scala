@@ -1,15 +1,15 @@
-package uk.gov.gds.model
+package uk.gov.gds.location.importer.model
 
 import org.specs2.mutable.Specification
 
-import uk.gov.gds.io.parseCsvLine
+import uk.gov.gds.location.importer.io.parseCsvLine
 import org.joda.time.DateTime
-import uk.gov.gds.model.CodeLists.BlpuStateCode._
-import uk.gov.gds.model.CodeLists.LogicalStatusCode._
-import uk.gov.gds.model.CodeLists.StreetClassificationCode._
-import uk.gov.gds.model.CodeLists.StreetRecordTypeCode._
-import uk.gov.gds.model.CodeLists.StreetStateCode._
-import uk.gov.gds.model.CodeLists.StreetSurfaceCode._
+import uk.gov.gds.location.importer.model.CodeLists.BlpuStateCode._
+import uk.gov.gds.location.importer.model.CodeLists.LogicalStatusCode._
+import uk.gov.gds.location.importer.model.CodeLists.StreetClassificationCode._
+import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode._
+import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode._
+import uk.gov.gds.location.importer.model.CodeLists.StreetSurfaceCode._
 
 class ModelTests extends Specification {
 

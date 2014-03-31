@@ -1,15 +1,16 @@
-package uk.gov.gds.model
+package uk.gov.gds.location.importer.model
 
 import org.specs2.mutable.Specification
 import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable}
 import scalax.io.Line.Terminators.NewLine
 import Processors._
+import uk.gov.gds.location.importer.processors.Extractors
 import Extractors._
 import Builders._
 import scala.collection.mutable
-import uk.gov.gds.io._
+import uk.gov.gds.location.importer.io._
 import uk.gov.gds.testutils.ReporterTestUtils._
-import uk.gov.gds.model.CodeLists._
+import uk.gov.gds.location.importer.model.CodeLists._
 import org.joda.time.DateTime
 import java.io.File
 import scala.Some
@@ -53,7 +54,7 @@ class ExtractorsTests extends Specification {
   )
 
   import Extractors._
-  import uk.gov.gds.io.parseCsvLine
+  import uk.gov.gds.location.importer.io.parseCsvLine
 
   "Processers" should {
 
@@ -92,7 +93,7 @@ class ExtractorsTests extends Specification {
   }
 
   "Extractors" should {
-    "extract a BLPU from a parsed line from the address base file" in {
+    "extract a BLPU from a parsedCsvLine line from the address base file" in {
       val validBlpuLine = """21,"I",94755,9059007610,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,2010-04-05,2009-05-22,2005-04-05,"S","DD5 3BX",0"""
       val blpuOption = extractRow[BLPU]("filename", parseCsvLine(validBlpuLine), BLPU)
 
@@ -109,7 +110,7 @@ class ExtractorsTests extends Specification {
       reportLineToTest(filename).get must contain(parseCsvLine(blpuLineWithNoUPRN).mkString("|"))
     }
 
-    "extract a LPI from a parsed line from the address base file" in {
+    "extract a LPI from a parsedCsvLine line from the address base file" in {
       val lpiLine = """24,"I",92423,9059007612,"9059L000069680","ENG",1,2005-04-05,2006-04-01,2005-04-05,2005-04-05,99,"SAO Start Suffix",100,"SAO End Suffix","Sao Text",1,"PAO Start Suffix",2,"PAO End Suffix","PAO Text",7803243,"1","Area 51","level","Y""""
       val lpiOption = extractRow[LPI]("filename", parseCsvLine(lpiLine), LPI)
       lpiOption must not be (None)
@@ -125,7 +126,7 @@ class ExtractorsTests extends Specification {
       reportLineToTest(filename).get must contain(parseCsvLine(lpiLineWithNoUPRN).mkString("|"))
     }
 
-    "extract a Classification from a parsed line from the address base file" in {
+    "extract a Classification from a parsedCsvLine line from the address base file" in {
       val classificationLine = """32,"I",94733,9059004873,"9059C000003726","RD04","AddressBase Premium Classification Scheme",1.0,2010-04-24,,2012-01-13,2010-04-24"""
       val classificationOption = extractRow[Classification]("filename", parseCsvLine(classificationLine), Classification)
       classificationOption must not be (None)
@@ -142,7 +143,7 @@ class ExtractorsTests extends Specification {
       reportLineToTest(filename).get must contain(parseCsvLine(lineWithNoUPRN).mkString("|"))
     }
 
-    "extract a Organisation from a parsed line from the address base file" in {
+    "extract a Organisation from a parsedCsvLine line from the address base file" in {
       val organisationLine = """31,"I",93843,9059000379,"9059O000000619","Department Of Leisure And Culture","",2012-01-23,,2012-01-23,2012-01-23"""
       val organisationOption = extractRow[Organisation]("filename", parseCsvLine(organisationLine), Organisation)
       organisationOption must not be (None)
@@ -158,7 +159,7 @@ class ExtractorsTests extends Specification {
       reportLineToTest(filename).get must contain(parseCsvLine(lineWithNoUPRN).mkString("|"))
     }
 
-    "extract a Street  from a parsed line from the address base file" in {
+    "extract a Street  from a parsedCsvLine line from the address base file" in {
       val streetLine = """11,"I",1,7803555,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999"""
       val streetOption = extractRow[Street]("filename", parseCsvLine(streetLine), Street)
       streetOption must not be (None)
@@ -174,7 +175,7 @@ class ExtractorsTests extends Specification {
       reportLineToTest(filename).get must contain(parseCsvLine(streetLineWithNoUSRN).mkString("|"))
     }
 
-    "extract a Street Descriptor from a parsed line from the address base file" in {
+    "extract a Street Descriptor from a parsedCsvLine line from the address base file" in {
       val streetDescriptorLine = """15,"I",1150,709887,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG""""
       val streetDescriptorOption = extractRow[StreetDescriptor]("filename", parseCsvLine(streetDescriptorLine), StreetDescriptor)
       streetDescriptorOption must not be (None)

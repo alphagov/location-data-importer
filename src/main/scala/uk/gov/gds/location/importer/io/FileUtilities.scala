@@ -1,11 +1,10 @@
-package uk.gov.gds
+package uk.gov.gds.location.importer.io
 
 import java.io.File
 import com.Ostermiller.util.CSVParser
 import scalax.io.{Resource, Codec}
-import uk.gov.gds.logging.Reporter
 
-package object io {
+object FileUtilities {
 
   implicit val code: Codec = Codec("UTF-8")
 
@@ -37,3 +36,4 @@ package object io {
 
   def parseCsvLine(line: String) = CSVParser.parse(line)(0).toList
 }
+

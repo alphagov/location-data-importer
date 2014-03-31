@@ -1,4 +1,4 @@
-package uk.gov.gds.logging
+package uk.gov.gds.location.importer.logging
 
 import org.slf4j.LoggerFactory
 

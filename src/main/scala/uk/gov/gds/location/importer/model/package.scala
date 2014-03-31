@@ -1,8 +1,11 @@
-package uk.gov.gds
+package uk.gov.gds.location.importer
 
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
+/**
+ * Useful implicit conversions for various address base types, doubles, Y/Ns etc
+ */
 package object model {
 
   implicit def stringToDouble(s: String) = java.lang.Double.parseDouble(s)

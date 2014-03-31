@@ -1,10 +1,10 @@
-package uk.gov.gds.conversions
+package uk.gov.gds.location.importer.conversions
 
 import org.geotools.referencing.ReferencingFactoryFinder
 import org.geotools.referencing.operation.DefaultCoordinateOperationFactory
 import org.geotools.geometry.GeneralDirectPosition
 
-object PointConvertor {
+object EastingNorthingToLatLongConvertor {
 
   private val crs = ReferencingFactoryFinder.getCRSAuthorityFactory("EPSG", null)
   private val egs84crs = crs.createCoordinateReferenceSystem("4326")

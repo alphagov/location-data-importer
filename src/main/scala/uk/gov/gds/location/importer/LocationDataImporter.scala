@@ -1,25 +1,29 @@
-package uk.gov.gds
+package uk.gov.gds.location.importer
 
-import scopt.OptionParser
-import uk.gov.gds.io.ProcessAddressBaseFiles
-import uk.gov.gds.logging.{Reporter, Logging}
-import uk.gov.gds.io.{Failure, Success}
-import java.io.File
 import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
+import scopt.OptionParser
 import org.joda.time.DateTime
-import uk.gov.gds.mongo.MongoConnection
-import org.geotools.referencing.ReferencingFactoryFinder
-import org.geotools.referencing.operation.DefaultCoordinateOperationFactory
-import org.geotools.geometry.GeneralDirectPosition
-import uk.gov.gds.conversions.PointConvertor
+import uk.gov.gds.location.importer.io.FileUtilities._
+import uk.gov.gds.location.importer.mongo.MongoConnection
+import uk.gov.gds.location.importer.logging.Logging
+import uk.gov.gds.location.importer.processors.AddressBaseFileProcessors
 
+/**
+ * Main class for data conversions from Ordinance Survey types into Locate style objects
+ */
 object LocationDataImporter extends Logging {
 
-  case class Config(dir: String = "", codePoint: String = "", addressOnly: Boolean = false, cleanReport: Boolean = false, username: String = "", password: String = "")
+  case class Config(dir: String = "", codePoint: String = "", addressOnly: Boolean = false, username: String = "", password: String = "")
+
+  def logStartOfRun() {
+    logger.info("=== Starting Run at " + new DateTime + " ===\n")
+  }
+
+  def logEndOfRun() {
+    logger.info("=== Ending Run at " + new DateTime + " ===\n")
+  }
 
   def main(args: Array[String]) {
-
-    PointConvertor.gridReferenceToLatLong(518841.2, 168688.3)
 
     RegisterJodaTimeConversionHelpers()
 
@@ -31,9 +35,6 @@ object LocationDataImporter extends Logging {
       opt[String]('c', "codepoint") required() text "Location of code point files)" action {
         (file: String, c: Config) => c.copy(codePoint = file)
       }
-      opt[Unit]('r', "removeReport") text "Remove the reports. (Default don't)" action {
-        (_, c: Config) => c.copy(cleanReport = true)
-      }
       opt[Unit]('o', "addressOnly") text "Only do address import stage. (Default process all stages)" action {
         (_, c: Config) => c.copy(addressOnly = true)
       }
@@ -43,7 +44,6 @@ object LocationDataImporter extends Logging {
       opt[String]('u', "username") text "Username for the mongo (default none)" action {
         (p: String, c: Config) => c.copy(username = p)
       }
-      help("help") text "use -a or --address to identify source directory containing address files to parse and -c or --codepoint to select the directory containing the codepoint file to parse"
       version("version") text "0.1"
     }
 
@@ -51,47 +51,48 @@ object LocationDataImporter extends Logging {
       config => {
         val start = new DateTime
 
-        if (config.cleanReport) {
-          new File(Reporter.reportFile).delete()
-          new File(Reporter.processed).delete()
-        }
+        val mongoConnection = new MongoConnection
 
         /*
-          Initialize the mongo connection
+          Authenticate the mongo connection
          */
-        implicit val mongoConnection =
-          if (!config.username.isEmpty && !config.password.isEmpty)
-            Some(new MongoConnection(Some(config.username), Some(config.password)))
-          else Some(new MongoConnection)
+        if (!config.username.isEmpty && !config.password.isEmpty)
+          mongoConnection.authenticate(config.username, config.password)
+
+        val processors = new AddressBaseFileProcessors(mongoConnection)
+        val addressBaseProcessor = new ProcessAddressBaseFiles(processors)
+
+        logStartOfRun()
 
         // Only process streets and code points if required.
         if (!config.addressOnly) {
-          processCodePoint(config)
-          processStreets(config)
+          processCodePoint(config, addressBaseProcessor, mongoConnection)
+          processStreets(config, addressBaseProcessor, mongoConnection)
         }
 
         /*
           Process files a second time, now for address objects
-          This requires the streets and code point files to be in mongo already
+          This requires the streets and code point files to be in the database already
         */
-        processAddresses(config)
+        processAddresses(config, addressBaseProcessor, mongoConnection)
 
-        logger.info("Finshed Processing: " + config.dir + " in " + ((new DateTime).getMillis - start.getMillis) / 1000 / 60 + " minutes")
+        logEndOfRun()
 
+        logger.info("Finished Processing: " + config.dir + " in " + ((new DateTime).getMillis - start.getMillis) / 1000 / 60 + " minutes")
       }
     }
   }
 
 
-  private def processAddresses(config: Config)(implicit mongoConnection: Option[MongoConnection]) = {
+  private def processAddresses(config: Config, processors: ProcessAddressBaseFiles, mongoConnection: MongoConnection) = {
 
-    val resultForAddresses = ProcessAddressBaseFiles.processAddressBaseFilesForAddresses(config.dir)
+    val resultForAddresses = processors.processAddressBaseFilesForAddresses(config.dir)
 
     /*
       Add indexes to address rows
      */
     logger.info("adding indexes")
-    mongoConnection.foreach(_.addIndexes())
+    mongoConnection.addAddressIndexes()
 
     /*
       Log result summary
@@ -109,11 +110,11 @@ object LocationDataImporter extends Logging {
     }
   }
 
-  private def processStreets(config: Config)(implicit mongoConnection: Option[MongoConnection]) = {
+  private def processStreets(config: Config, processors: ProcessAddressBaseFiles, mongoConnection: MongoConnection) = {
     /*
        Process all addressbase files for street data
       */
-    val resultForStreets = ProcessAddressBaseFiles.processAddressBaseFilesForStreets(config.dir)
+    val resultForStreets = processors.processAddressBaseFilesForStreets(config.dir)
 
     /*
       Log result summary
@@ -134,14 +135,14 @@ object LocationDataImporter extends Logging {
       Add indexes on streets
      */
     logger.info("adding street indexes")
-    mongoConnection.foreach(_.addStreetIndexes())
+    mongoConnection.addStreetIndexes()
   }
 
-  private def processCodePoint(config: Config)(implicit mongoConnection: Option[MongoConnection]) = {
+  private def processCodePoint(config: Config, processors: ProcessAddressBaseFiles, mongoConnection: MongoConnection) = {
     /*
        Process Code Points for Local Authority code lookups
       */
-    val resultForCodePoint = ProcessAddressBaseFiles.processCodePointFiles(config.codePoint)
+    val resultForCodePoint = processors.processCodePointFiles(config.codePoint)
 
     /*
       Log result summary
@@ -162,7 +163,8 @@ object LocationDataImporter extends Logging {
       Add indexes on codepoints
      */
     logger.info("adding codepoint indexes")
-    mongoConnection.foreach(_.addCodePointIndexes())
+    mongoConnection.addCodePointIndexes()
   }
+
 
 }

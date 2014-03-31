@@ -1,8 +1,8 @@
 package uk.gov.gds.testutils
 
 
-import uk.gov.gds.io.loadFile
-import uk.gov.gds.logging.Reporter._
+import uk.gov.gds.location.importer.io.loadFile
+import uk.gov.gds.location.importer.logging.Reporter._
 import java.io.File
 import scala.util.Random
 import scala.collection.immutable.List

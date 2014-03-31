@@ -2,7 +2,7 @@
 
 cachedir=~/mongo/download-cache
 mongodir=~/mongo/mongo-workspace/location
-mongoversion=2.2.4
+mongoversion=2.4.7
 
 echo Stopping mongodb
 killall mongos > /dev/null 2>&1

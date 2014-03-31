@@ -1,4 +1,4 @@
-package uk.gov.gds.model
+package uk.gov.gds.location.importer.model
 
 import org.specs2.mutable.Specification
 

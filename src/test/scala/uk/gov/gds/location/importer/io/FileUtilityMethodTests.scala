@@ -1,4 +1,4 @@
-package uk.gov.gds.io
+package uk.gov.gds.location.importer.io
 
 import org.specs2.mutable._
 import java.io.File

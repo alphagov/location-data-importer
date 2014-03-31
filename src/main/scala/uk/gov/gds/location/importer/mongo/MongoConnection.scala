@@ -1,15 +1,15 @@
-package uk.gov.gds.mongo
+package uk.gov.gds.location.importer.mongo
 
 import com.mongodb.casbah.Imports._
-import uk.gov.gds.logging.Logging
+import uk.gov.gds.location.importer.logging.Logging
 import com.novus.salat._
 import com.novus.salat.global._
-import uk.gov.gds.model.{BoundaryLine, CodePoint, StreetWithDescription, StreetDescriptor}
-import uk.gov.gds.model.BoundaryLine
+import uk.gov.gds.location.importer.model.CodePoint
+import uk.gov.gds.location.importer.model.BoundaryLine
 import scala.Some
-import uk.gov.gds.model.StreetWithDescription
+import uk.gov.gds.location.importer.model.StreetWithDescription
 
-class MongoConnection(username: Option[String] = None, password: Option[String] = None) extends Logging {
+class MongoConnection extends Logging {
 
   private val mongoClient = MongoClient()
 
@@ -20,11 +20,9 @@ class MongoConnection(username: Option[String] = None, password: Option[String] 
   private val codePoints = db.getCollection("codePoints")
   private val boundaryLine = db.getCollection("boundaryline")
 
-  private def authenticate() {
-    if (username.isDefined && password.isDefined) db.authenticate(username.get, password.get)
+  def authenticate(username: String, password: String) {
+    db.authenticate(username, password)
   }
-
-  authenticate()
 
   def insertAddresses(things: List[DBObject]) = addresses.insert(things.toArray, WriteConcern.Normal)
 
@@ -77,7 +75,7 @@ class MongoConnection(username: Option[String] = None, password: Option[String] 
     }
   }
 
-  def addIndexes() {
+  def addAddressIndexes() {
     logger.info("indexing geo lookups - needs mongo 2.6")
     //db.getCollection("boundaryline").ensureIndex(DBObject("properties.CODE" -> 1, "geometry.coordinates" -> "2dsphere"))
     logger.info("indexing postcode")

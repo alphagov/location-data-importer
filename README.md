@@ -73,7 +73,7 @@ Mongo:
 
 ### Process:
 
-(1) Code point files parsed and inserted into the Mongo DB. This is done upfront as we make a reference table to query address postcodes against to discover GSS codes.
+(1) Code point files parsedCsvLine and inserted into the Mongo DB. This is done upfront as we make a reference table to query address postcodes against to discover GSS codes.
 
     - Example document:
 
@@ -85,7 +85,7 @@ Mongo:
         "ward" : "S13002483"
     }
 
-(2) Address base files parsed for Streets and inserted into the Mongo DB.
+(2) Address base files parsedCsvLine for Streets and inserted into the Mongo DB.
 
     - The persisted street objects are an join between the Address Base Premimum notions of
         - Street

@@ -1,9 +1,9 @@
-package uk.gov.gds.io
+package uk.gov.gds.location.importer.io
 
 import org.specs2.mutable.Specification
 import java.io.File
 import org.specs2.specification.AfterExample
-import uk.gov.gds.logging.Reporter
+import uk.gov.gds.location.importer.logging.Reporter
 import org.specs2.mock.Mockito
 import uk.gov.gds.testutils.ReporterTestUtils._
 
