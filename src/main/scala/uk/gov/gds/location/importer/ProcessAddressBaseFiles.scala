@@ -34,7 +34,17 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessors) extends Log
     }
 
 
-  private def processForCodePoints(filePath: String) = resultOf("codepoint", directoryContents(filePath).map(processors.processCodePointFile(_)).toList)
+  private def processForCodePoints(filePath: String) = {
+    val files = directoryContents(filePath)
+    resultOf("codepoint", files.zipWithIndex.map {
+      case (file, index) => {
+        val toGo = files.size - index
+        val done = index
+        print("|" + "*" * done + "-" * toGo)
+        processors.processCodePointFile(file)
+      }
+    }.toList)
+  }
 
   private def processForStreets(filePath: String) = resultOf("streets", directoryContents(filePath).map(processors.processAddressBaseForStreets(_)).toList)
 
@@ -55,6 +65,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessors) extends Log
       case _ => Result(Failure, "processed " + pass + ": " + overallResult._1.size + " files successfully and " + overallResult._2.size + " files with errors")
     }
   }
+
   private def filePathHasErrors(filePath: String): Option[Result] = {
     if (!fileExists(filePath)) Some(Result(Failure, "Supplied path does not exist"))
     else if (!isDirectory(filePath)) Some(Result(Failure, "Supplied path is not a directory"))
