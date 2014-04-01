@@ -2,6 +2,7 @@ package uk.gov.gds.location.importer.io
 
 import org.specs2.mutable._
 import java.io.File
+import uk.gov.gds.location.importer.io.FileUtilities._
 
 class FileUtilityMethodTests extends Specification  {
 

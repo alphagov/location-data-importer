@@ -16,6 +16,7 @@ import uk.gov.gds.location.importer.model.CodeLists.BlpuStateCode
 import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode
 import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode.StreetStateCode
 import uk.gov.gds.location.importer.conversions.EastingNorthingToLatLongConvertor.gridReferenceToLatLong
+import uk.gov.gds.location.importer.logging.Logging
 
 /**
  * Keeps all code point objects in memory as an optimisation
@@ -81,7 +82,7 @@ case class CodePoint(postcode: String, country: String, county: Option[String], 
   def serialize = grater[CodePoint].asDBObject(this)
 }
 
-object CodePoint extends AddressBaseHelpers[CodePoint] {
+object CodePoint extends AddressBaseHelpers[CodePoint] with Logging {
   private val postcodeIndex = 0
   private val countryIndex = 12
   private val countyIndex = 15
@@ -98,7 +99,24 @@ object CodePoint extends AddressBaseHelpers[CodePoint] {
     )
   }
 
-  override def isValidCsvLine(csvLine: List[String]) = csvLine.size == requiredCsvColumns && !isMissingAMandatoryField(csvLine)
+  override def isValidCsvLine(csvLine: List[String]) = {
+    if (csvLine.size != requiredCsvColumns) {
+      logger.error(
+        String.format(
+          "Invalid codepoint row length: required [%s] got[%s] row details[%s]", requiredCsvColumns.toString, csvLine.size.toString, csvLine.mkString("|"))
+      )
+      false
+    }
+    else if (isMissingAMandatoryField(csvLine)) {
+      logger.error(
+        String.format(
+          "Invalid codepoint row missing mandatory fields: required columns [%s] row details[%s]", mandatoryCsvColumns, csvLine.mkString("|"))
+      )
+      false
+    }
+    else
+      true
+  }
 
   val recordIdentifier = ""
   // not relevant for these rows
