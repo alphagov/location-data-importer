@@ -129,8 +129,8 @@ case class BLPU(
                  uprn: String,
                  blpuState: Option[BlpuStateCode],
                  logicalState: Option[LogicalStatusCode],
-                 easting: Double,
-                 northing: Double,
+                 lat: Double,
+                 long: Double,
                  localCustodianCode: String,
                  startDate: DateTime,
                  endDate: Option[DateTime],
@@ -168,8 +168,8 @@ object BLPU extends AddressBaseHelpers[BLPU] {
       csvLine(uprnIndex),
       BlpuStateCode.forId(csvLine(blpuStateIndex)),
       LogicalStatusCode.forId(csvLine(logicalStateIndex)),
-      latLong.getCoordinate()(0),
-      latLong.getCoordinate()(1),
+      latLong.lat,
+      latLong.long,
       csvLine(localCustodianCodeIndex),
       csvLine(startDateIndex),
       csvLine(endDateIndex),
@@ -367,7 +367,7 @@ case class Classification(
    * R means residential, but RC means residential parking not dwelling!
    * Much too simplified and may not belong here
    */
-  def isResidential = classificationCode.startsWith("R") && !classificationCode.startsWith("RC")
+  def isResidential = ClassificationCodes.isResidential(classificationCode)
 }
 
 object Classification extends AddressBaseHelpers[Classification] {

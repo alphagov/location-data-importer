@@ -85,7 +85,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessors) extends Log
     }
   }
 
-  private def asPercent(n: Int, total: Int) = n.toDouble / total.toDouble * 100
+  private def asPercent(n: Int, total: Int) = "%.2f".format(n.toDouble / total.toDouble * 100)
 
   private def filePathHasErrors(filePath: String): Option[Result] = {
     if (!fileExists(filePath)) Some(Result(Failure, "Supplied path does not exist"))

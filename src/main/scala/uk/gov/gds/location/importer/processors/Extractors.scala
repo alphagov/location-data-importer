@@ -3,7 +3,7 @@ package uk.gov.gds.location.importer.processors
 import uk.gov.gds.location.importer.logging.Logging
 import java.io.File
 import uk.gov.gds.location.importer.io.FileUtilities._
-import scalax.io.LongTraversable
+import scalax.io.{LineTraversable, LongTraversable}
 import uk.gov.gds.location.importer.conversions.AddressBaseToLocateConvertor
 import uk.gov.gds.location.importer.model._
 import scala.Some
@@ -20,20 +20,20 @@ object Extractors extends Logging {
    * @param file
    * @return List[CodePoint]
    */
-  def processRowsIntoCodePoint(file: File) = {
+  def processRowsIntoCodePoint(lines: LongTraversable[String], fileName: String) = {
 
     def processRow(line: String) = {
       val parsed = parseCsvLine(line)
       CodePoint.isValidCsvLine(parsed) match {
         case true => Some(CodePoint.fromCsvLine(parsed))
         case _ => {
-          logger.error(String.format("Invalid codepoint row FILENAME [%s] DATA [%s]", file.getName, parsed.mkString("|")))
+          logger.error(String.format("Invalid codepoint row FILENAME [%s] DATA [%s]", fileName, parsed.mkString("|")))
           None
         }
       }
     }
 
-    loadFile(file).lines().flatMap(processRow).toList
+    lines.flatMap(processRow).toList
   }
 
   /**
@@ -41,20 +41,20 @@ object Extractors extends Logging {
    * @param file
    * @return List[StreetWrapper]
    */
-  def processRowsIntoStreets(file: File) = {
+  def processRowsIntoStreets(lines: LongTraversable[String], fileName: String) = {
 
     def processRow(line: String) = {
 
       val parsed = parseCsvLine(line)
       parsed.head match {
-        case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](file.getName, parsed, StreetDescriptor)
-        case Street.recordIdentifier => extractRow[Street](file.getName, parsed, Street)
+        case StreetDescriptor.recordIdentifier => extractRow[StreetDescriptor](fileName, parsed, StreetDescriptor)
+        case Street.recordIdentifier => extractRow[Street](fileName, parsed, Street)
         case _ => None
       }
     }
 
-    val genericRows = processRows(loadFile(file).lines(), processRow)
-    extractStreetWrappers(file.getName, genericRows)
+    val genericRows = processRows(lines, processRow)
+    extractStreetWrappers(fileName, genericRows)
   }
 
   /**
@@ -62,21 +62,21 @@ object Extractors extends Logging {
    * @param file
    * @return List[AddressWrapper]
    */
-  def processRowsIntoAddressWrappers(file: File) = {
+  def processRowsIntoAddressWrappers(lines: LongTraversable[String], fileName: String) = {
     def processRow(line: String) = {
       val parsed = parseCsvLine(line)
 
       parsed.head match {
-        case BLPU.recordIdentifier => extractRow[BLPU](file.getName, parsed, BLPU)
-        case LPI.recordIdentifier => extractRow[LPI](file.getName, parsed, LPI)
-        case Classification.recordIdentifier => extractRow[Classification](file.getName, parsed, Classification)
-        case Organisation.recordIdentifier => extractRow[Organisation](file.getName, parsed, Organisation)
+        case BLPU.recordIdentifier => extractRow[BLPU](fileName, parsed, BLPU)
+        case LPI.recordIdentifier => extractRow[LPI](fileName, parsed, LPI)
+        case Classification.recordIdentifier => extractRow[Classification](fileName, parsed, Classification)
+        case Organisation.recordIdentifier => extractRow[Organisation](fileName, parsed, Organisation)
         case _ => None
       }
     }
 
-    val genericRows = processRows(loadFile(file).lines(), processRow)
-    extractAddressBaseWrappers(file.getName, genericRows)
+    val genericRows = processRows(lines, processRow)
+    extractAddressBaseWrappers(fileName, genericRows)
   }
 
   private def processRows(lines: LongTraversable[String], f: String => Option[AddressBase]) = lines.flatMap(f(_)).toList

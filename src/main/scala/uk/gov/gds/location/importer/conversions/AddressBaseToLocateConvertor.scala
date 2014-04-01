@@ -108,7 +108,7 @@ object AddressBaseToLocateConvertor extends Logging {
     secondaryClassification =  addressWrapper.classification.secondaryUse
   )
 
-  def location(blpu: BLPU) = Location(blpu.easting, blpu.northing)
+  def location(blpu: BLPU) = Location(blpu.lat, blpu.long)
 
   def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription) = {
     Presentation(

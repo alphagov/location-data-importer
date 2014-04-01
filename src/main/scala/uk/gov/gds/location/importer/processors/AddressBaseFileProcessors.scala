@@ -9,6 +9,9 @@ import uk.gov.gds.location.importer.conversions.AddressBaseToLocateConvertor
 import AddressBaseToLocateConvertor.toLocateAddress
 import uk.gov.gds.location.importer.model._
 import uk.gov.gds.location.importer.model.StreetWithDescription
+import uk.gov.gds.location.importer.io.FileUtilities._
+import uk.gov.gds.location.importer.model.AddressBaseWrapper
+import uk.gov.gds.location.importer.model.StreetWithDescription
 
 /**
  * Methods in this class take a file and attempt to process it into a locate style object
@@ -32,7 +35,7 @@ class AddressBaseFileProcessors(mongoConnection: MongoConnection) extends Loggin
     val start = new DateTime()
 
     try {
-      persistCodePoint(processRowsIntoCodePoint(file))
+      persistCodePoint(processRowsIntoCodePoint(loadFile(file).lines(), file.getName))
       logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
@@ -55,7 +58,7 @@ class AddressBaseFileProcessors(mongoConnection: MongoConnection) extends Loggin
 
     val start = new DateTime()
     try {
-      persistStreetDescriptors(processRowsIntoStreets(file))
+      persistStreetDescriptors(processRowsIntoStreets(loadFile(file).lines(), file.getName))
       logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
@@ -79,7 +82,7 @@ class AddressBaseFileProcessors(mongoConnection: MongoConnection) extends Loggin
 
     val start = new DateTime()
     try {
-      persistAddresses(processRowsIntoAddressWrappers(file), fileName)
+      persistAddresses(processRowsIntoAddressWrappers(loadFile(file).lines(), file.getName), fileName)
       logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {

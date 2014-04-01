@@ -3,6 +3,13 @@ package uk.gov.gds.location.importer.conversions
 import org.geotools.referencing.ReferencingFactoryFinder
 import org.geotools.referencing.operation.DefaultCoordinateOperationFactory
 import org.geotools.geometry.GeneralDirectPosition
+import org.opengis.geometry.DirectPosition
+
+case class LatLong(lat: Double, long: Double)
+
+object LatLong {
+  def apply(directPosition: DirectPosition):LatLong = LatLong(directPosition.getCoordinate()(0), directPosition.getCoordinate()(1))
+}
 
 object EastingNorthingToLatLongConvertor {
 
@@ -13,8 +20,6 @@ object EastingNorthingToLatLongConvertor {
 
   def gridReferenceToLatLong(easting: Double, northing: Double) = {
     val eastNorth = new GeneralDirectPosition(easting, northing)
-    op.getMathTransform().transform(eastNorth, eastNorth)
+    LatLong(op.getMathTransform().transform(eastNorth, eastNorth))
   }
-
-
 }

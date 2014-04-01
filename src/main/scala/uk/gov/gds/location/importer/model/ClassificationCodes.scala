@@ -2,7 +2,10 @@ package uk.gov.gds.location.importer.model
 
 object ClassificationCodes {
 
-  def primaryCodeFor(classification: String) = primaryCodes.get(classification.substring(0, 1))
+  def primaryCodeFor(classification: String) = {
+    if (classification.length <= 0) None
+    else primaryCodes.get(classification.substring(0, 1))
+  }
 
   def secondaryCodeFor(classification: String) = {
     if (classification.length < 2) None
