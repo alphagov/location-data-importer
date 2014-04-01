@@ -13,9 +13,12 @@ import java.io.File
 import scala.Some
 import Extractors._
 import scalax.io.Line.Terminators._
+import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable}
+import scalax.io.Line.Terminators.NewLine
 
 class ExtractorsTests extends Specification {
 
+  implicit private def listToLineTraversable(list: List[String]) = new LineTraversable(CloseableIterator(list.mkString("\n").toCharArray.iterator), NewLine, false, DefaultResourceContext)
 
   private val validCodePointLines = List(
     """"KT9 2QL",10,"N",9,9,3,6,0,9,0,517267,161318,"E92000001","E19000003","E18000007","","E09000021","E05000405","S"""",
@@ -25,14 +28,11 @@ class ExtractorsTests extends Specification {
 
   "Code point extractor" should {
     "be able to constuct list of CodePoint objects from a list of valid CSV string" in {
-
-      processRowsIntoCodePoint(validCodePointLines, "fileName")
-
+      processRowsIntoCodePoint(validCodePointLines, "fileName").size must beEqualTo(3)
     }
 
   }
 
-  private def listToLineTraversable(list: List[String]) = new LineTraversable(list.iterator, NewLine, false, null)
 
   //  private val validLinesForBLPU = List(
   //    """21,"I",94755,9059007610,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BX",0""",
