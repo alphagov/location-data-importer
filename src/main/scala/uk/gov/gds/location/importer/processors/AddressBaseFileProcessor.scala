@@ -8,21 +8,21 @@ import AddressBaseRowProcessor._
 import uk.gov.gds.location.importer.conversions.AddressBaseToLocateConvertor
 import AddressBaseToLocateConvertor.toLocateAddress
 import uk.gov.gds.location.importer.model._
-import uk.gov.gds.location.importer.model.StreetWithDescription
 import uk.gov.gds.location.importer.io.FileUtilities._
 import uk.gov.gds.location.importer.model.AddressBaseWrapper
 import uk.gov.gds.location.importer.model.StreetWithDescription
 
 /**
- * Methods in this class take a file and attempt to process it into a locate style object
+ * Methods in this class take a file, and pass a line iterator into the row processors
+ * The resultant object Lists are then bulk inserted into Mongo
  * Can process:
- *    (1) Code Point files
- *    (2) AddressBase files for streets
- *    (3) AddressBase files for addresses
+ * (1) Code Point files
+ * (2) AddressBase files for streets
+ * (3) AddressBase files for addresses
  * (2) must be done prior to (3)
  * @param mongoConnection
  */
-class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging  {
+class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging {
 
   /**
    * Process code point files
@@ -35,8 +35,8 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
     val start = new DateTime()
 
     try {
-      persistCodePoint(processRowsIntoCodePoint(loadFile(file).lines(), file.getName))
-      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
+      val rows = persistCodePoint(processRowsIntoCodePoint(loadFile(file).lines(), file.getName))
+      logger.info(String.format("Successfully processed [%s] in [%s] inserted [%s] rows", file.getName, (new DateTime().getMillis - start.getMillis).toString, rows.toString))
       true
     } catch {
       case e: Exception => {
@@ -58,8 +58,8 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
 
     val start = new DateTime()
     try {
-      persistStreetDescriptors(processRowsIntoStreets(loadFile(file).lines(), file.getName))
-      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
+      val rows = persistStreetDescriptors(processRowsIntoStreets(loadFile(file).lines(), file.getName))
+      logger.info(String.format("Successfully processed [%s] in [%s] inserted [%s] rows", file.getName, (new DateTime().getMillis - start.getMillis).toString, rows.toString))
       true
     } catch {
       case e: Exception => {
@@ -82,8 +82,8 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
 
     val start = new DateTime()
     try {
-      persistAddresses(processRowsIntoAddressWrappers(loadFile(file).lines(), file.getName), fileName)
-      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
+      val rows = persistAddresses(processRowsIntoAddressWrappers(loadFile(file).lines(), file.getName), fileName)
+      logger.info(String.format("Successfully processed [%s] in [%s] inserted [%s] rows", file.getName, (new DateTime().getMillis - start.getMillis).toString, rows.toString))
       true
     } catch {
       case e: Exception => {
@@ -98,7 +98,7 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
    * Persists the codePoint objects into mongo
    * @param codePoints List of codePoint objects to bulk insert
    */
-  private def persistCodePoint(codePoints: List[CodePoint]) {
+  private def persistCodePoint(codePoints: List[CodePoint]) = {
     AllTheCodePoints.add(codePoints)
     mongoConnection.insertCodePoints(codePoints.map(_.serialize))
   }
@@ -107,7 +107,7 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
    * Persists the street descriptor objects into mongo
    * @param streetDescriptors List of streetDescriptors objects to bulk insert
    */
-  private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription]) {
+  private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription]) = {
     AllTheStreets.add(streetDescriptors)
     mongoConnection.insertStreets(streetDescriptors.map(_.serialize))
   }
@@ -116,9 +116,8 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
    * Persists the address wrappers into mongo
    * @param addressBaseWrappers List of addressBaseWrappers objects to bulk insert
    */
-  private def persistAddresses(addressBaseWrappers: List[AddressBaseWrapper], filename: String) {
+  private def persistAddresses(addressBaseWrappers: List[AddressBaseWrapper], filename: String) =
     mongoConnection.insertAddresses(addressBaseWrappers.flatMap(toLocateAddress(_, filename)).par.map(_.serialize).toList)
-  }
 
 }
 

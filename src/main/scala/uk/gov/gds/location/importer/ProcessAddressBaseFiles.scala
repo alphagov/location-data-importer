@@ -40,7 +40,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logg
     resultOf("codepoint", files.zipWithIndex.map {
       case (file, index) => {
         val result = processors.processCodePointFile(file)
-        println("CodePoints: " + asPercent(index + 1, files.size) + "% done")
+        println("CodePoints: " + asPercent(index + 1, files.size) + "% done result:" + result)
         result
       }
     }.toList)
@@ -51,7 +51,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logg
     resultOf("streets", files.zipWithIndex.map {
       case (file, index) => {
         val result = processors.processAddressBaseForStreets(file)
-        println("Streets: " + asPercent(index + 1, files.size) + "% done")
+        println("Streets: " + asPercent(index + 1, files.size) + "% done result:" + result)
         result
 
       }
@@ -63,7 +63,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logg
     resultOf("addresses", files.zipWithIndex.map {
       case (file, index) => {
         val result = processors.processAddressBaseForAddresses(file)
-        println("Addresses: " + asPercent(index + 1, files.size) + "% done")
+        println("Addresses: " + asPercent(index + 1, files.size) + "% done result:" + result)
         result
       }
     }.toList)
@@ -74,8 +74,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logg
     /*
       Results partitioned on result type, 1) Success 2) Failure
      */
-    val overallResult = fileResult.partition(result => true)
-
+    val overallResult = fileResult.partition(result => result == true)
     /*
       Partitions used to count success / error rows
      */

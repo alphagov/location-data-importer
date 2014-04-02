@@ -42,11 +42,11 @@ class MongoConnection extends Logging {
     codePoints.drop()
   }
 
-  def insertAddresses(things: List[DBObject]) = addresses.insert(things.toArray, WriteConcern.Normal)
+  def insertAddresses(things: List[DBObject]) = addresses.insert(things.toArray, WriteConcern.Normal).getN
 
-  def insertStreets(things: List[DBObject]) = streets.insert(things.toArray, WriteConcern.Normal)
+  def insertStreets(things: List[DBObject]) = streets.insert(things.toArray, WriteConcern.Normal).getN
 
-  def insertCodePoints(things: List[DBObject]) = codePoints.insert(things.toArray, WriteConcern.Normal)
+  def insertCodePoints(things: List[DBObject]) = codePoints.insert(things.toArray, WriteConcern.Normal).getN
 
   def boundaryLineForGssCode(gssCode: String, x: Double, y: Double) = {
 

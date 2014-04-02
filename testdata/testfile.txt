@@ -1,0 +1,1 @@
+File used in directory checking tests

@@ -389,6 +389,17 @@ class AddressBaseRowProcessorTests extends Specification {
       addressBaseWrapper.organisation.get must beEqualTo(o)
     }
 
+    "create a wrapper object containing linked BLPU, LPI, Classification objects and no Organisation if none available" in {
+      val b = blpu("uprn")
+      val l = lpi("uprn", "usrn")
+      val c = classification("uprn")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map.empty[String, List[Organisation]]).get
+      addressBaseWrapper.blpu must beEqualTo(b)
+      addressBaseWrapper.lpi must beEqualTo(l)
+      addressBaseWrapper.classification must beEqualTo(c)
+      addressBaseWrapper.organisation must beEqualTo(None)
+    }
+
     "return None if BLPU is inactive" in {
       val b = blpu("uprn").copy(endDate = Some(endDate))
       val l = lpi("uprn", "usrn")
@@ -428,6 +439,21 @@ class AddressBaseRowProcessorTests extends Specification {
       val o = organisation("uprn")
       val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l1,l2)), Map("uprn" -> List(c)), Map("uprn" -> List(o))).get
       addressBaseWrapper.lpi must beEqualTo(l1)
+    }
+
+    "return None if no Classification for that UPRN - empty list" in {
+      val b = blpu("uprn")
+      val l = lpi("uprn", "usrn")
+      val o = organisation("uprn")
+      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List.empty[Classification]), Map("uprn" -> List(o))) must beEqualTo(None)
+    }
+
+    "return None if no Classification for that UPRN - no matching uprn key" in {
+      val b = blpu("uprn")
+      val l = lpi("uprn", "usrn")
+      val c = classification("different uprn")
+      val o = organisation("uprn")
+      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("different uprn" -> List(c)), Map("uprn" -> List(o))) must beEqualTo(None)
     }
   }
 

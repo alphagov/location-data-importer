@@ -19,10 +19,10 @@ class FileUtilityMethodTests extends Specification  {
     }
 
     "be able to create a list of all files in a directory" in {
-      directoryContents("testdata/addressbase").size must beEqualTo(5)
+      directoryContents("testdata/addressbase").size must beEqualTo(6)
       directoryContents("testdata/addressbase").map {
         _.getName
-      } must contain("good-and-bad-files", "single-good-file", "multiple-good-files", "single-bad-file", "multiple-bad-files").exactly
+      } must contain("good-and-bad-files", "single-good-file", "multiple-good-files", "single-bad-file", "multiple-bad-files", "good-file").exactly
     }
 
     "be able to filter the list of files in a directory" in {
