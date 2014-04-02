@@ -1,14 +1,9 @@
-package uk.gov.gds.location.importer.model
+package uk.gov.gds.location.importer.conversions
 
 import org.specs2.mutable.Specification
-import uk.gov.gds.location.importer.model.CodeLists._
-import org.joda.time.DateTime
-import scala.Some
 import org.specs2.mock.Mockito
-import uk.gov.gds.location.importer.mongo.MongoConnection
-import uk.gov.gds.location.importer.conversions.formatters
 
-class AddressBuilderTests extends Specification with Mockito {
+class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
 //  import formatters._
 //

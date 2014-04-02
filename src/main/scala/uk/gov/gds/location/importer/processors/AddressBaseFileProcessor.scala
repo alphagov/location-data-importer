@@ -96,6 +96,7 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
 
   /**
    * Persists the codePoint objects into mongo
+   * Also keep code points in memory for faster processing of address conversions
    * @param codePoints List of codePoint objects to bulk insert
    */
   private def persistCodePoint(codePoints: List[CodePoint]) = {
@@ -105,6 +106,7 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
 
   /**
    * Persists the street descriptor objects into mongo
+   * Also keep street in memory for faster processing of address conversions
    * @param streetDescriptors List of streetDescriptors objects to bulk insert
    */
   private def persistStreetDescriptors(streetDescriptors: List[StreetWithDescription]) = {
