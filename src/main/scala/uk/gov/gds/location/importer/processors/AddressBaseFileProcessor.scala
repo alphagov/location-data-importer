@@ -4,7 +4,7 @@ import uk.gov.gds.location.importer.logging._
 import java.io.File
 import org.joda.time.DateTime
 import uk.gov.gds.location.importer.mongo.MongoConnection
-import Extractors._
+import AddressBaseRowProcessor._
 import uk.gov.gds.location.importer.conversions.AddressBaseToLocateConvertor
 import AddressBaseToLocateConvertor.toLocateAddress
 import uk.gov.gds.location.importer.model._
@@ -22,7 +22,7 @@ import uk.gov.gds.location.importer.model.StreetWithDescription
  * (2) must be done prior to (3)
  * @param mongoConnection
  */
-class AddressBaseFileProcessors(mongoConnection: MongoConnection) extends Logging  {
+class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging  {
 
   /**
    * Process code point files

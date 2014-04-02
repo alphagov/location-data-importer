@@ -4,14 +4,14 @@ import org.specs2.mutable.Specification
 import java.io.File
 import org.specs2.specification.AfterExample
 import org.specs2.mock.Mockito
-import uk.gov.gds.location.importer.processors.AddressBaseFileProcessors
+import uk.gov.gds.location.importer.processors.AddressBaseFileProcessor
 import uk.gov.gds.location.importer.mongo.MongoConnection
 
 class ProcessAddressBaseFilesTests extends Specification with Mockito {
   //} with AfterExample with Mockito {
 
   val mongoConnection = mock[MongoConnection]
-  val addressBaseFileProcessors = new AddressBaseFileProcessors(mongoConnection)
+  val addressBaseFileProcessors = new AddressBaseFileProcessor(mongoConnection)
 
 //  "The supplied file path" should {
 //    "be checked for existence" in {

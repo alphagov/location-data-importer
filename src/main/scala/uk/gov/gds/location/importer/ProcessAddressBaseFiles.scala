@@ -3,7 +3,7 @@ package uk.gov.gds.location.importer
 import uk.gov.gds.location.importer.logging.Logging
 import uk.gov.gds.location.importer.io.FileUtilities._
 import scala.Some
-import uk.gov.gds.location.importer.processors.AddressBaseFileProcessors
+import uk.gov.gds.location.importer.processors.AddressBaseFileProcessor
 import java.io.File
 
 /**
@@ -14,7 +14,7 @@ import java.io.File
  * (4) For each type return a wrapper object to feed back this collated outcome count
  * @param processors AddressBaseFileProcessors
  */
-class ProcessAddressBaseFiles(processors: AddressBaseFileProcessors) extends Logging {
+class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logging {
 
   def processCodePointFiles(filePath: String): Result =
     filePathHasErrors(filePath) match {

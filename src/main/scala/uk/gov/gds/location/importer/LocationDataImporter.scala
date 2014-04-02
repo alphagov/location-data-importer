@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import uk.gov.gds.location.importer.io.FileUtilities._
 import uk.gov.gds.location.importer.mongo.MongoConnection
 import uk.gov.gds.location.importer.logging.Logging
-import uk.gov.gds.location.importer.processors.AddressBaseFileProcessors
+import uk.gov.gds.location.importer.processors.AddressBaseFileProcessor
 
 /**
  * Main class for data conversions from Ordinance Survey types into Locate style objects
@@ -69,7 +69,7 @@ object LocationDataImporter extends Logging {
           Create main processors
          */
         val addressBaseProcessor = new ProcessAddressBaseFiles(
-          new AddressBaseFileProcessors(mongoConnection)
+          new AddressBaseFileProcessor(mongoConnection)
         )
 
         /*

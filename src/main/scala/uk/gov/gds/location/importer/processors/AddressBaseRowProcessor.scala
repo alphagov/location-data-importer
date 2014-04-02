@@ -3,21 +3,22 @@ package uk.gov.gds.location.importer.processors
 import uk.gov.gds.location.importer.logging.Logging
 import java.io.File
 import uk.gov.gds.location.importer.io.FileUtilities._
-import scalax.io.{LineTraversable, LongTraversable}
+import scalax.io.{LongTraversable, LineTraversable}
 import uk.gov.gds.location.importer.conversions.AddressBaseToLocateConvertor
 import uk.gov.gds.location.importer.model._
 import scala.Some
+import org.joda.time.DateTime
 
 /**
  * Utility methods to convert CSV rows into the model objects required by to create locate style addresses
  */
-object Extractors extends Logging {
+object AddressBaseRowProcessor extends Logging {
 
   import AddressBaseToLocateConvertor._
 
   /**
    * Processes a code point file into a list of CodePoint model objects
-   * @param file
+   * @param LongTraversable[String] iterator of filelines
    * @return List[CodePoint]
    */
   def processRowsIntoCodePoint(lines: LongTraversable[String], fileName: String) = {
@@ -38,7 +39,10 @@ object Extractors extends Logging {
 
   /**
    * Processes an address base file to link all the Streets and StreetDescriptors together into a single, wrapper, object
-   * @param file
+   * Each CSV row is parsed and if relevant an Object of extending AddressBase is created
+   * A list of AddressBase objects is returned from the row processing phase
+   * These are subsequently converted into a rich data object once the whole file is processed
+   * @param LongTraversable[String] iterator of filelines
    * @return List[StreetWrapper]
    */
   def processRowsIntoStreets(lines: LongTraversable[String], fileName: String) = {
@@ -58,8 +62,12 @@ object Extractors extends Logging {
   }
 
   /**
-   * Processes an address base file, linking all the BLPU, LPI, Organisation and classification rows into AddressWrapper objects
-   * @param file
+   * Processes an address base file
+   * Each CSV row is parsed and if relevant an Object of extending AddressBase is created
+   * A list of AddressBase objects is returned from the row processing phase
+   * These are subsequently converted into a rich data object once the whole file is processed
+   * linking all the BLPU, LPI, Organisation and classification rows into AddressWrapper objects
+   * @param LongTraversable[String] iterator of filelines
    * @return List[AddressWrapper]
    */
   def processRowsIntoAddressWrappers(lines: LongTraversable[String], fileName: String) = {
@@ -94,7 +102,7 @@ object Extractors extends Logging {
    * @param addressBase < AddressBaseHelper
    * @return Option[T < AddressBase]
    */
-  def extractRow[T <: AddressBase](fileName: String, parsedCsvLine: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
+  private def extractRow[T <: AddressBase](fileName: String, parsedCsvLine: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsedCsvLine)) {
       logger.error(String.format("Invalid row TYPE [%s] FILENAME [%s] DATA [%s]", fileName, addressBase.getClass.getName, parsedCsvLine.mkString("|")))
       throw new Exception("Unable to parse row " + Some(parsedCsvLine.mkString("|")))
@@ -120,7 +128,7 @@ object Extractors extends Logging {
    * May have an historic record of organisation. Linked by UPRN
    *
    * @param raw List[AddressBase]
-   * @return List[LPI]
+   * @return Map[String,List[LPI]] UPRN to List of LPI
    */
   def extractLpisByUprn(raw: List[AddressBase]) =
     raw flatMap {
@@ -133,7 +141,7 @@ object Extractors extends Logging {
    * May have an historic record of organisation. Linked by UPRN
    *
    * @param raw List[AddressBase]
-   * @return List[Organisation]
+   * @return Map[String,List[Organisation]] UPRN to List of Organisation
    */
   def extractOrganisationsUprn(raw: List[AddressBase]) =
     raw flatMap {
@@ -146,7 +154,7 @@ object Extractors extends Logging {
    * May have an historic record of classification. Linked by UPRN
    *
    * @param raw List[AddressBase]
-   * @return List[Classification]
+   * @return Map[String,List[Classification]] UPRN to List of Classification
    */
   def extractClassificationsByUprn(raw: List[AddressBase]) =
     raw flatMap {
@@ -213,9 +221,111 @@ object Extractors extends Logging {
 
     streetDescriptions.flatMap(
       streetDescription =>
-        toStreetWrapper(fileName, streets, streetDescription)
+        toStreetWithDescription(fileName, streets, streetDescription)
     ).toList
   }
+
+  /*
+   Combine the blpu with the lpi and classification into a wrapper. Error if no classification or LPI.
+   Errors here don't fail the file - files will fail if some row is invalid - however log the failed UPRN
+  */
+  def toAddressBaseWrapper(
+                            fileName: String,
+                            blpu: BLPU,
+                            lpis: Map[String, List[LPI]],
+                            classifications: Map[String, List[Classification]],
+                            organisations: Map[String, List[Organisation]]) = {
+
+    val lpi = mostRecentActiveLPIForUprn(blpu.uprn, lpis)
+    val classification = mostRecentActiveClassificationForUprn(blpu.uprn, classifications)
+    val organisation = mostRecentActiveOrganisationForUprn(blpu.uprn, organisations)
+
+    if (!blpuIsActive(blpu)) {
+      logger.error(String.format("BLPU is inactive BLPU [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      None
+    } else if (lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
+      logger.error(String.format("BLPU has no matching LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      None
+    } else if (!lpi.isDefined) {
+      logger.error(String.format("BLPU has no matching active LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      None
+    } else if (!classification.isDefined) {
+      logger.error(String.format("BLPU has no classification UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      None
+    } else {
+      Some(AddressBaseWrapper(blpu, lpi.get, classification.get, organisation))
+    }
+  }
+
+  /*
+   BLPU checker - all BLPUs must NOT have an end date - indicates an active property
+  */
+  def blpuIsActive(blpu: BLPU) = !blpu.endDate.isDefined
+
+  implicit object LastUpdatedOrdering extends Ordering[DateTime] {
+    def compare(a: DateTime, b: DateTime) = b compareTo a
+  }
+
+  def toStreetWithDescription(fileName: String, streets: Map[String, List[Street]], streetDescriptor: StreetDescriptor) = {
+    val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
+
+    if (streets.get(streetDescriptor.usrn).isEmpty) {
+      logger.error(String.format("No street found for USRN [%s]", streetDescriptor.usrn, fileName))
+      None
+    } else if (!street.isDefined) {
+      logger.error(String.format("No active street found for USRN [%s]", streetDescriptor.usrn, fileName))
+      None
+    } else
+      street.map(s => StreetWithDescription(
+        streetDescriptor.usrn,
+        streetDescriptor.streetDescription,
+        streetDescriptor.localityName,
+        streetDescriptor.townName,
+        streetDescriptor.administrativeArea,
+        s.recordType.map(r => r.toString),
+        s.state.map(r => r.toString),
+        s.surface.map(r => r.toString),
+        s.classification.map(r => r.toString),
+        fileName
+      ))
+  }
+
+
+  /*
+     We want one LPI per BLPU, and there may be several so remove all with an end date, and get the most recently updated
+    */
+  def mostRecentActiveLPIForUprn(uprn: String, lpis: Map[String, List[LPI]]): Option[LPI] =
+    lpis.get(uprn) match {
+      case Some(lpi) => lpi.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case _ => None
+    }
+
+  /*
+     We want one Classification per BLPU, and there may be several so remove all with an end date, and get the most recently updated
+    */
+  def mostRecentActiveClassificationForUprn(uprn: String, classifications: Map[String, List[Classification]]): Option[Classification] =
+    classifications.get(uprn) match {
+      case Some(classification) => classification.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case _ => None
+    }
+
+  /*
+     We want one Organisation per BLPU, and there may be several so remove all with an end date, and get the most recently updated
+    */
+  def mostRecentActiveOrganisationForUprn(uprn: String, organisations: Map[String, List[Organisation]]): Option[Organisation] =
+    organisations.get(uprn) match {
+      case Some(organisation) => organisation.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case _ => None
+    }
+
+  /*
+    We want one Street per USRN, and there may be several so remove all with an end date, and get the most recently updated
+   */
+  def mostRecentActiveStreetForUsrn(usrn: String, streets: Map[String, List[Street]]): Option[Street] =
+    streets.get(usrn) match {
+      case Some(street) => street.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case _ => None
+    }
 }
 
 
