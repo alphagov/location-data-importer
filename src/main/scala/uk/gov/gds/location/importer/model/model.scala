@@ -354,6 +354,34 @@ object Organisation extends AddressBaseHelpers[Organisation] {
   val mandatoryCsvColumns = List(uprnIndex, organisationIndex, startDateIndex, updatedDateIndex)
 }
 
+case class DeliveryPoint(
+                          uprn: String,
+                          postcode: String,
+                          startDate: DateTime,
+                          endDate: Option[DateTime],
+                          lastUpdated: DateTime) extends AddressBase
+
+object DeliveryPoint extends AddressBaseHelpers[DeliveryPoint] {
+  val recordIdentifier = "28"
+  val requiredCsvColumns = 29
+
+  private val uprnIndex = 3
+  private val postcodeIndex = 16
+  private val startDateIndex = 25
+  private val endDateIndex = 26
+  private val updatedDateIndex = 27
+
+  val mandatoryCsvColumns = List(uprnIndex, postcodeIndex, startDateIndex, updatedDateIndex)
+
+  def fromCsvLine(csvLine: List[String]) = DeliveryPoint(
+    csvLine(uprnIndex),
+    csvLine(postcodeIndex),
+    csvLine(startDateIndex),
+    csvLine(endDateIndex),
+    csvLine(updatedDateIndex)
+  )
+}
+
 case class Classification(
                            uprn: String,
                            classificationCode: String,
@@ -368,6 +396,8 @@ case class Classification(
    * Much too simplified and may not belong here
    */
   def isResidential = ClassificationCodes.isResidential(classificationCode)
+
+  def isCommercial = ClassificationCodes.isCommercial(classificationCode)
 }
 
 object Classification extends AddressBaseHelpers[Classification] {
@@ -410,8 +440,8 @@ object Classification extends AddressBaseHelpers[Classification] {
 case class Location(lat: Double, long: Double)
 
 case class Details(
-                    blpuCreatedAt: Long,
-                    blpuUpdatedAt: Long,
+                    blpuCreatedAt: DateTime,
+                    blpuUpdatedAt: DateTime,
                     classification: String,
                     status: Option[String] = None,
                     state: Option[String] = None,

@@ -2,7 +2,6 @@ package uk.gov.gds.location.importer.conversions
 
 import uk.gov.gds.location.importer.logging._
 import uk.gov.gds.location.importer.model._
-import org.joda.time.DateTime
 import uk.gov.gds.location.importer.model.AddressBaseWrapper
 import uk.gov.gds.location.importer.model.Location
 import scala.Some
@@ -35,20 +34,15 @@ object AddressBaseToLocateConvertor extends Logging {
       case Some(street) => {
         val codePoint = AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""))
         codePoint match {
-          case Some(code) => {
-            address(addressWrapper, code._2, code._1, street, fileName)
-          }
-          case _ => {
+          case Some(code) => address(addressWrapper, code._2, code._1, street, fileName)
+          case _ =>
             logger.error(String.format("No codepoint found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
             None
-          }
         }
       }
-      case _ => {
+      case _ =>
         logger.error(String.format("No street found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
         None
-      }
-
     }
   }
 
@@ -87,21 +81,26 @@ object AddressBaseToLocateConvertor extends Logging {
       street = toSentenceCase(constructStreetAddressFrom(lpi, street)),
       locality = toSentenceCase(street.localityName),
       town = toSentenceCase(street.townName),
-      area = if (street.townName.isDefined && !street.townName.get.equals(street.administrativeArea)) toSentenceCase(Some(street.administrativeArea)) else None,
+      area = constructArea(street),
       postcode = blpu.postcode,
       uprn = blpu.uprn
     )
   }
 
+  def constructArea(street: StreetWithDescription) =
+    toSentenceCase(if (!street.townName.isDefined) street.administrativeArea
+    else if (street.townName.isDefined && street.townName.get.equals(street.administrativeArea)) None
+    else street.administrativeArea)
+
   def details(addressWrapper: AddressBaseWrapper, filename: String) = Details(
-    blpuCreatedAt = addressWrapper.blpu.startDate.getMillis,
-    blpuUpdatedAt = addressWrapper.blpu.lastUpdated.getMillis,
+    blpuCreatedAt = addressWrapper.blpu.startDate,
+    blpuUpdatedAt = addressWrapper.blpu.lastUpdated,
     classification = addressWrapper.classification.classificationCode,
     status = addressWrapper.blpu.blpuState.map(pp => pp.toString),
     state = addressWrapper.blpu.logicalState.map(pp => pp.toString),
     isPostalAddress = addressWrapper.blpu.canReceivePost,
     isResidential = addressWrapper.classification.isResidential,
-    isCommercial = !addressWrapper.classification.isResidential,
+    isCommercial = addressWrapper.classification.isCommercial,
     usrn = addressWrapper.lpi.usrn,
     file = filename,
     organisation = toSentenceCase(addressWrapper.organisation.map(org => org.organistation)),
@@ -112,12 +111,17 @@ object AddressBaseToLocateConvertor extends Logging {
 }
 
 /**
- * Various utilities for string / field conversions
+ * Various utilities for string / field conversions / creations
  */
 object formatters {
 
   def constructPropertyFrom(lpi: LPI) = {
-    val formatted = List(formatStartAndEndNumbersAndSuffixes(lpi.saoStartNumber, lpi.saoStartSuffix, lpi.saoEndNumber, lpi.saoEndSuffix), lpi.saoText, lpi.paoText).flatten.mkString(" ")
+    val formatted = (
+      toSentenceCase(lpi.saoText).toList ++
+        formatStartAndEndNumbersAndSuffixes(lpi.saoStartNumber, lpi.saoStartSuffix, lpi.saoEndNumber, lpi.saoEndSuffix).toList ++
+        toSentenceCase(lpi.paoText).toList
+      ).mkString(" ")
+
     if (formatted.isEmpty) None
     else Some(formatted)
   }

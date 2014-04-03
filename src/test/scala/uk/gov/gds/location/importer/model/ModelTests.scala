@@ -419,6 +419,55 @@ class ModelTests extends Specification {
     }
   }
 
+  "DeliveryPoint" should {
+
+    "be able to identify a valid line" in {
+      val validLine = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(validLine)) must beTrue
+    }
+
+    "be able to identify an invalid line due to wrong type" in {
+      val wrongRecordIdentifier = """8,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
+    }
+
+    "be able to identify an invalid line due to wrong number of columns" in {
+      val wrongNumberOfColumns = """28,"I",100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to identify an invalid line due to missing mandatory column" in {
+      val invalidLine = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES",,"S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
+    "be able to be constructed from a fully populated csv line" in {
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,2014-01-01,2010-09-14,2010-09-14"""
+      deliveryPoint(line).uprn must beEqualTo("100021769440")
+      deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
+      deliveryPoint(line).endDate.get must beEqualTo(new DateTime(2014, 1, 1, 0, 0))
+      deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
+    }
+
+    "be able to be constructed from a mimum populated csv line" in {
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      deliveryPoint(line).uprn must beEqualTo("100021769440")
+      deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
+      deliveryPoint(line).endDate.isDefined must beFalse
+      deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
+    }
+
+    "be able to be made into correct type" in {
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      deliveryPoint(line).isInstanceOf[AddressBase] must beTrue
+      deliveryPoint(line).isInstanceOf[DeliveryPoint] must beTrue
+    }
+  }
+
+  private def deliveryPoint(line: String) = DeliveryPoint.fromCsvLine(parseCsvLine(line))
+  
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))
 
   private def lpi(line: String) = LPI.fromCsvLine(parseCsvLine(line))

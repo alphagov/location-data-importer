@@ -2,6 +2,8 @@ package uk.gov.gds.location.importer.model
 
 object ClassificationCodes {
 
+
+
   def primaryCodeFor(classification: String) = {
     if (classification.length <= 0) None
     else primaryCodes.get(classification.substring(0, 1))
@@ -13,9 +15,11 @@ object ClassificationCodes {
   }
 
   def isResidential(classification: String) =
-    classification.startsWith("RD") || // Dwelling
-      classification.startsWith("RH") || // Multiple Occupance
-      classification.startsWith("RI") // Institute (nursing home etc)
+    classification.toUpperCase.startsWith("RD") || // Dwelling
+      classification.toUpperCase.startsWith("RH") || // Multiple Occupance
+      classification.toUpperCase.startsWith("RI") // Institute (nursing home etc)
+
+  def isCommercial(classification: String) = classification.toUpperCase.startsWith("C")
 
   private val primaryCodes: Map[String, String] = Map(
     "C" -> "Commercial",

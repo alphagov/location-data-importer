@@ -18,6 +18,11 @@ class ClassificationCodesTest extends Specification {
       isResidential("A Anything after ignored") must beFalse
     }
 
+    "indicate if classification is residential" in {
+      isCommercial("C any thing after ignored") must beTrue
+      isCommercial("A any thing after ignored") must beFalse
+    }
+
     "return correct primary code based on 1st letter of classification" in {
       primaryCodeFor("C Anything after ignored") must beEqualTo(Some("Commercial"))
       primaryCodeFor("L Anything after ignored") must beEqualTo(Some("Land"))
