@@ -4,6 +4,8 @@ import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import uk.gov.gds.location.importer.processors.AddressBaseFileProcessor
 import uk.gov.gds.location.importer.io.FileUtilities._
+import uk.gov.gds.location.importer.io.FileUtilities
+import java.io.File
 
 class ProcessAddressBaseFilesTests extends Specification with Mockito {
 
@@ -33,12 +35,14 @@ class ProcessAddressBaseFilesTests extends Specification with Mockito {
     }
 
     "be checked to be a directory with files" in {
+      new File("testdata/emptydirectoryusedintesting").mkdir()
       processAddressBaseFiles.processCodePointFiles("testdata/emptydirectoryusedintesting").outcome must beEqualTo(Failure)
       processAddressBaseFiles.processCodePointFiles("testdata/emptydirectoryusedintesting").message must beEqualTo("testdata/emptydirectoryusedintesting contains no files")
       processAddressBaseFiles.processAddressBaseFilesForStreets("testdata/emptydirectoryusedintesting").outcome must beEqualTo(Failure)
       processAddressBaseFiles.processAddressBaseFilesForStreets("testdata/emptydirectoryusedintesting").message must beEqualTo("testdata/emptydirectoryusedintesting contains no files")
       processAddressBaseFiles.processAddressBaseFilesForAddresses("testdata/emptydirectoryusedintesting").outcome must beEqualTo(Failure)
       processAddressBaseFiles.processAddressBaseFilesForAddresses("testdata/emptydirectoryusedintesting").message must beEqualTo("testdata/emptydirectoryusedintesting contains no files")
+      new File("testdata/emptydirectoryusedintesting").delete() must beEqualTo(true)
     }
 
     "be checked to be a directory with no non csv files" in {
