@@ -407,7 +407,7 @@ object Classification extends AddressBaseHelpers[Classification] {
 /*
   These case classes are the model we translate too and persist
  */
-case class Location(x: Double, y: Double)
+case class Location(lat: Double, long: Double)
 
 case class Details(
                     blpuCreatedAt: Long,
@@ -436,9 +436,12 @@ case class Presentation(
                          )
 
 case class OrderingHelpers(
-                            startHouseNumber: Option[Int] = None,
-                            endHouseNumber: Option[Int] = None,
-                            houseName: Option[String] = None
+                            saoStartNumber: Option[Int] = None,
+                            saoEndNumber: Option[Int] = None,
+                            paoStartNumber: Option[Int] = None,
+                            paoEndNumber: Option[Int] = None,
+                            paoText: Option[String] = None,
+                            saoText: Option[String] = None
                             )
 
 case class Address(

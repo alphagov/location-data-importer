@@ -40,6 +40,22 @@ class CodeListsTests extends Specification {
     "generate None if no id matches" in {
       StreetRecordTypeCode.forId("99") should beEqualTo(None)
     }
+
+    "correctly identify an unoffical street" in {
+      StreetRecordTypeCode.isUnofficialStreet("unofficialStreetDescription") must beTrue
+      StreetRecordTypeCode.isUnofficialStreet("descriptionForLLPG") must beTrue
+      StreetRecordTypeCode.isUnofficialStreet("numberedStreet") must beFalse
+      StreetRecordTypeCode.isUnofficialStreet("streetDescription") must beFalse
+      StreetRecordTypeCode.isUnofficialStreet("officiallyDesignated") must beFalse
+    }
+
+    "correctly identify an street description" in {
+      StreetRecordTypeCode.isDescription("unofficialStreetDescription") must beFalse
+      StreetRecordTypeCode.isDescription("descriptionForLLPG") must beFalse
+      StreetRecordTypeCode.isDescription("numberedStreet") must beFalse
+      StreetRecordTypeCode.isDescription("streetDescription") must beTrue
+      StreetRecordTypeCode.isDescription("officiallyDesignated") must beFalse
+    }
   }
 
   "Logical State Code lists" should {

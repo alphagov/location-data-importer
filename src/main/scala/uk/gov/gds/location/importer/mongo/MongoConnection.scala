@@ -49,9 +49,7 @@ class MongoConnection extends Logging {
   def insertCodePoints(things: List[DBObject]) = codePoints.insert(things.toArray, WriteConcern.Normal).getN
 
   def boundaryLineForGssCode(gssCode: String, x: Double, y: Double) = {
-
     val point = MongoDBObject("$geometry" -> MongoDBObject("type" -> "Point", "coordinates" -> GeoCoords(x, y)))
-
     val b = boundaryLine.findOne(DBObject("properties.CODE" -> gssCode, "geometry" -> MongoDBObject("$geoIntersects" -> point)))
 
     if (b == null) {
@@ -61,13 +59,9 @@ class MongoConnection extends Logging {
     }
   }
 
-
   def boundaryLineForLatLong(x: Double, y: Double) = {
-
     val point = MongoDBObject("$geometry" -> MongoDBObject("type" -> "Point", "coordinates" -> GeoCoords(x, y)))
-
     val b = boundaryLine.findOne(DBObject("geometry" -> MongoDBObject("$geoIntersects" -> point)))
-
     if (b == null) {
       None
     } else {

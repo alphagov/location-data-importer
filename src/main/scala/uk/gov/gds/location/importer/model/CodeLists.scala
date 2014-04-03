@@ -44,7 +44,14 @@ object CodeLists {
       case "9" => Some(descriptionForLLPG)
       case _ => None
     }
+
+    def isUnofficialStreet(value: String) =
+      value.equals(this.unofficialStreetDescription.toString) || value.equals(this.descriptionForLLPG.toString)
+
+    def isDescription(value: String) =
+      value.equals(this.streetDescription.toString)
   }
+
 
   object StreetStateCode extends Enumeration {
     type StreetStateCode = Value

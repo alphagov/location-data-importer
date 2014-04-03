@@ -1,7 +1,6 @@
 package uk.gov.gds.location.importer.processors
 
 import org.specs2.mutable.Specification
-import scalax.io.LineTraversable
 import AddressBaseRowProcessor._
 import scalax.io.{CloseableIterator, DefaultResourceContext, LineTraversable}
 import scalax.io.Line.Terminators.NewLine
@@ -9,6 +8,7 @@ import uk.gov.gds.location.importer.model.CodeLists._
 import org.joda.time.DateTime
 import scala.Some
 import uk.gov.gds.location.importer.model._
+import uk.gov.gds.location.importer.helpers.TestHelpers._
 
 class AddressBaseRowProcessorTests extends Specification {
 
@@ -456,56 +456,4 @@ class AddressBaseRowProcessorTests extends Specification {
       toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("different uprn" -> List(c)), Map("uprn" -> List(o))) must beEqualTo(None)
     }
   }
-
-
-  /**
-   * Helpers
-   */
-  private lazy val startDate = new DateTime().minusDays(100)
-  private lazy val lastUpdatedDate = new DateTime().minusDays(50)
-  private lazy val endDate = new DateTime().minusDays(50)
-
-  private def blpu(uprn: String) = BLPU(
-    uprn,
-    Some(BlpuStateCode.inUse),
-    Some(LogicalStatusCode.approved),
-    1.1,
-    2.2,
-    "1234",
-    startDate,
-    None,
-    lastUpdatedDate,
-    "S",
-    "postcode")
-
-
-  private def lpi(uprn: String, usrn: String) = LPI(
-    uprn,
-    usrn,
-    Some(LogicalStatusCode.approved),
-    startDate,
-    None,
-    lastUpdatedDate,
-    Some("pao start number"),
-    Some("pao start suffix"),
-    Some("pao end number"),
-    Some("pao end suffix"),
-    Some("pao text"),
-    Some("sao start number"),
-    Some("sao start suffix"),
-    Some("sao end number"),
-    Some("sao end suffix"),
-    Some("sao text"),
-    Some("area name"),
-    Some(true)
-  )
-
-
-  private def street(usrn: String) = Street(usrn, Some(StreetRecordTypeCode.numberedStreet), Some(StreetStateCode.open), Some(StreetSurfaceCode.mixed), Some(StreetClassificationCode.allVehicles), startDate, None, lastUpdatedDate)
-
-  private def streetDescriptor(usrn: String) = StreetDescriptor(usrn, "description", Some("locality"), Some("town"), "admin area")
-
-  private def classification(uprn: String) = Classification(uprn, "code", startDate, None, lastUpdatedDate, "primaryUse", Some("secondaryUse"))
-
-  private def organisation(uprn: String) = Organisation(uprn, "organisation", startDate, None, lastUpdatedDate)
 }
