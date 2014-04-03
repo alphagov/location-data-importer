@@ -4,13 +4,13 @@ import uk.gov.gds.location.importer.logging._
 import uk.gov.gds.location.importer.model._
 import uk.gov.gds.location.importer.model.AddressBaseWrapper
 import uk.gov.gds.location.importer.model.Location
-import scala.Some
 import uk.gov.gds.location.importer.model.Details
 import uk.gov.gds.location.importer.model.Presentation
 import uk.gov.gds.location.importer.model.OrderingHelpers
 import uk.gov.gds.location.importer.model.StreetWithDescription
 import uk.gov.gds.location.importer.model.Address
 import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode
+import LocalAuthorities._
 
 /**
  * Object to take lists of address base types and convert to our address / street model
@@ -47,17 +47,40 @@ object AddressBaseToLocateConvertor extends Logging {
   }
 
   def address(addressWrapper: AddressBaseWrapper, country: String, gssCode: String, street: StreetWithDescription, fileName: String) = {
+
+    /**
+     * Comparing CodePoint and Custodian Code dervived GSSCodes for information purposes
+     */
+    checkGssCodeWithCustodianCode(addressWrapper.blpu, gssCode, fileName)
+
     Some(Address(
-      houseName = toSentenceCase(addressWrapper.lpi.paoText),
-      houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
       gssCode = gssCode,
       countryCode = country,
-      postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
+      postcode = lowercase(stripAllWhitespace(addressWrapper.blpu.postcode)),
       presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
       ordering = Some(ordering(addressWrapper))
     ))
+  }
+
+  /**
+   * Address base objects have a custodian code, which maps to a GSSCode
+   * Compare the Codepoint derived GSSCode with the Custodian code version
+   * Using custodian code on any variation
+   * @param custodianCode
+   * @param gssCode
+   * @return
+   */
+  def checkGssCodeWithCustodianCode(blpu: BLPU, gssCode: String, fileName: String ) = {
+    localAuthoritiesByCustodianCode.get(blpu.custodianCode) match {
+      case Some(la) if la.gssCode.equalsIgnoreCase(gssCode) => gssCode
+      case Some(la) if !la.gssCode.equalsIgnoreCase(gssCode) => {
+        logger.info("GSSCode and Custodian code mismatch: file [%s] uprn [%s] custodian code[%s], la.gssCode [%s] codepoint.gssCode [%s]".format(fileName, blpu.uprn, custodianCode, la.gssCode, gssCode))
+        la.gssCode
+      }
+      case _ => gssCode
+    }
   }
 
   /*

@@ -26,6 +26,7 @@ class ModelTests extends Specification {
       CodePoint.fromCsvLine(parseCsvLine(validLine)).county must beEqualTo(Some("S12000047"))
       CodePoint.fromCsvLine(parseCsvLine(validLine)).district must beEqualTo("S12000041")
       CodePoint.fromCsvLine(parseCsvLine(validLine)).ward must beEqualTo("S13002509")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).name must beEqualTo("Angus")
     }
 
     "be able to extract a code point from a valid CSV line with minimum valid fields" in {
@@ -40,6 +41,11 @@ class ModelTests extends Specification {
 
     "be able to identify an invalid line with wrong number of columns" in {
       val invalidLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,"S92000003","","S08000013","","S12000041","S13002509","S""""
+      CodePoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
+    "be able to identify an invalid line with unmatched LA" in {
+      val invalidLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,"S92000003","","S08000013","","donesnt exist","S13002509","S""""
       CodePoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
     }
 

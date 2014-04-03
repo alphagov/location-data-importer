@@ -69,5 +69,5 @@ object TestHelpers {
     fileName
   )
 
-  def codePoint = CodePoint("postcode", "country", Some("county"), "district", "ward")
+  def codePoint = CodePoint("postcode", "country", Some("county"), "district", "ward", "name")
 }

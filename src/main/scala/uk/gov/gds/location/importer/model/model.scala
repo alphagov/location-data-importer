@@ -18,6 +18,8 @@ import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode.StreetStateC
 import uk.gov.gds.location.importer.conversions.EastingNorthingToLatLongConvertor.gridReferenceToLatLong
 import uk.gov.gds.location.importer.logging.Logging
 
+import LocalAuthorities._
+
 /**
  * Keeps all code point objects in memory as an optimisation
  */
@@ -78,7 +80,7 @@ trait AddressBaseHelpers[T <: AddressBase] {
 /**
  * Code point model
  */
-case class CodePoint(postcode: String, country: String, county: Option[String], district: String, ward: String) extends AddressBase {
+case class CodePoint(postcode: String, country: String, county: Option[String], district: String, ward: String, name: String) extends AddressBase {
   def serialize = grater[CodePoint].asDBObject(this)
 }
 
@@ -95,12 +97,21 @@ object CodePoint extends AddressBaseHelpers[CodePoint] with Logging {
       csvLine(countryIndex),
       csvLine(countyIndex),
       csvLine(districtIndex),
-      csvLine(wardIndex)
+      csvLine(wardIndex),
+      localAuthoritiesByGssCode(csvLine(districtIndex)).onsName
     )
   }
 
   override def isValidCsvLine(csvLine: List[String]) = {
-    if (csvLine.size != requiredCsvColumns) {
+
+    if(!localAuthoritiesByGssCode.get(csvLine(districtIndex)).isDefined) {
+      logger.error(
+        String.format(
+          "Invalid codepoint row - no matching LA: gssCode [%s]", csvLine(districtIndex))
+      )
+      false
+    }
+    else if (csvLine.size != requiredCsvColumns) {
       logger.error(
         String.format(
           "Invalid codepoint row length: required [%s] got[%s] row details[%s]", requiredCsvColumns.toString, csvLine.size.toString, csvLine.mkString("|"))
@@ -475,8 +486,6 @@ case class OrderingHelpers(
                             )
 
 case class Address(
-                    houseNumber: Option[String],
-                    houseName: Option[String],
                     postcode: String,
                     gssCode: String,
                     countryCode: String,

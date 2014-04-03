@@ -14,6 +14,20 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
   sequential
 
+  "GssCode comparison" should {
+    "be able to compare a custodian code derived gsscode with one from code point" in {
+      checkGssCodeWithCustodianCode(blpu("uprn").copy(localCustodianCode = "9052"), "S12000033", "filename") must beEqualTo("S12000033")
+    }
+
+    "be able to compare a custodian code derived gsscode with one from code point - returning Code point version if no resolved custodian code" in {
+      checkGssCodeWithCustodianCode(blpu("uprn").copy(localCustodianCode = "ferfew"), "S12000033", "filename") must beEqualTo("S12000033")
+    }
+
+    "be able to compare a custodian code derived gsscode with one from code point - returning custodian code version if disagreement" in {
+      checkGssCodeWithCustodianCode(blpu("uprn").copy(localCustodianCode = "9052"), "S1200", "filename") must beEqualTo("S12000034")
+    }
+  }
+
   "Address conversions" should {
 
     "not create an address if no street available for the usrn" in {
