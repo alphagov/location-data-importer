@@ -22,22 +22,17 @@ class ModelTests extends Specification {
     "be able to extract a code point from a valid CSV line" in {
       val validLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","S12000041","S13002509","S""""
       CodePoint.fromCsvLine(parseCsvLine(validLine)).postcode must beEqualTo("dd97ux")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("S92000003")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).county must beEqualTo(Some("S12000047"))
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).district must beEqualTo("S12000041")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).ward must beEqualTo("S13002509")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("Scotland")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).gssCode must beEqualTo("S12000041")
       CodePoint.fromCsvLine(parseCsvLine(validLine)).name must beEqualTo("Angus")
     }
 
     "be able to extract a code point from a valid CSV line with minimum valid fields" in {
       val validLine = """"DD9 7UX",,"",,,,,,,,,,"S92000003","","","","S12000041","S13002509","S""""
       CodePoint.fromCsvLine(parseCsvLine(validLine)).postcode must beEqualTo("dd97ux")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("S92000003")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).county must beEqualTo(None)
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).district must beEqualTo("S12000041")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).ward must beEqualTo("S13002509")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("Scotland")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).gssCode must beEqualTo("S12000041")
     }
-
 
     "be able to identify an invalid line with wrong number of columns" in {
       val invalidLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,"S92000003","","S08000013","","S12000041","S13002509","S""""
@@ -49,17 +44,20 @@ class ModelTests extends Specification {
       CodePoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
     }
 
+    "be able to identify an invalid line with unmatched country" in {
+      val invalidLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,"where?","","S08000013","","S12000041","S13002509","S""""
+      CodePoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
     "be able to identify an invalid line with missing data" in {
 
       val invalidLineNoPostcode = """"",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","S12000041","S13002509","S""""
       val invalidLineNoCountry = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"","","S08000013","S12000047","S12000041","S13002509","S""""
       val invalidLineNoDistrict = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","","S13002509","S""""
-      val invalidLineNoWard = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","S12000041","","S""""
 
       CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoPostcode)) must beFalse
       CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoCountry)) must beFalse
       CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoDistrict)) must beFalse
-      CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoWard)) must beFalse
     }
   }
 

@@ -22,14 +22,14 @@ class AddressBaseFileProcessorTests extends Specification with Mockito {
       addressBaseFileProcessor.processCodePointFile(new File("testdata/codepoint/good-file.csv")) must beTrue
       there were atMostTwo(mongoConnection).insertCodePoints(any)
       AllTheCodePoints.codePoints("dd97yx")._1 must beEqualTo("S12000041")
-      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("S92000003")
+      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("Scotland")
     }
 
     "successfully process a valid file with one bad row" in {
       addressBaseFileProcessor.processCodePointFile(new File("testdata/codepoint/file-with-one-bad-row.csv")) must beTrue
       there were atMostTwo(mongoConnection).insertCodePoints(any)
       AllTheCodePoints.codePoints("dd97yx")._1 must beEqualTo("S12000041")
-      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("S92000003")
+      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("Scotland")
     }
   }
 

@@ -70,13 +70,13 @@ object AddressBaseToLocateConvertor extends Logging {
    * Using custodian code on any variation
    * @param custodianCode
    * @param gssCode
-   * @return
+   * @return  
    */
   def checkGssCodeWithCustodianCode(blpu: BLPU, gssCode: String, fileName: String ) = {
-    localAuthoritiesByCustodianCode.get(blpu.custodianCode) match {
+    localAuthoritiesByCustodianCode.get(blpu.localCustodianCode) match {
       case Some(la) if la.gssCode.equalsIgnoreCase(gssCode) => gssCode
       case Some(la) if !la.gssCode.equalsIgnoreCase(gssCode) => {
-        logger.info("GSSCode and Custodian code mismatch: file [%s] uprn [%s] custodian code[%s], la.gssCode [%s] codepoint.gssCode [%s]".format(fileName, blpu.uprn, custodianCode, la.gssCode, gssCode))
+        logger.info("GSSCode and Custodian code mismatch: file [%s] uprn [%s] custodian code[%s], la.gssCode [%s] codepoint.gssCode [%s]".format(fileName, blpu.uprn, blpu.localCustodianCode, la.gssCode, gssCode))
         la.gssCode
       }
       case _ => gssCode

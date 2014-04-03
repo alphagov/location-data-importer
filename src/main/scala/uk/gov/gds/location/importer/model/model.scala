@@ -17,6 +17,7 @@ import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode
 import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode.StreetStateCode
 import uk.gov.gds.location.importer.conversions.EastingNorthingToLatLongConvertor.gridReferenceToLatLong
 import uk.gov.gds.location.importer.logging.Logging
+import Countries.countries
 
 import LocalAuthorities._
 
@@ -30,7 +31,7 @@ object AllTheCodePoints {
   var codePoints = MutableMap.empty[String, (String, String)]
 
   def add(codePointsToAdd: List[CodePoint]) {
-    codePointsToAdd.map(c => codePoints.put(c.postcode, (c.district, c.country)))
+    codePointsToAdd.map(c => codePoints.put(c.postcode, (c.gssCode, c.country)))
   }
 }
 
@@ -80,34 +81,37 @@ trait AddressBaseHelpers[T <: AddressBase] {
 /**
  * Code point model
  */
-case class CodePoint(postcode: String, country: String, county: Option[String], district: String, ward: String, name: String) extends AddressBase {
+case class CodePoint(postcode: String, country: String, gssCode: String, name: String) extends AddressBase {
   def serialize = grater[CodePoint].asDBObject(this)
 }
 
 object CodePoint extends AddressBaseHelpers[CodePoint] with Logging {
   private val postcodeIndex = 0
   private val countryIndex = 12
-  private val countyIndex = 15
-  private val districtIndex = 16
-  private val wardIndex = 17
+  private val gssCodeIndex = 16
 
   def fromCsvLine(csvLine: List[String]) = {
     CodePoint(
       csvLine(postcodeIndex).toLowerCase.replaceAll(" ", ""),
-      csvLine(countryIndex),
-      csvLine(countyIndex),
-      csvLine(districtIndex),
-      csvLine(wardIndex),
-      localAuthoritiesByGssCode(csvLine(districtIndex)).onsName
+      countries(csvLine(countryIndex)),
+      csvLine(gssCodeIndex),
+      localAuthoritiesByGssCode(csvLine(gssCodeIndex)).onsName
     )
   }
 
   override def isValidCsvLine(csvLine: List[String]) = {
 
-    if(!localAuthoritiesByGssCode.get(csvLine(districtIndex)).isDefined) {
+    if (!localAuthoritiesByGssCode.get(csvLine(gssCodeIndex)).isDefined) {
       logger.error(
         String.format(
-          "Invalid codepoint row - no matching LA: gssCode [%s]", csvLine(districtIndex))
+          "Invalid codepoint row - no matching LA: gssCode [%s]", csvLine(gssCodeIndex))
+      )
+      false
+    }
+    else if (!countries.get(csvLine(countryIndex)).isDefined) {
+      logger.error(
+        String.format(
+          "Invalid codepoint row - no matching country: country code [%s]", csvLine(countryIndex))
       )
       false
     }
@@ -132,7 +136,7 @@ object CodePoint extends AddressBaseHelpers[CodePoint] with Logging {
   val recordIdentifier = ""
   // not relevant for these rows
   val requiredCsvColumns = 19
-  val mandatoryCsvColumns = List(postcodeIndex, countryIndex, wardIndex, districtIndex)
+  val mandatoryCsvColumns = List(postcodeIndex, countryIndex, gssCodeIndex)
 }
 
 /* Basic Land and Property Unit */
