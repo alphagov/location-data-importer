@@ -492,7 +492,7 @@ case class OrderingHelpers(
 case class Address(
                     postcode: String,
                     gssCode: String,
-                    countryCode: String,
+                    country: String,
                     createdAt: DateTime = new DateTime,
                     presentation: Presentation,
                     location: Location,

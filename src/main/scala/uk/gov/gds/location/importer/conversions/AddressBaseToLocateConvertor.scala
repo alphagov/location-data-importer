@@ -55,7 +55,7 @@ object AddressBaseToLocateConvertor extends Logging {
 
     Some(Address(
       gssCode = gssCode,
-      countryCode = country,
+      country = country,
       postcode = lowercase(stripAllWhitespace(addressWrapper.blpu.postcode)),
       presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
       location = location(addressWrapper.blpu),

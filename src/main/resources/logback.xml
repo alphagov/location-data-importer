@@ -15,4 +15,8 @@
 
     <logger name="uk.gov" level="INFO" />
 
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+    </root>
+
 </configuration>
