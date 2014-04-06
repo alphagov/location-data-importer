@@ -195,6 +195,15 @@ Mongo:
 
     Uses Java logging - logback.xml to configure
 
+(7) Credentials
+
+    Credentials for APIs are not created  by the application. In order to create tokens for the API clients:
+
+        db.authorizationToken.insert({token:"Me6ZGsSKqkVLNLS9fzYBvrGCQF4"})
+
+        db.authorizationToken.ensureIndex({token:1})
+
+    Locate API has endpoints for making new tokens, but needs a first token to get going.
 
 ### Boundary line
 [Boundary line](http://www.ordnancesurvey.co.uk/business-and-government/products/boundary-line.html) is the polygon data set outlining the various administrative boundaries in the UK.
@@ -212,7 +221,7 @@ Data sets currently used are: district_borough_unitary_region
 
 The docs directory contains a geojson file containing the data which can be imported into mongo with the following command:
 
-    mongoimport --db locate --collection boundaryline district-quarter.geojson
+    mongoimport --db locate --collection authorityBoundaries district-quarter.geojson
 
 
 

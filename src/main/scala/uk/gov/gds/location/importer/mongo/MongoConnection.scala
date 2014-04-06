@@ -5,7 +5,7 @@ import uk.gov.gds.location.importer.logging.Logging
 import com.novus.salat._
 import com.novus.salat.global._
 import uk.gov.gds.location.importer.model.CodePoint
-import uk.gov.gds.location.importer.model.BoundaryLine
+import uk.gov.gds.location.importer.model.AuthorityBoundary
 import scala.Some
 import uk.gov.gds.location.importer.model.StreetWithDescription
 
@@ -15,10 +15,10 @@ class MongoConnection extends Logging {
 
   private val db = mongoClient("locate")
 
-  private val addresses = db.getCollection("address")
+  private val addresses = db.getCollection("addresses")
   private val streets = db.getCollection("streets")
-  private val codePoints = db.getCollection("codePoints")
-  private val boundaryLine = db.getCollection("boundaryline")
+  private val postcodeToAuthority = db.getCollection("postcodeToAuthority")
+  private val authorityBoundaries = db.getCollection("authorityBoundaries")
 
   def authenticate(username: String, password: String) {
     db.authenticate(username, password)
@@ -39,7 +39,7 @@ class MongoConnection extends Logging {
   }
 
   def dropStreets() {
-    codePoints.drop()
+    postcodeToAuthority.drop()
   }
 
   def insertAddresses(things: List[DBObject]) = {
@@ -51,27 +51,27 @@ class MongoConnection extends Logging {
   }
 
   def insertCodePoints(things: List[DBObject]) = {
-    codePoints.insert(things.toArray, WriteConcern.Normal)
+    postcodeToAuthority.insert(things.toArray, WriteConcern.Normal)
   }
 
   def boundaryLineForGssCode(gssCode: String, x: Double, y: Double) = {
     val point = MongoDBObject("$geometry" -> MongoDBObject("type" -> "Point", "coordinates" -> GeoCoords(x, y)))
-    val b = boundaryLine.findOne(DBObject("properties.CODE" -> gssCode, "geometry" -> MongoDBObject("$geoIntersects" -> point)))
+    val b = authorityBoundaries.findOne(DBObject("properties.CODE" -> gssCode, "geometry" -> MongoDBObject("$geoIntersects" -> point)))
 
     if (b == null) {
       None
     } else {
-      Some(grater[BoundaryLine].asObject(b))
+      Some(grater[AuthorityBoundary].asObject(b))
     }
   }
 
   def boundaryLineForLatLong(x: Double, y: Double) = {
     val point = MongoDBObject("$geometry" -> MongoDBObject("type" -> "Point", "coordinates" -> GeoCoords(x, y)))
-    val b = boundaryLine.findOne(DBObject("geometry" -> MongoDBObject("$geoIntersects" -> point)))
+    val b = authorityBoundaries.findOne(DBObject("geometry" -> MongoDBObject("$geoIntersects" -> point)))
     if (b == null) {
       None
     } else {
-      Some(grater[BoundaryLine].asObject(b))
+      Some(grater[AuthorityBoundary].asObject(b))
     }
   }
 
@@ -85,7 +85,7 @@ class MongoConnection extends Logging {
   }
 
   def codePointForPostcode(postcode: String) = {
-    val a = codePoints.findOne(DBObject("postcode" -> postcode.toLowerCase.replaceAll(" ", "")))
+    val a = postcodeToAuthority.findOne(DBObject("postcode" -> postcode.toLowerCase.replaceAll(" ", "")))
     if (a == null) {
       None
     } else {
@@ -95,16 +95,19 @@ class MongoConnection extends Logging {
 
   def addAddressIndexes() {
     logger.info("indexing geo lookups - needs mongo 2.6")
-    //db.getCollection("boundaryline").ensureIndex(DBObject("properties.CODE" -> 1, "geometry.coordinates" -> "2dsphere"))
-    db.getCollection("boundaryline").ensureIndex(DBObject("properties.CODE" -> 1))
+    authorityBoundaries.ensureIndex(DBObject("properties.CODE" -> 1))
 
     logger.info("indexing postcode")
-    db.getCollection("address").ensureIndex(DBObject("postcode" -> 1))
-    logger.info("indexing postcode, postal address, residential")
-    db.getCollection("address").ensureIndex(DBObject("postcode" -> 1, "details.isPostalAddress" -> 1, "details.isResidential" -> 1))
+    addresses.ensureIndex(DBObject("postcode" -> 1))
+
     logger.info("indexing uprn")
-    db.getCollection("address").ensureIndex(DBObject("uprn" -> 1))
-    logger.info("indexing boundaryline")
+    addresses.ensureIndex(DBObject("uprn" -> 1))
+
+    logger.info("indexing postcode, postal address, residential")
+    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isPostalAddress" -> 1, "details.isResidential" -> 1))
+
+    logger.info("indexing gssCode")
+    addresses.ensureIndex(DBObject("gssCode" -> 1))
   }
 
   def addStreetIndexes() {
@@ -114,6 +117,7 @@ class MongoConnection extends Logging {
 
   def addCodePointIndexes() {
     logger.info("indexing postcode on codepoint")
-    codePoints.ensureIndex(DBObject("postcode" -> 1))
+    postcodeToAuthority.ensureIndex(DBObject("postcode" -> 1))
+    postcodeToAuthority.ensureIndex(DBObject("gssCode" -> 1))
   }
 }

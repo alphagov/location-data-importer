@@ -14,6 +14,36 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
   sequential
 
+
+  "Address conversions" should {
+
+    "not create an address if no street available for the usrn" in {
+      val addressWrapper = AddressBaseWrapper(blpu("blpu"), lpi("uprn", "usrn"), classification("uprn"), None)
+      toLocateAddress(addressWrapper, "filename") must beEqualTo(None)
+    }
+
+    "not create an address if street available for the usrn but no authority for custodian code" in {
+      AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(localCustodianCode = "doesn't exist"), lpi("uprn", "usrn"), classification("uprn"), None)
+      toLocateAddress(addressWrapper, "filename") must beEqualTo(None)
+    }
+
+    "create an address if street and custodian code available for the address" in {
+      AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None)
+      toLocateAddress(addressWrapper, "filename").isDefined must beTrue
+    }
+
+    "create an address with correct root fields derived from custodian code and blpu" in {
+      AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "SW11 2DR", uprn = "123456", localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None)
+      toLocateAddress(addressWrapper, "filename").get.postcode must beEqualTo("sw112dr")
+      toLocateAddress(addressWrapper, "filename").get.uprn must beEqualTo("123456")
+      toLocateAddress(addressWrapper, "filename").get.gssCode must beEqualTo("S12000033")
+      toLocateAddress(addressWrapper, "filename").get.country must beEqualTo("Scotland")
+    }
+  }
+
   "GssCode comparison" should {
     "be able to compare a custodian code derived gsscode with one from code point" in {
       checkGssCodeWithCustodianCode(blpu("uprn").copy(localCustodianCode = "9052"), "S12000034", "filename") must beEqualTo("S12000034")
@@ -25,27 +55,6 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
     "be able to compare a custodian code derived gsscode with one from code point - returning custodian code version if disagreement" in {
       checkGssCodeWithCustodianCode(blpu("uprn").copy(localCustodianCode = "9052"), "S1200", "filename") must beEqualTo("S12000034")
-    }
-  }
-
-  "Address conversions" should {
-
-    "not create an address if no street available for the usrn" in {
-      val addressWrapper = AddressBaseWrapper(blpu("blpu"), lpi("uprn", "usrn"), classification("uprn"), None)
-      toLocateAddress(addressWrapper, "filename") must beEqualTo(None)
-    }
-
-    "not create an address if street available for the usrn but no codepoint for postcode" in {
-      AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
-      val addressWrapper = AddressBaseWrapper(blpu("blpu"), lpi("uprn", "usrn"), classification("uprn"), None)
-      toLocateAddress(addressWrapper, "filename") must beEqualTo(None)
-    }
-
-    "create an address if street and codepoint available for the address" in {
-      AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
-      AllTheCodePoints.add(List(codePoint))
-      val addressWrapper = AddressBaseWrapper(blpu("blpu"), lpi("uprn", "usrn"), classification("uprn"), None)
-      toLocateAddress(addressWrapper, "filename").isDefined must beTrue
     }
   }
 
@@ -663,7 +672,6 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       p.town.get must beEqualTo("My Town")
       p.postcode must beEqualTo("MY1 1MY")
       p.area.get must beEqualTo("Admin Area")
-      p.uprn must beEqualTo("uprn")
     }
 
     "set up minimum set of values, all in sentence case" in {
@@ -691,7 +699,6 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       p.town.isDefined must beFalse
       p.postcode must beEqualTo("MY1 1MY")
       p.area.get must beEqualTo("Admin Area")
-      p.uprn must beEqualTo("uprn")
     }
 
 

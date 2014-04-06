@@ -13,10 +13,6 @@ class AddressBaseFileProcessorTests extends Specification with Mockito {
   val mongoConnection = mock[MongoConnection]
   val addressBaseFileProcessor = new AddressBaseFileProcessor(mongoConnection)
 
-  mongoConnection.insertCodePoints(any) returns (100)
-  mongoConnection.insertStreets(any) returns (100)
-  mongoConnection.insertAddresses(any) returns (100)
-
   "processCodePointFile" should {
     "successfully process a valid file" in {
       addressBaseFileProcessor.processCodePointFile(new File("testdata/codepoint/good-file.csv")) must beTrue

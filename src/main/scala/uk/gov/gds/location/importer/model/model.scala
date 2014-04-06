@@ -476,8 +476,7 @@ case class Presentation(
                          locality: Option[String] = None,
                          town: Option[String] = None,
                          area: Option[String] = None,
-                         postcode: String,
-                         uprn: String
+                         postcode: String
                          )
 
 case class OrderingHelpers(
@@ -493,6 +492,7 @@ case class Address(
                     postcode: String,
                     gssCode: String,
                     country: String,
+                    uprn: String,
                     createdAt: DateTime = new DateTime,
                     presentation: Presentation,
                     location: Location,
@@ -523,9 +523,9 @@ case class StreetWithDescription(
  */
 case class Properties(NAME: String, CODE: String)
 
-case class BoundaryLine(
+case class AuthorityBoundary(
                          properties: Properties
                          ) {
-  def serialize = grater[BoundaryLine].asDBObject(this)
+  def serialize = grater[AuthorityBoundary].asDBObject(this)
 }
 

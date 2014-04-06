@@ -32,11 +32,10 @@ object AddressBaseToLocateConvertor extends Logging {
 
     streetDescriptor match {
       case Some(street) => {
-        val codePoint = AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""))
-        codePoint match {
-          case Some(code) => address(addressWrapper, code._2, code._1, street, fileName)
+        localAuthoritiesByCustodianCode.get(addressWrapper.blpu.localCustodianCode) match {
+          case Some(localAuthority) => address(addressWrapper, localAuthority, street, fileName)
           case _ =>
-            logger.error(String.format("No codepoint found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
+            logger.error(String.format("No localAuthority found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s] custodian code [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName, addressWrapper.blpu.localCustodianCode))
             None
         }
       }
@@ -46,16 +45,21 @@ object AddressBaseToLocateConvertor extends Logging {
     }
   }
 
-  def address(addressWrapper: AddressBaseWrapper, country: String, gssCode: String, street: StreetWithDescription, fileName: String) = {
+  def address(addressWrapper: AddressBaseWrapper, localAuthority: LocalAuthority, street: StreetWithDescription, fileName: String) = {
 
     /**
-     * Comparing CodePoint and Custodian Code dervived GSSCodes for information purposes
+     * Check custodian code derived gssCode against code point if code point resolves to postcode
+     * Don't use this for persitance- simple a matter of logging
      */
-    checkGssCodeWithCustodianCode(addressWrapper.blpu, gssCode, fileName)
+    AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", "")) match {
+      case Some(codePoint) => checkGssCodeWithCustodianCode(addressWrapper.blpu, codePoint._1, fileName)
+      case _ =>
+    }
 
     Some(Address(
-      gssCode = gssCode,
-      country = country,
+      gssCode = localAuthority.gssCode,
+      country = Countries.countryForGssCode(localAuthority.gssCode),
+      uprn = addressWrapper.blpu.uprn,
       postcode = lowercase(stripAllWhitespace(addressWrapper.blpu.postcode)),
       presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
       location = location(addressWrapper.blpu),
@@ -70,9 +74,10 @@ object AddressBaseToLocateConvertor extends Logging {
    * Using custodian code on any variation
    * @param custodianCode
    * @param gssCode
-   * @return  
+   * @param fileName
+   * @return   
    */
-  def checkGssCodeWithCustodianCode(blpu: BLPU, gssCode: String, fileName: String ) = {
+  def checkGssCodeWithCustodianCode(blpu: BLPU, gssCode: String, fileName: String) = {
     localAuthoritiesByCustodianCode.get(blpu.localCustodianCode) match {
       case Some(la) if la.gssCode.equalsIgnoreCase(gssCode) => gssCode
       case Some(la) if !la.gssCode.equalsIgnoreCase(gssCode) => {
@@ -105,8 +110,7 @@ object AddressBaseToLocateConvertor extends Logging {
       locality = toSentenceCase(street.localityName),
       town = toSentenceCase(street.townName),
       area = constructArea(street),
-      postcode = blpu.postcode,
-      uprn = blpu.uprn
+      postcode = blpu.postcode
     )
   }
 
