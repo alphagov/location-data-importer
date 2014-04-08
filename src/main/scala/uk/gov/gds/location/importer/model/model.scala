@@ -17,6 +17,9 @@ import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode
 import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode.StreetStateCode
 import uk.gov.gds.location.importer.conversions.EastingNorthingToLatLongConvertor.gridReferenceToLatLong
 import uk.gov.gds.location.importer.logging.Logging
+import Countries.countries
+
+import LocalAuthorities._
 
 /**
  * Keeps all code point objects in memory as an optimisation
@@ -28,7 +31,7 @@ object AllTheCodePoints {
   var codePoints = MutableMap.empty[String, (String, String)]
 
   def add(codePointsToAdd: List[CodePoint]) {
-    codePointsToAdd.map(c => codePoints.put(c.postcode, (c.district, c.country)))
+    codePointsToAdd.map(c => codePoints.put(c.postcode, (c.gssCode, c.country)))
   }
 }
 
@@ -78,29 +81,41 @@ trait AddressBaseHelpers[T <: AddressBase] {
 /**
  * Code point model
  */
-case class CodePoint(postcode: String, country: String, county: Option[String], district: String, ward: String) extends AddressBase {
+case class CodePoint(postcode: String, country: String, gssCode: String, name: String) extends AddressBase {
   def serialize = grater[CodePoint].asDBObject(this)
 }
 
 object CodePoint extends AddressBaseHelpers[CodePoint] with Logging {
   private val postcodeIndex = 0
   private val countryIndex = 12
-  private val countyIndex = 15
-  private val districtIndex = 16
-  private val wardIndex = 17
+  private val gssCodeIndex = 16
 
   def fromCsvLine(csvLine: List[String]) = {
     CodePoint(
       csvLine(postcodeIndex).toLowerCase.replaceAll(" ", ""),
-      csvLine(countryIndex),
-      csvLine(countyIndex),
-      csvLine(districtIndex),
-      csvLine(wardIndex)
+      countries(csvLine(countryIndex)),
+      csvLine(gssCodeIndex),
+      localAuthoritiesByGssCode(csvLine(gssCodeIndex)).onsName
     )
   }
 
   override def isValidCsvLine(csvLine: List[String]) = {
-    if (csvLine.size != requiredCsvColumns) {
+
+    if (!localAuthoritiesByGssCode.get(csvLine(gssCodeIndex)).isDefined) {
+      logger.error(
+        String.format(
+          "Invalid codepoint row - no matching LA: gssCode [%s]", csvLine(gssCodeIndex))
+      )
+      false
+    }
+    else if (!countries.get(csvLine(countryIndex)).isDefined) {
+      logger.error(
+        String.format(
+          "Invalid codepoint row - no matching country: country code [%s]", csvLine(countryIndex))
+      )
+      false
+    }
+    else if (csvLine.size != requiredCsvColumns) {
       logger.error(
         String.format(
           "Invalid codepoint row length: required [%s] got[%s] row details[%s]", requiredCsvColumns.toString, csvLine.size.toString, csvLine.mkString("|"))
@@ -121,7 +136,7 @@ object CodePoint extends AddressBaseHelpers[CodePoint] with Logging {
   val recordIdentifier = ""
   // not relevant for these rows
   val requiredCsvColumns = 19
-  val mandatoryCsvColumns = List(postcodeIndex, countryIndex, wardIndex, districtIndex)
+  val mandatoryCsvColumns = List(postcodeIndex, countryIndex, gssCodeIndex)
 }
 
 /* Basic Land and Property Unit */
@@ -354,6 +369,34 @@ object Organisation extends AddressBaseHelpers[Organisation] {
   val mandatoryCsvColumns = List(uprnIndex, organisationIndex, startDateIndex, updatedDateIndex)
 }
 
+case class DeliveryPoint(
+                          uprn: String,
+                          postcode: String,
+                          startDate: DateTime,
+                          endDate: Option[DateTime],
+                          lastUpdated: DateTime) extends AddressBase
+
+object DeliveryPoint extends AddressBaseHelpers[DeliveryPoint] {
+  val recordIdentifier = "28"
+  val requiredCsvColumns = 29
+
+  private val uprnIndex = 3
+  private val postcodeIndex = 16
+  private val startDateIndex = 25
+  private val endDateIndex = 26
+  private val updatedDateIndex = 27
+
+  val mandatoryCsvColumns = List(uprnIndex, postcodeIndex, startDateIndex, updatedDateIndex)
+
+  def fromCsvLine(csvLine: List[String]) = DeliveryPoint(
+    csvLine(uprnIndex),
+    csvLine(postcodeIndex),
+    csvLine(startDateIndex),
+    csvLine(endDateIndex),
+    csvLine(updatedDateIndex)
+  )
+}
+
 case class Classification(
                            uprn: String,
                            classificationCode: String,
@@ -368,6 +411,8 @@ case class Classification(
    * Much too simplified and may not belong here
    */
   def isResidential = ClassificationCodes.isResidential(classificationCode)
+
+  def isCommercial = ClassificationCodes.isCommercial(classificationCode)
 }
 
 object Classification extends AddressBaseHelpers[Classification] {
@@ -410,8 +455,8 @@ object Classification extends AddressBaseHelpers[Classification] {
 case class Location(lat: Double, long: Double)
 
 case class Details(
-                    blpuCreatedAt: Long,
-                    blpuUpdatedAt: Long,
+                    blpuCreatedAt: DateTime,
+                    blpuUpdatedAt: DateTime,
                     classification: String,
                     status: Option[String] = None,
                     state: Option[String] = None,
@@ -431,8 +476,7 @@ case class Presentation(
                          locality: Option[String] = None,
                          town: Option[String] = None,
                          area: Option[String] = None,
-                         postcode: String,
-                         uprn: String
+                         postcode: String
                          )
 
 case class OrderingHelpers(
@@ -445,11 +489,10 @@ case class OrderingHelpers(
                             )
 
 case class Address(
-                    houseNumber: Option[String],
-                    houseName: Option[String],
                     postcode: String,
                     gssCode: String,
-                    countryCode: String,
+                    country: String,
+                    uprn: String,
                     createdAt: DateTime = new DateTime,
                     presentation: Presentation,
                     location: Location,
@@ -480,9 +523,9 @@ case class StreetWithDescription(
  */
 case class Properties(NAME: String, CODE: String)
 
-case class BoundaryLine(
+case class AuthorityBoundary(
                          properties: Properties
                          ) {
-  def serialize = grater[BoundaryLine].asDBObject(this)
+  def serialize = grater[AuthorityBoundary].asDBObject(this)
 }
 

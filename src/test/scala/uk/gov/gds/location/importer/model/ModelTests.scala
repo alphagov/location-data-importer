@@ -22,24 +22,30 @@ class ModelTests extends Specification {
     "be able to extract a code point from a valid CSV line" in {
       val validLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","S12000041","S13002509","S""""
       CodePoint.fromCsvLine(parseCsvLine(validLine)).postcode must beEqualTo("dd97ux")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("S92000003")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).county must beEqualTo(Some("S12000047"))
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).district must beEqualTo("S12000041")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).ward must beEqualTo("S13002509")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("Scotland")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).gssCode must beEqualTo("S12000041")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).name must beEqualTo("Angus")
     }
 
     "be able to extract a code point from a valid CSV line with minimum valid fields" in {
       val validLine = """"DD9 7UX",,"",,,,,,,,,,"S92000003","","","","S12000041","S13002509","S""""
       CodePoint.fromCsvLine(parseCsvLine(validLine)).postcode must beEqualTo("dd97ux")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("S92000003")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).county must beEqualTo(None)
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).district must beEqualTo("S12000041")
-      CodePoint.fromCsvLine(parseCsvLine(validLine)).ward must beEqualTo("S13002509")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("Scotland")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).gssCode must beEqualTo("S12000041")
     }
-
 
     "be able to identify an invalid line with wrong number of columns" in {
       val invalidLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,"S92000003","","S08000013","","S12000041","S13002509","S""""
+      CodePoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
+    "be able to identify an invalid line with unmatched LA" in {
+      val invalidLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,"S92000003","","S08000013","","donesnt exist","S13002509","S""""
+      CodePoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
+    "be able to identify an invalid line with unmatched country" in {
+      val invalidLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,"where?","","S08000013","","S12000041","S13002509","S""""
       CodePoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
     }
 
@@ -48,12 +54,10 @@ class ModelTests extends Specification {
       val invalidLineNoPostcode = """"",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","S12000041","S13002509","S""""
       val invalidLineNoCountry = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"","","S08000013","S12000047","S12000041","S13002509","S""""
       val invalidLineNoDistrict = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","","S13002509","S""""
-      val invalidLineNoWard = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","S12000041","","S""""
 
       CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoPostcode)) must beFalse
       CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoCountry)) must beFalse
       CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoDistrict)) must beFalse
-      CodePoint.isValidCsvLine(parseCsvLine(invalidLineNoWard)) must beFalse
     }
   }
 
@@ -419,6 +423,55 @@ class ModelTests extends Specification {
     }
   }
 
+  "DeliveryPoint" should {
+
+    "be able to identify a valid line" in {
+      val validLine = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(validLine)) must beTrue
+    }
+
+    "be able to identify an invalid line due to wrong type" in {
+      val wrongRecordIdentifier = """8,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(wrongRecordIdentifier)) must beFalse
+    }
+
+    "be able to identify an invalid line due to wrong number of columns" in {
+      val wrongNumberOfColumns = """28,"I",100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(wrongNumberOfColumns)) must beFalse
+    }
+
+    "be able to identify an invalid line due to missing mandatory column" in {
+      val invalidLine = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES",,"S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      DeliveryPoint.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
+    "be able to be constructed from a fully populated csv line" in {
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,2014-01-01,2010-09-14,2010-09-14"""
+      deliveryPoint(line).uprn must beEqualTo("100021769440")
+      deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
+      deliveryPoint(line).endDate.get must beEqualTo(new DateTime(2014, 1, 1, 0, 0))
+      deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
+    }
+
+    "be able to be constructed from a mimum populated csv line" in {
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      deliveryPoint(line).uprn must beEqualTo("100021769440")
+      deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
+      deliveryPoint(line).endDate.isDefined must beFalse
+      deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
+    }
+
+    "be able to be made into correct type" in {
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      deliveryPoint(line).isInstanceOf[AddressBase] must beTrue
+      deliveryPoint(line).isInstanceOf[DeliveryPoint] must beTrue
+    }
+  }
+
+  private def deliveryPoint(line: String) = DeliveryPoint.fromCsvLine(parseCsvLine(line))
+  
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))
 
   private def lpi(line: String) = LPI.fromCsvLine(parseCsvLine(line))

@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import scala.Some
 import uk.gov.gds.location.importer.model._
 import uk.gov.gds.location.importer.helpers.TestHelpers._
+import scala.Some
 
 class AddressBaseRowProcessorTests extends Specification {
 
@@ -56,6 +57,7 @@ class AddressBaseRowProcessorTests extends Specification {
     """15,"I",1150,7803243,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG""""
   )
 
+
   private val inValidLinesForStreets = List( """11,"I",1,,1,9059,,1995-09-04,,8,0,1995-09-04,,2005-04-07,2005-04-07,345558.00,731129.00,345809.00,731128.00,999""")
   private val inValidLinesForStreetDescriptor = List( """15,"I",1150,,"ZU306 FROM TRACK BETWEEN ZU306 AND B962 TO B961 AT DRUMSTURDY","","KINGENNIE","ANGUS","ENG"""")
 
@@ -98,11 +100,17 @@ class AddressBaseRowProcessorTests extends Specification {
     """31,"I",93843,9059007612,"9059O000000619","Department Of Leisure And Culture","",2012-01-23,,2012-01-23,2012-01-23"""
   )
 
+  private val validLinesForDeliveryPoint = List(
+    """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14""",
+    """28,"I",262267,100021769433,,12077415,"","","","",32,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14""",
+    """28,"I",262219,100021769427,,12077408,"","","","",20,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+  )
+
   private val invaldBlpu = List( """"21","I",94755,,1,2,2005-04-05,9059007610,346782.00,732382.00,1,9059,2005-04-05,,2009-05-22,2005-04-05,"S","DD5 3BZ",0""")
 
   "processRowsIntoAddressWrappers" should {
     "extract an AddressWrapper for each valid set of consituent address rows" in {
-      val lines = validLinesForBLPU ++ validLinesForLPI ++ validLinesForClassification ++ validLinesForOrganisation
+      val lines = validLinesForBLPU ++ validLinesForLPI ++ validLinesForClassification ++ validLinesForOrganisation ++ validLinesForDeliveryPoint
       processRowsIntoAddressWrappers(lines, "filename").size must beEqualTo(3)
       processRowsIntoAddressWrappers(lines, "filename")(0).uprn must beEqualTo("9059007610")
       processRowsIntoAddressWrappers(lines, "filename")(1).uprn must beEqualTo("9059007611")
@@ -118,6 +126,15 @@ class AddressBaseRowProcessorTests extends Specification {
   /**
    * Extract specific AddressBase type from list of generic types
    */
+
+  "extractDeliveryPointsByUprn" should {
+    "extract all Delivery Point types from a list of generic AddressBase types grouping by UPRN" in {
+      val deliveryPointToFind1 = deliveryPoint("uprn")
+      val deliveryPointToFind2 = deliveryPoint("uprn")
+      extractDeliveryPointsByUprn(List(deliveryPointToFind1, deliveryPointToFind2, blpu("uprn"), lpi("uprn", "usrn"), classification("uprn"), organisation("uprn")))("uprn").size must beEqualTo(2)
+      extractDeliveryPointsByUprn(List(deliveryPointToFind1, deliveryPointToFind2, blpu("uprn"), lpi("uprn", "usrn"), classification("uprn"), organisation("uprn")))("uprn") must contain(deliveryPointToFind1, deliveryPointToFind2)
+    }
+  }
 
   "extractBlpus" should {
     "extract all BLPU types from a list of generic AddressBase types" in {
@@ -308,6 +325,36 @@ class AddressBaseRowProcessorTests extends Specification {
     }
   }
 
+  "mostRecentActiveDeliveryPointForUprn" should {
+    "return DeliveryPoint for a UPRN" in {
+      val deliveryPointForUprn = deliveryPoint("uprn")
+      mostRecentActiveDeliveryPointForUprn("uprn", Map("uprn" -> List(deliveryPointForUprn))).get must beEqualTo(deliveryPointForUprn)
+    }
+
+    "return None if no DeliveryPoint for a UPRN" in {
+      mostRecentActiveDeliveryPointForUprn("none", Map("uprn" -> List(deliveryPoint("uprn")))) must beEqualTo(None)
+    }
+
+    "return active DeliveryPoint from a list of DeliveryPoint for a  UPRN" in {
+      val active = deliveryPoint("uprn")
+      val inActive = deliveryPoint("uprn").copy(endDate = Some(endDate))
+      mostRecentActiveDeliveryPointForUprn("uprn", Map("uprn" -> List(active, inActive))).get must beEqualTo(active)
+    }
+
+    "return None if no active LPI from a list of LPIs for a  UPRN" in {
+      val inActive1 = deliveryPoint("uprn").copy(endDate = Some(endDate))
+      val inActive2 = deliveryPoint("uprn").copy(endDate = Some(endDate))
+      mostRecentActiveDeliveryPointForUprn("uprn", Map("uprn" -> List(inActive1, inActive2))) must beEqualTo(None)
+    }
+
+    "return most recently updated LPI from a list of active LPIs for a  UPRN" in {
+      val dp1 = deliveryPoint("uprn").copy(lastUpdated = new DateTime().minusDays(1))
+      val dp2 = deliveryPoint("uprn").copy(lastUpdated = new DateTime().minusDays(2))
+      val dp3 = deliveryPoint("uprn").copy(lastUpdated = new DateTime().minusDays(3))
+      mostRecentActiveDeliveryPointForUprn("uprn", Map("uprn" -> List(dp3, dp2, dp1))).get must beEqualTo(dp1)
+    }
+  }
+
 
   /**
    * Convert a street object and a street description onto a single representative object
@@ -382,18 +429,80 @@ class AddressBaseRowProcessorTests extends Specification {
       val l = lpi("uprn", "usrn")
       val c = classification("uprn")
       val o = organisation("uprn")
-      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o))).get
+      val dp = deliveryPoint("uprn")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))).get
       addressBaseWrapper.blpu must beEqualTo(b)
       addressBaseWrapper.lpi must beEqualTo(l)
       addressBaseWrapper.classification must beEqualTo(c)
       addressBaseWrapper.organisation.get must beEqualTo(o)
     }
 
+    "create a wrapper object with the BLPU postcode if delivery point postcode and BLPU postcode are the same" in {
+      val b = blpu("uprn").copy(postcode = "POSTCODE")
+      val l = lpi("uprn", "usrn")
+      val c = classification("uprn")
+      val o = organisation("uprn")
+      val dp = deliveryPoint("uprn").copy(postcode = "POSTCODE")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))).get
+      addressBaseWrapper.blpu.postcode must beEqualTo("POSTCODE")
+    }
+
+    "create a wrapper object with the BLPU postcode if delivery point postcode and BLPU postcode are the same - ignoring case" in {
+      val b = blpu("uprn").copy(postcode = "POSTCODE")
+      val l = lpi("uprn", "usrn")
+      val c = classification("uprn")
+      val o = organisation("uprn")
+      val dp = deliveryPoint("uprn").copy(postcode = "postcode")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))).get
+      addressBaseWrapper.blpu.postcode must beEqualTo("POSTCODE")
+    }
+
+    "create a wrapper object with the BLPU postcode if delivery point postcode and BLPU postcode are the same - ignoring whitespace" in {
+      val b = blpu("uprn").copy(postcode = "POSTCODE")
+      val l = lpi("uprn", "usrn")
+      val c = classification("uprn")
+      val o = organisation("uprn")
+      val dp = deliveryPoint("uprn").copy(postcode = " post code ")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))).get
+      addressBaseWrapper.blpu.postcode must beEqualTo("POSTCODE")
+    }
+
+    "create a wrapper object with the delivery point postcode if delivery point postcode and BLPU postcode are different" in {
+      val b = blpu("uprn").copy(postcode = "POSTCODE")
+      val l = lpi("uprn", "usrn")
+      val c = classification("uprn")
+      val o = organisation("uprn")
+      val dp = deliveryPoint("uprn").copy(postcode = "DIFFERENT POSTCODE")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))).get
+      addressBaseWrapper.blpu.postcode must beEqualTo("DIFFERENT POSTCODE")
+    }
+
+    "create a wrapper object with the BLPU postcode if delivery point is missing for UPRN" in {
+      val b = blpu("uprn").copy(postcode = "POSTCODE")
+      val l = lpi("uprn", "usrn")
+      val c = classification("uprn")
+      val o = organisation("uprn")
+      val dp = deliveryPoint("uprn").copy(postcode = "DIFFERENT POSTCODE")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("another uprn" -> List(dp))).get
+      addressBaseWrapper.blpu.postcode must beEqualTo("POSTCODE")
+    }
+
+    "create a wrapper object with the BLPU postcode if no delivery points" in {
+      val b = blpu("uprn").copy(postcode = "POSTCODE")
+      val l = lpi("uprn", "usrn")
+      val c = classification("uprn")
+      val o = organisation("uprn")
+      val dp = deliveryPoint("uprn").copy(postcode = "DIFFERENT POSTCODE")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map.empty[String, List[DeliveryPoint]]).get
+      addressBaseWrapper.blpu.postcode must beEqualTo("POSTCODE")
+    }
+
     "create a wrapper object containing linked BLPU, LPI, Classification objects and no Organisation if none available" in {
       val b = blpu("uprn")
       val l = lpi("uprn", "usrn")
       val c = classification("uprn")
-      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map.empty[String, List[Organisation]]).get
+      val dp = deliveryPoint("uprn")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map.empty[String, List[Organisation]], Map("uprn" -> List(dp))).get
       addressBaseWrapper.blpu must beEqualTo(b)
       addressBaseWrapper.lpi must beEqualTo(l)
       addressBaseWrapper.classification must beEqualTo(c)
@@ -405,7 +514,8 @@ class AddressBaseRowProcessorTests extends Specification {
       val l = lpi("uprn", "usrn")
       val c = classification("uprn")
       val o = organisation("uprn")
-      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o))) must beEqualTo(None)
+      val dp = deliveryPoint("uprn")
+      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))) must beEqualTo(None)
     }
 
     "return None if no LPI for that UPRN - empty map for key" in {
@@ -413,14 +523,16 @@ class AddressBaseRowProcessorTests extends Specification {
       val l = lpi("different-uprn", "usrn")
       val c = classification("uprn")
       val o = organisation("uprn")
-      toAddressBaseWrapper("filename", b, Map("different-uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o))) must beEqualTo(None)
+      val dp = deliveryPoint("uprn")
+      toAddressBaseWrapper("filename", b, Map("different-uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))) must beEqualTo(None)
     }
 
     "return None if no LPI for that UPRN - empty list associated with key" in {
       val b = blpu("uprn")
       val c = classification("uprn")
       val o = organisation("uprn")
-      toAddressBaseWrapper("filename", b, Map("uprn" -> List.empty[LPI]), Map("uprn" -> List(c)), Map("uprn" -> List(o))) must beEqualTo(None)
+      val dp = deliveryPoint("uprn")
+      toAddressBaseWrapper("filename", b, Map("uprn" -> List.empty[LPI]), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))) must beEqualTo(None)
     }
 
     "return None if no active LPI for that UPRN" in {
@@ -428,7 +540,8 @@ class AddressBaseRowProcessorTests extends Specification {
       val l = lpi("uprn", "usrn").copy(endDate = Some(endDate))
       val c = classification("uprn")
       val o = organisation("uprn")
-      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o))) must beEqualTo(None)
+      val dp = deliveryPoint("uprn")
+      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))) must beEqualTo(None)
     }
 
     "return most recently updated active LPI for that UPRN" in {
@@ -437,7 +550,8 @@ class AddressBaseRowProcessorTests extends Specification {
       val l2 = lpi("uprn", "usrn").copy(lastUpdated = new DateTime().minusDays(100))
       val c = classification("uprn")
       val o = organisation("uprn")
-      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l1,l2)), Map("uprn" -> List(c)), Map("uprn" -> List(o))).get
+      val dp = deliveryPoint("uprn")
+      val addressBaseWrapper = toAddressBaseWrapper("filename", b, Map("uprn" -> List(l1, l2)), Map("uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))).get
       addressBaseWrapper.lpi must beEqualTo(l1)
     }
 
@@ -445,7 +559,8 @@ class AddressBaseRowProcessorTests extends Specification {
       val b = blpu("uprn")
       val l = lpi("uprn", "usrn")
       val o = organisation("uprn")
-      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List.empty[Classification]), Map("uprn" -> List(o))) must beEqualTo(None)
+      val dp = deliveryPoint("uprn")
+      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("uprn" -> List.empty[Classification]), Map("uprn" -> List(o)), Map("uprn" -> List(dp))) must beEqualTo(None)
     }
 
     "return None if no Classification for that UPRN - no matching uprn key" in {
@@ -453,7 +568,8 @@ class AddressBaseRowProcessorTests extends Specification {
       val l = lpi("uprn", "usrn")
       val c = classification("different uprn")
       val o = organisation("uprn")
-      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("different uprn" -> List(c)), Map("uprn" -> List(o))) must beEqualTo(None)
+      val dp = deliveryPoint("uprn")
+      toAddressBaseWrapper("filename", b, Map("uprn" -> List(l)), Map("different uprn" -> List(c)), Map("uprn" -> List(o)), Map("uprn" -> List(dp))) must beEqualTo(None)
     }
   }
 }

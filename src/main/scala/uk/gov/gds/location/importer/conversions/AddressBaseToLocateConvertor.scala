@@ -2,16 +2,15 @@ package uk.gov.gds.location.importer.conversions
 
 import uk.gov.gds.location.importer.logging._
 import uk.gov.gds.location.importer.model._
-import org.joda.time.DateTime
 import uk.gov.gds.location.importer.model.AddressBaseWrapper
 import uk.gov.gds.location.importer.model.Location
-import scala.Some
 import uk.gov.gds.location.importer.model.Details
 import uk.gov.gds.location.importer.model.Presentation
 import uk.gov.gds.location.importer.model.OrderingHelpers
 import uk.gov.gds.location.importer.model.StreetWithDescription
 import uk.gov.gds.location.importer.model.Address
 import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode
+import LocalAuthorities._
 
 /**
  * Object to take lists of address base types and convert to our address / street model
@@ -33,37 +32,60 @@ object AddressBaseToLocateConvertor extends Logging {
 
     streetDescriptor match {
       case Some(street) => {
-        val codePoint = AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""))
-        codePoint match {
-          case Some(code) => {
-            address(addressWrapper, code._2, code._1, street, fileName)
-          }
-          case _ => {
-            logger.error(String.format("No codepoint found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
+        localAuthoritiesByCustodianCode.get(addressWrapper.blpu.localCustodianCode) match {
+          case Some(localAuthority) => address(addressWrapper, localAuthority, street, fileName)
+          case _ =>
+            logger.error(String.format("No localAuthority found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s] custodian code [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName, addressWrapper.blpu.localCustodianCode))
             None
-          }
         }
       }
-      case _ => {
+      case _ =>
         logger.error(String.format("No street found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
         None
-      }
-
     }
   }
 
-  def address(addressWrapper: AddressBaseWrapper, country: String, gssCode: String, street: StreetWithDescription, fileName: String) = {
+  def address(addressWrapper: AddressBaseWrapper, localAuthority: LocalAuthority, street: StreetWithDescription, fileName: String) = {
+
+    /**
+     * Check custodian code derived gssCode against code point if code point resolves to postcode
+     * Don't use this for persitance- simple a matter of logging
+     */
+    AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", "")) match {
+      case Some(codePoint) => checkGssCodeWithCustodianCode(addressWrapper.blpu, codePoint._1, fileName)
+      case _ =>
+    }
+
     Some(Address(
-      houseName = toSentenceCase(addressWrapper.lpi.paoText),
-      houseNumber = constructStreetAddressPrefixFrom(addressWrapper.lpi),
-      gssCode = gssCode,
-      countryCode = country,
-      postcode = addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", ""),
+      gssCode = localAuthority.gssCode,
+      country = Countries.countryForGssCode(localAuthority.gssCode),
+      uprn = addressWrapper.blpu.uprn,
+      postcode = lowercase(stripAllWhitespace(addressWrapper.blpu.postcode)),
       presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
       ordering = Some(ordering(addressWrapper))
     ))
+  }
+
+  /**
+   * Address base objects have a custodian code, which maps to a GSSCode
+   * Compare the Codepoint derived GSSCode with the Custodian code version
+   * Using custodian code on any variation
+   * @param custodianCode
+   * @param gssCode
+   * @param fileName
+   * @return   
+   */
+  def checkGssCodeWithCustodianCode(blpu: BLPU, gssCode: String, fileName: String) = {
+    localAuthoritiesByCustodianCode.get(blpu.localCustodianCode) match {
+      case Some(la) if la.gssCode.equalsIgnoreCase(gssCode) => gssCode
+      case Some(la) if !la.gssCode.equalsIgnoreCase(gssCode) => {
+        logger.info("GSSCode and Custodian code mismatch: file [%s] uprn [%s] custodian code[%s], la.gssCode [%s] codepoint.gssCode [%s]".format(fileName, blpu.uprn, blpu.localCustodianCode, la.gssCode, gssCode))
+        la.gssCode
+      }
+      case _ => gssCode
+    }
   }
 
   /*
@@ -87,21 +109,25 @@ object AddressBaseToLocateConvertor extends Logging {
       street = toSentenceCase(constructStreetAddressFrom(lpi, street)),
       locality = toSentenceCase(street.localityName),
       town = toSentenceCase(street.townName),
-      area = if (street.townName.isDefined && !street.townName.get.equals(street.administrativeArea)) toSentenceCase(Some(street.administrativeArea)) else None,
-      postcode = blpu.postcode,
-      uprn = blpu.uprn
+      area = constructArea(street),
+      postcode = blpu.postcode
     )
   }
 
+  def constructArea(street: StreetWithDescription) =
+    toSentenceCase(if (!street.townName.isDefined) street.administrativeArea
+    else if (street.townName.isDefined && street.townName.get.equals(street.administrativeArea)) None
+    else street.administrativeArea)
+
   def details(addressWrapper: AddressBaseWrapper, filename: String) = Details(
-    blpuCreatedAt = addressWrapper.blpu.startDate.getMillis,
-    blpuUpdatedAt = addressWrapper.blpu.lastUpdated.getMillis,
+    blpuCreatedAt = addressWrapper.blpu.startDate,
+    blpuUpdatedAt = addressWrapper.blpu.lastUpdated,
     classification = addressWrapper.classification.classificationCode,
     status = addressWrapper.blpu.blpuState.map(pp => pp.toString),
     state = addressWrapper.blpu.logicalState.map(pp => pp.toString),
     isPostalAddress = addressWrapper.blpu.canReceivePost,
     isResidential = addressWrapper.classification.isResidential,
-    isCommercial = !addressWrapper.classification.isResidential,
+    isCommercial = addressWrapper.classification.isCommercial,
     usrn = addressWrapper.lpi.usrn,
     file = filename,
     organisation = toSentenceCase(addressWrapper.organisation.map(org => org.organistation)),
@@ -112,12 +138,17 @@ object AddressBaseToLocateConvertor extends Logging {
 }
 
 /**
- * Various utilities for string / field conversions
+ * Various utilities for string / field conversions / creations
  */
 object formatters {
 
   def constructPropertyFrom(lpi: LPI) = {
-    val formatted = List(formatStartAndEndNumbersAndSuffixes(lpi.saoStartNumber, lpi.saoStartSuffix, lpi.saoEndNumber, lpi.saoEndSuffix), lpi.saoText, lpi.paoText).flatten.mkString(" ")
+    val formatted = (
+      toSentenceCase(lpi.saoText).toList ++
+        formatStartAndEndNumbersAndSuffixes(lpi.saoStartNumber, lpi.saoStartSuffix, lpi.saoEndNumber, lpi.saoEndSuffix).toList ++
+        toSentenceCase(lpi.paoText).toList
+      ).mkString(" ")
+
     if (formatted.isEmpty) None
     else Some(formatted)
   }

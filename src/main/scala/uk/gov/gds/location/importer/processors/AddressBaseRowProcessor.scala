@@ -79,6 +79,7 @@ object AddressBaseRowProcessor extends Logging {
         case LPI.recordIdentifier => extractRow[LPI](fileName, parsed, LPI)
         case Classification.recordIdentifier => extractRow[Classification](fileName, parsed, Classification)
         case Organisation.recordIdentifier => extractRow[Organisation](fileName, parsed, Organisation)
+        case DeliveryPoint.recordIdentifier => extractRow[DeliveryPoint](fileName, parsed, DeliveryPoint)
         case _ => None
       }
     }
@@ -109,6 +110,19 @@ object AddressBaseRowProcessor extends Logging {
     }
     else Some(addressBase.fromCsvLine(parsedCsvLine))
   }
+
+  /**
+   * Extract a list of only the BLPUs from generic list of Address Base types
+   *
+   * @param raw List[AddressBase]
+   * @return Map[String,List[DeliveryPoint]] UPRN to List of DeliveryPoints
+   */
+  def extractDeliveryPointsByUprn(raw: List[AddressBase]) =
+    raw flatMap {
+      case a: DeliveryPoint => Some(a)
+      case _ => None
+
+    } groupBy (_.uprn)
 
   /**
    * Extract a list of only the BLPUs from generic list of Address Base types
@@ -200,10 +214,11 @@ object AddressBaseRowProcessor extends Logging {
     val lpis = extractLpisByUprn(rows)
     val classifications = extractClassificationsByUprn(rows)
     val organisations = extractOrganisationsUprn(rows)
+    val deliveryPoints = extractDeliveryPointsByUprn(rows)
 
     blpus.flatMap(
       blpu =>
-        toAddressBaseWrapper(fileName, blpu, lpis, classifications, organisations)
+        toAddressBaseWrapper(fileName, blpu, lpis, classifications, organisations, deliveryPoints)
     ).toList
   }
 
@@ -234,11 +249,13 @@ object AddressBaseRowProcessor extends Logging {
                             blpu: BLPU,
                             lpis: Map[String, List[LPI]],
                             classifications: Map[String, List[Classification]],
-                            organisations: Map[String, List[Organisation]]) = {
+                            organisations: Map[String, List[Organisation]],
+                            deliveryPoints: Map[String, List[DeliveryPoint]]) = {
 
     val lpi = mostRecentActiveLPIForUprn(blpu.uprn, lpis)
     val classification = mostRecentActiveClassificationForUprn(blpu.uprn, classifications)
     val organisation = mostRecentActiveOrganisationForUprn(blpu.uprn, organisations)
+    val deliveryPoint = mostRecentActiveDeliveryPointForUprn(blpu.uprn, deliveryPoints)
 
     if (!blpuIsActive(blpu)) {
       logger.error(String.format("BLPU is inactive BLPU [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
@@ -253,9 +270,27 @@ object AddressBaseRowProcessor extends Logging {
       logger.error(String.format("BLPU has no classification UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else {
-      Some(AddressBaseWrapper(blpu, lpi.get, classification.get, organisation))
+      Some(AddressBaseWrapper(updateBlpuPostcodeIfRequired(fileName, blpu, deliveryPoint), lpi.get, classification.get, organisation))
     }
   }
+
+  /**
+   * Potentially the delivery point postcode may differ from the BLPU
+   * If so Delivery Point should override BLPU
+   * @param blpu
+   * @param deliveryPoint
+   * @return
+   */
+  private def updateBlpuPostcodeIfRequired(fileName: String, blpu: BLPU, deliveryPoint: Option[DeliveryPoint]) =
+    deliveryPoint match {
+      case Some(dp) if !same(blpu.postcode, dp.postcode) => {
+        logger.info("using DeliveryPoint postcode filename [%s] UPRN [%s] BLPU postcode [%s] DeliveryPoint postcode [%s]".format(fileName, blpu.uprn, blpu.postcode, dp.postcode))
+        blpu.copy(postcode = dp.postcode)
+      }
+      case _ => blpu
+    }
+
+  private def same(one: String, two: String) = one.replace(" ","").equalsIgnoreCase(two.replace(" ",""))
 
   /*
    BLPU checker - all BLPUs must NOT have an end date - indicates an active property
@@ -324,6 +359,15 @@ object AddressBaseRowProcessor extends Logging {
   def mostRecentActiveStreetForUsrn(usrn: String, streets: Map[String, List[Street]]): Option[Street] =
     streets.get(usrn) match {
       case Some(street) => street.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case _ => None
+    }
+
+  /*
+   We want one Delivery Point per UPRN, and there may be several so remove all with an end date, and get the most recently updated
+  */
+  def mostRecentActiveDeliveryPointForUprn(uprn: String, deliveryPoints: Map[String, List[DeliveryPoint]]): Option[DeliveryPoint] =
+    deliveryPoints.get(uprn) match {
+      case Some(deliveryPoint) => deliveryPoint.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
       case _ => None
     }
 }

@@ -35,8 +35,8 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
     val start = new DateTime()
 
     try {
-      val rows = persistCodePoint(processRowsIntoCodePoint(loadFile(file).lines(), file.getName))
-      logger.info(String.format("Successfully processed [%s] in [%s] inserted [%s] rows", file.getName, (new DateTime().getMillis - start.getMillis).toString, rows.toString))
+      persistCodePoint(processRowsIntoCodePoint(loadFile(file).lines(), file.getName))
+      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
       case e: Exception => {
@@ -58,8 +58,8 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
 
     val start = new DateTime()
     try {
-      val rows = persistStreetDescriptors(processRowsIntoStreets(loadFile(file).lines(), file.getName))
-      logger.info(String.format("Successfully processed [%s] in [%s] inserted [%s] rows", file.getName, (new DateTime().getMillis - start.getMillis).toString, rows.toString))
+      persistStreetDescriptors(processRowsIntoStreets(loadFile(file).lines(), file.getName))
+      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
       case e: Exception => {
@@ -82,8 +82,8 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
 
     val start = new DateTime()
     try {
-      val rows = persistAddresses(processRowsIntoAddressWrappers(loadFile(file).lines(), file.getName), fileName)
-      logger.info(String.format("Successfully processed [%s] in [%s] inserted [%s] rows", file.getName, (new DateTime().getMillis - start.getMillis).toString, rows.toString))
+      persistAddresses(processRowsIntoAddressWrappers(loadFile(file).lines(), file.getName), fileName)
+      logger.info(String.format("Successfully processed [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString))
       true
     } catch {
       case e: Exception => {

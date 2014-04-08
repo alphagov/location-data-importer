@@ -40,7 +40,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logg
     resultOf("codepoint", files.zipWithIndex.map {
       case (file, index) => {
         val result = processors.processCodePointFile(file)
-        println("CodePoints: " + asPercent(index + 1, files.size) + "% done result:" + result)
+        println("CodePoints: " + asPercent(index + 1, files.size) + "% of files done")
         result
       }
     }.toList)
@@ -51,7 +51,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logg
     resultOf("streets", files.zipWithIndex.map {
       case (file, index) => {
         val result = processors.processAddressBaseForStreets(file)
-        println("Streets: " + asPercent(index + 1, files.size) + "% done result:" + result)
+        println("Streets: " + asPercent(index + 1, files.size) + "% of files done")
         result
 
       }
@@ -63,7 +63,7 @@ class ProcessAddressBaseFiles(processors: AddressBaseFileProcessor) extends Logg
     resultOf("addresses", files.zipWithIndex.map {
       case (file, index) => {
         val result = processors.processAddressBaseForAddresses(file)
-        println("Addresses: " + asPercent(index + 1, files.size) + "% done result:" + result)
+        println("Addresses: " + asPercent(index + 1, files.size) + "% of files done")
         result
       }
     }.toList)

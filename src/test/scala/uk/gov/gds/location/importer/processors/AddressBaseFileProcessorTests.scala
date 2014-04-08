@@ -13,23 +13,19 @@ class AddressBaseFileProcessorTests extends Specification with Mockito {
   val mongoConnection = mock[MongoConnection]
   val addressBaseFileProcessor = new AddressBaseFileProcessor(mongoConnection)
 
-  mongoConnection.insertCodePoints(any) returns (100)
-  mongoConnection.insertStreets(any) returns (100)
-  mongoConnection.insertAddresses(any) returns (100)
-
   "processCodePointFile" should {
     "successfully process a valid file" in {
       addressBaseFileProcessor.processCodePointFile(new File("testdata/codepoint/good-file.csv")) must beTrue
       there were atMostTwo(mongoConnection).insertCodePoints(any)
       AllTheCodePoints.codePoints("dd97yx")._1 must beEqualTo("S12000041")
-      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("S92000003")
+      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("Scotland")
     }
 
     "successfully process a valid file with one bad row" in {
       addressBaseFileProcessor.processCodePointFile(new File("testdata/codepoint/file-with-one-bad-row.csv")) must beTrue
       there were atMostTwo(mongoConnection).insertCodePoints(any)
       AllTheCodePoints.codePoints("dd97yx")._1 must beEqualTo("S12000041")
-      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("S92000003")
+      AllTheCodePoints.codePoints("dd97yx")._2 must beEqualTo("Scotland")
     }
   }
 
