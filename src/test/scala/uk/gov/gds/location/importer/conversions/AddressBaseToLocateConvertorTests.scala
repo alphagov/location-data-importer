@@ -62,17 +62,25 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
     "build full set of ordering information from sao and pao fields in LPI" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = Some("1"),
+        saoStartSuffix = Some("a"),
         saoEndNumber = Some("2"),
+        saoEndSuffix = Some("b"),
         paoStartNumber = Some("3"),
+        paoStartSuffix = Some("x"),
         paoEndNumber = Some("4"),
+        paoEndSuffix = Some("y"),
         saoText = Some("saotext"),
         paoText = Some("paotext")
       )
       val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None))
       o.saoStartNumber.get must beEqualTo(1)
+      o.saoStartSuffix.get must beEqualTo("a")
       o.saoEndNumber.get must beEqualTo(2)
+      o.saoEndSuffix.get must beEqualTo("b")
       o.paoStartNumber.get must beEqualTo(3)
+      o.paoStartSuffix.get must beEqualTo("x")
       o.paoEndNumber.get must beEqualTo(4)
+      o.paoEndSuffix.get must beEqualTo("y")
       o.saoText.get must beEqualTo("saotext")
       o.paoText.get must beEqualTo("paotext")
     }
@@ -80,17 +88,25 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
     "build empty set of ordering information from empty sao and pao fields in LPI" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = None,
+        saoStartSuffix = None,
         saoEndNumber = None,
+        saoEndSuffix = None,
         paoStartNumber = None,
+        paoStartSuffix = None,
         paoEndNumber = None,
+        paoEndSuffix = None,
         saoText = None,
         paoText = None
       )
       val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None))
       o.saoStartNumber must beEqualTo(None)
+      o.saoStartSuffix must beEqualTo(None)
       o.saoEndNumber must beEqualTo(None)
+      o.saoEndSuffix must beEqualTo(None)
       o.paoStartNumber must beEqualTo(None)
+      o.paoStartSuffix must beEqualTo(None)
       o.paoEndNumber must beEqualTo(None)
+      o.paoEndSuffix must beEqualTo(None)
       o.saoText must beEqualTo(None)
       o.paoText must beEqualTo(None)
     }

@@ -94,9 +94,13 @@ object AddressBaseToLocateConvertor extends Logging {
 
   def ordering(addressWrapper: AddressBaseWrapper) = OrderingHelpers(
     paoStartNumber = addressWrapper.lpi.paoStartNumber.flatMap(n => n),
+    paoStartSuffix = addressWrapper.lpi.paoStartSuffix.flatMap(n => n),
     paoEndNumber = addressWrapper.lpi.paoEndNumber.flatMap(n => n),
+    paoEndSuffix = addressWrapper.lpi.paoEndSuffix.flatMap(n => n),
     saoStartNumber = addressWrapper.lpi.saoStartNumber.flatMap(n => n),
+    saoStartSuffix = addressWrapper.lpi.saoStartSuffix.flatMap(n => n),
     saoEndNumber = addressWrapper.lpi.saoEndNumber.flatMap(n => n),
+    saoEndSuffix = addressWrapper.lpi.saoEndSuffix.flatMap(n => n),
     paoText = addressWrapper.lpi.paoText.map(v => stripAllWhitespace(lowercase(v))),
     saoText = addressWrapper.lpi.saoText.map(v => stripAllWhitespace(lowercase(v)))
   )

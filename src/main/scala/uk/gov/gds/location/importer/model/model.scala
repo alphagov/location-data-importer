@@ -481,9 +481,13 @@ case class Presentation(
 
 case class OrderingHelpers(
                             saoStartNumber: Option[Int] = None,
+                            saoStartSuffix: Option[String] = None,
                             saoEndNumber: Option[Int] = None,
+                            saoEndSuffix: Option[String] = None,
                             paoStartNumber: Option[Int] = None,
+                            paoStartSuffix: Option[String] = None,
                             paoEndNumber: Option[Int] = None,
+                            paoEndSuffix: Option[String] = None,
                             paoText: Option[String] = None,
                             saoText: Option[String] = None
                             )
@@ -524,8 +528,8 @@ case class StreetWithDescription(
 case class Properties(NAME: String, CODE: String)
 
 case class AuthorityBoundary(
-                         properties: Properties
-                         ) {
+                              properties: Properties
+                              ) {
   def serialize = grater[AuthorityBoundary].asDBObject(this)
 }
 
