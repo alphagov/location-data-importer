@@ -406,13 +406,11 @@ case class Classification(
                            primaryUse: String,
                            secondaryUse: Option[String]
                            ) extends AddressBase {
-  /*
-   * R means residential, but RC means residential parking not dwelling!
-   * Much too simplified and may not belong here
-   */
   def isResidential = ClassificationCodes.isResidential(classificationCode)
 
   def isCommercial = ClassificationCodes.isCommercial(classificationCode)
+
+  def isEducational = ClassificationCodes.isHigherEducational(classificationCode)
 }
 
 object Classification extends AddressBaseHelpers[Classification] {
@@ -463,6 +461,8 @@ case class Details(
                     isPostalAddress: Boolean,
                     isCommercial: Boolean,
                     isResidential: Boolean,
+                    isHigherEducational: Boolean,
+                    isElectoral: Boolean,
                     usrn: String,
                     file: String,
                     organisation: Option[String],

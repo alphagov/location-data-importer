@@ -18,9 +18,20 @@ class ClassificationCodesTest extends Specification {
       isResidential("A Anything after ignored") must beFalse
     }
 
-    "indicate if classification is residential" in {
+    "indicate if classification is commercial" in {
       isCommercial("C any thing after ignored") must beTrue
+      isCommercial("CE any thing after ignored") must beFalse // educational
       isCommercial("A any thing after ignored") must beFalse
+    }
+
+    "indicate if classification is educational" in {
+      isHigherEducational("CE01 any thing after ignored") must beTrue
+      isHigherEducational("CE05 any thing after ignored") must beTrue
+      isHigherEducational("CE02 any thing after ignored") must beFalse
+      isHigherEducational("CE03 any thing after ignored") must beFalse
+      isHigherEducational("CE04 any thing after ignored") must beFalse
+      isHigherEducational("CA any thing after ignored") must beFalse
+      isHigherEducational("C any thing after ignored") must beFalse
     }
 
     "return correct primary code based on 1st letter of classification" in {
@@ -58,7 +69,7 @@ class ClassificationCodesTest extends Specification {
       secondaryCodeFor("CE Anything after ignored") must beEqualTo(Some("Education"))
       secondaryCodeFor("CH Anything after ignored") must beEqualTo(Some("Hotel / Motel / Boarding / Guest House"))
       secondaryCodeFor("CI Anything after ignored") must beEqualTo(Some("Industrial Application"))
-      secondaryCodeFor("CL Anything after ignored") must beEqualTo(Some("Lesiure"))
+      secondaryCodeFor("CL Anything after ignored") must beEqualTo(Some("Leisure"))
       secondaryCodeFor("CM Anything after ignored") must beEqualTo(Some("Medical"))
       secondaryCodeFor("CN Anything after ignored") must beEqualTo(Some("Animal Centre"))
       secondaryCodeFor("CO Anything after ignored") must beEqualTo(Some("Office"))
@@ -84,7 +95,7 @@ class ClassificationCodesTest extends Specification {
       secondaryCodeFor("MF Anything after ignored") must beEqualTo(Some("Air Force"))
       secondaryCodeFor("MG Anything after ignored") must beEqualTo(Some("Defense Estates"))
       secondaryCodeFor("MN Anything after ignored") must beEqualTo(Some("Navy"))
-      secondaryCodeFor("OA Anything after ignored") must beEqualTo(Some("Aid To Naviation"))
+      secondaryCodeFor("OA Anything after ignored") must beEqualTo(Some("Aid To Navigation"))
       secondaryCodeFor("OC Anything after ignored") must beEqualTo(Some("Coastal Protection / Flood Prevention"))
       secondaryCodeFor("OE Anything after ignored") must beEqualTo(Some("Emergency Support"))
       secondaryCodeFor("OF Anything after ignored") must beEqualTo(Some("Street Furniture"))

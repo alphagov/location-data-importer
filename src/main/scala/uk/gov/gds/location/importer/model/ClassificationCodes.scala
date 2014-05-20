@@ -19,7 +19,9 @@ object ClassificationCodes {
       classification.toUpperCase.startsWith("RH") || // Multiple Occupance
       classification.toUpperCase.startsWith("RI") // Institute (nursing home etc)
 
-  def isCommercial(classification: String) = classification.toUpperCase.startsWith("C")
+  def isCommercial(classification: String) = classification.toUpperCase.startsWith("C") && !classification.toUpperCase.startsWith("CE")
+
+  def isHigherEducational(classification: String) = classification.toUpperCase.startsWith("CE01") || classification.toUpperCase.startsWith("CE05")
 
   private val primaryCodes: Map[String, String] = Map(
     "C" -> "Commercial",
@@ -40,7 +42,7 @@ object ClassificationCodes {
     "CE" -> "Education",
     "CH" -> "Hotel / Motel / Boarding / Guest House",
     "CI" -> "Industrial Application",
-    "CL" -> "Lesiure",
+    "CL" -> "Leisure",
     "CM" -> "Medical",
     "CN" -> "Animal Centre",
     "CO" -> "Office",
@@ -66,7 +68,7 @@ object ClassificationCodes {
     "MF" -> "Air Force",
     "MG" -> "Defense Estates",
     "MN" -> "Navy",
-    "OA" -> "Aid To Naviation",
+    "OA" -> "Aid To Navigation",
     "OC" -> "Coastal Protection / Flood Prevention",
     "OE" -> "Emergency Support",
     "OF" -> "Street Furniture",

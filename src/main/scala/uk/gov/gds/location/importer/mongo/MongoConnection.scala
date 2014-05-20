@@ -95,7 +95,7 @@ class MongoConnection extends Logging {
 
   def addAddressIndexes() {
     logger.info("indexing geo lookups - needs mongo 2.6")
-    authorityBoundaries.ensureIndex(DBObject("properties.CODE" -> 1))
+    //authorityBoundaries.ensureIndex(DBObject("properties.CODE" -> 1))
 
     logger.info("indexing postcode")
     addresses.ensureIndex(DBObject("postcode" -> 1))
@@ -104,7 +104,7 @@ class MongoConnection extends Logging {
     addresses.ensureIndex(DBObject("uprn" -> 1))
 
     logger.info("indexing postcode, postal address, residential")
-    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isPostalAddress" -> 1, "details.isResidential" -> 1))
+    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isElectoral" -> 1))
 
     logger.info("indexing gssCode")
     addresses.ensureIndex(DBObject("gssCode" -> 1))

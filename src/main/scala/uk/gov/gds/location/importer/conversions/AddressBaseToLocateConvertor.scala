@@ -132,6 +132,8 @@ object AddressBaseToLocateConvertor extends Logging {
     isPostalAddress = addressWrapper.blpu.canReceivePost,
     isResidential = addressWrapper.classification.isResidential,
     isCommercial = addressWrapper.classification.isCommercial,
+    isHigherEducational = addressWrapper.classification.isEducational,
+    isElectoral = (addressWrapper.classification.isEducational || addressWrapper.classification.isResidential) && addressWrapper.blpu.canReceivePost,
     usrn = addressWrapper.lpi.usrn,
     file = filename,
     organisation = toSentenceCase(addressWrapper.organisation.map(org => org.organistation)),

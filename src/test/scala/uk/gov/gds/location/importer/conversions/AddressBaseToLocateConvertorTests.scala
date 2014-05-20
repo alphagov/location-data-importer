@@ -613,10 +613,64 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       d.isPostalAddress must beTrue
       d.isResidential must beTrue
       d.isCommercial must beFalse
+      d.isHigherEducational must beFalse
+      d.isElectoral must beTrue
       d.usrn must beEqualTo("usrn")
       d.organisation.get must beEqualTo("The Org")
       d.primaryClassification must beEqualTo("Residential")
       d.secondaryClassification.get must beEqualTo("Dwelling")
+
+    }
+
+    "contain all relevant data from LPI, Organisation and Classification objects for educational property" in {
+      val l = lpi("uprn", "usrn")
+      val b = blpu("uprn").copy(receivesPost = "Y")
+      val c = classification("uprn").copy(classificationCode = "CE01", primaryUse = "Education", secondaryUse = Some("College"))
+      val o = organisation("uprn").copy(organistation = "THE ORG")
+
+      val wrapper = AddressBaseWrapper(b, l, c, Some(o))
+      val d = details(wrapper, "filename")
+      d.file must beEqualTo("filename")
+      d.blpuCreatedAt must beEqualTo(b.startDate)
+      d.blpuUpdatedAt must beEqualTo(b.lastUpdated)
+      d.classification must beEqualTo(c.classificationCode)
+      d.status.get must beEqualTo(b.blpuState.get.toString)
+      d.state.get must beEqualTo(b.logicalState.get.toString)
+      d.isPostalAddress must beTrue
+      d.isResidential must beFalse
+      d.isCommercial must beFalse
+      d.isHigherEducational must beTrue
+      d.isElectoral must beTrue
+      d.usrn must beEqualTo("usrn")
+      d.organisation.get must beEqualTo("The Org")
+      d.primaryClassification must beEqualTo("Education")
+      d.secondaryClassification.get must beEqualTo("College")
+
+    }
+
+    "contain all set electoral field to false if not a postal address" in {
+      val l = lpi("uprn", "usrn")
+      val b = blpu("uprn").copy(receivesPost = "N")
+      val c = classification("uprn").copy(classificationCode = "CE01", primaryUse = "Education", secondaryUse = Some("College"))
+      val o = organisation("uprn").copy(organistation = "THE ORG")
+
+      val wrapper = AddressBaseWrapper(b, l, c, Some(o))
+      val d = details(wrapper, "filename")
+      d.file must beEqualTo("filename")
+      d.blpuCreatedAt must beEqualTo(b.startDate)
+      d.blpuUpdatedAt must beEqualTo(b.lastUpdated)
+      d.classification must beEqualTo(c.classificationCode)
+      d.status.get must beEqualTo(b.blpuState.get.toString)
+      d.state.get must beEqualTo(b.logicalState.get.toString)
+      d.isPostalAddress must beFalse
+      d.isResidential must beFalse
+      d.isCommercial must beFalse
+      d.isHigherEducational must beTrue
+      d.isElectoral must beFalse
+      d.usrn must beEqualTo("usrn")
+      d.organisation.get must beEqualTo("The Org")
+      d.primaryClassification must beEqualTo("Education")
+      d.secondaryClassification.get must beEqualTo("College")
 
     }
 
@@ -634,6 +688,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       d.isPostalAddress must beTrue
       d.isResidential must beTrue
       d.isCommercial must beFalse
+      d.isHigherEducational must beFalse
       d.usrn must beEqualTo("usrn")
       d.organisation.isDefined must beFalse
       d.primaryClassification must beEqualTo("Residential")
