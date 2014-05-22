@@ -3,6 +3,8 @@ Location Data Importer
 
 Location Data Importer is a scala application that imports Ordinance Survey data into a mongo database. Primarily it is used to back the locate-api which provides address and local authority lookups from postcode / GSS Code.
 
+Issued under an MIT license, see LICENSE file.
+
 ### Ordinance Survey
 
 This is backed by two Ordinance Survey products:
