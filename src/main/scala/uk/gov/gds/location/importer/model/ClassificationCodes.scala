@@ -15,6 +15,7 @@ object ClassificationCodes {
   }
 
   def isResidential(classification: String) =
+    classification.toUpperCase.equals("R") || // Generic Residential
     classification.toUpperCase.startsWith("RD") || // Dwelling
       classification.toUpperCase.startsWith("RH") || // Multiple Occupance
       classification.toUpperCase.startsWith("RI") // Institute (nursing home etc)

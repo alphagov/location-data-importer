@@ -9,6 +9,7 @@ class ClassificationCodesTest extends Specification {
   "Classification Codes" should {
 
     "indicate if classification is residential" in {
+      isResidential("R") must beTrue
       isResidential("RD Anything after ignored") must beTrue
       isResidential("RH Anything after ignored") must beTrue
       isResidential("RI Anything after ignored") must beTrue
