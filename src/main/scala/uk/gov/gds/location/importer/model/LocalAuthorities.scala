@@ -5,8 +5,8 @@ case class LocalAuthority(gssCode: String, snacCode: String, onsName: String, cu
 
 object LocalAuthorities {
 
-  lazy val localAuthoritiesByCustodianCode = localAuthorities.map(la => la.custodianCode -> la).toMap
-  lazy val localAuthoritiesByGssCode = localAuthorities.map(la => la.gssCode -> la).toMap
+  lazy val localAuthoritiesByCustodianCode = localAuthorities.map(la => la.custodianCode.trim -> la).toMap
+  lazy val localAuthoritiesByGssCode = localAuthorities.map(la => la.gssCode.trim -> la).toMap
 
   val localAuthorities = List(
     LocalAuthority("S12000033", "00QA", "Aberdeen City", "9051", "ABERDEEN CITY"),
