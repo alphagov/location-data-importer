@@ -48,7 +48,7 @@ object LocalAuthorities {
     LocalAuthority("E07000068", "22UD", "Brentwood", "1515", "BRENTWOOD"),
     LocalAuthority("W06000013", "00PB", "Bridgend", "6915", "BRIDGEND"),
     LocalAuthority("E06000043", "00ML", "Brighton and Hove", "1445", "BRIGHTON AND HOVE"),
-    LocalAuthority("E06000023", "00HB", "Bristol City", "116 ", "BRISTOL CITY"),
+    LocalAuthority("E06000023", "00HB", "Bristol City", "116", "BRISTOL CITY"),
     LocalAuthority("E07000144", "33UC", "Broadland", "2610", "BROADLAND"),
     LocalAuthority("E09000006", "00AF", "Bromley", "5180", "BROMLEY"),
     LocalAuthority("E07000234", "47UB", "Bromsgrove", "1805", "BROMSGROVE"),
