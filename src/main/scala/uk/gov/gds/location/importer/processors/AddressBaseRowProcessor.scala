@@ -331,7 +331,7 @@ object AddressBaseRowProcessor extends Logging {
     */
   def mostRecentActiveLPIForUprn(uprn: String, lpis: Map[String, List[LPI]]): Option[LPI] =
     lpis.get(uprn) match {
-      case Some(lpi) => lpi.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case Some(lpi) => lpi.filter(l => !l.endDate.isDefined && l.officialAddress.getOrElse(true)).sortBy(l => l.lastUpdated).headOption
       case _ => None
     }
 

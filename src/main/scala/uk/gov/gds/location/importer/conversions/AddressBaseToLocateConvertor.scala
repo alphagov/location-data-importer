@@ -161,20 +161,30 @@ object formatters extends Logging {
 
   /**
    * Build street address (ie 4 High Street).
-   * If Street Description is of classification unofficial or description then use delivery point fields
+   * If Street Description is of classification unofficial or description then use delivery point thoroughfare as street name
    * @param lpi
    * @param street
    * @param deliveryPoint
    * @return
    */
   def constructStreetAddressFrom(lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint]) = {
-
     if (invalidStreetDescription(street)) {
-      logger.info("Using delivery point: street classification [%s] uprn [%s]".format(street.recordType, lpi.uprn))
-      Some(String.format("%s %s", deliveryPoint.get.buildingNumber, deliveryPoint.get.thoroughfareName))
+      logger.info("Using delivery point: street classification [%s] uprn [%s] description [%s] delivery point [%s]".format(street.recordType, lpi.uprn, street.streetDescription, deliveryPoint))
+      deliveryPointStreet(deliveryPoint) match {
+        case Some(street) => Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street).get).trim)
+        case _ => None
+      }
     }
     else
       Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street.streetDescription).get).trim)
+  }
+
+  // should have optional number and street as 1 street or simply street with no trailing whitespace
+  def deliveryPointStreet(deliveryPoint: Option[DeliveryPoint]) = {
+    deliveryPoint match {
+      case Some(dp) if dp.thoroughfareName.isDefined => Some(dp.thoroughfareName.get)
+      case _ => None
+    }
   }
 
   def invalidStreetDescription(street: StreetWithDescription) = !street.recordType.isDefined || StreetRecordTypeCode.isUnofficialStreet(street.recordType.get) || StreetRecordTypeCode.isDescription(street.recordType.get)

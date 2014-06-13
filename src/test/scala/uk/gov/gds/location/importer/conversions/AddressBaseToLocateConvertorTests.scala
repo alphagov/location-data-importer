@@ -297,24 +297,6 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
   }
 
   "construct street address" should {
-    "be None if not officially designated street" in {
-      val l = lpi("uprn", "usrn").copy(
-        saoStartNumber = Some("1"),
-        saoStartSuffix = Some("a"),
-        saoEndNumber = Some("2"),
-        saoEndSuffix = Some("b"),
-        paoStartNumber = Some("3"),
-        paoStartSuffix = Some("c"),
-        paoEndNumber = Some("4"),
-        paoEndSuffix = Some("d"),
-        saoText = Some("saotext"),
-        paoText = Some("paotext")
-      )
-
-      val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("streetDescription"))
-      constructStreetAddressFrom(l, sd).isDefined must beFalse
-    }
-
     "be populated if officially designated or numbered street" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = Some("1"),
@@ -328,14 +310,14 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = Some("saotext"),
         paoText = Some("paotext")
       )
-
+      val dp = deliveryPoint("uprn")
       val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("officiallyDesignated"))
-      constructStreetAddressFrom(l, sd1).isDefined must beTrue
+      constructStreetAddressFrom(l, sd1, Some(dp)).isDefined must beTrue
       val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("numberedStreet"))
-      constructStreetAddressFrom(l, sd2).isDefined must beTrue
+      constructStreetAddressFrom(l, sd2, Some(dp)).isDefined must beTrue
     }
 
-    "be not populated if not officially designated or numbered street" in {
+    "be populated from delivery point if not officially designated or numbered street" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = Some("1"),
         saoStartSuffix = Some("a"),
@@ -348,14 +330,40 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = Some("saotext"),
         paoText = Some("paotext")
       )
-
+      val dp = deliveryPoint("uprn")
       val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
-      constructStreetAddressFrom(l, sd1).isDefined must beFalse
+      constructStreetAddressFrom(l, sd1, Some(dp)).isDefined must beTrue
+      constructStreetAddressFrom(l, sd1, Some(dp)).get must beEqualTo("3c-4d Thoroughfarename")
       val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
-      constructStreetAddressFrom(l, sd2).isDefined must beFalse
+      constructStreetAddressFrom(l, sd2, Some(dp)).isDefined must beTrue
+      constructStreetAddressFrom(l, sd2, Some(dp)).get must beEqualTo("3c-4d Thoroughfarename")
       val sd3 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("streetDescription"))
-      constructStreetAddressFrom(l, sd3).isDefined must beFalse
+      constructStreetAddressFrom(l, sd3, Some(dp)).isDefined must beTrue
+      constructStreetAddressFrom(l, sd3, Some(dp)).get must beEqualTo("3c-4d Thoroughfarename")
     }
+
+    "be none if not officially designated or numbered street and no delivery point entry" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = Some("1"),
+        saoStartSuffix = Some("a"),
+        saoEndNumber = Some("2"),
+        saoEndSuffix = Some("b"),
+        paoStartNumber = Some("3"),
+        paoStartSuffix = Some("c"),
+        paoEndNumber = Some("4"),
+        paoEndSuffix = Some("d"),
+        saoText = Some("saotext"),
+        paoText = Some("paotext")
+      )
+      val dp = deliveryPoint("uprn")
+      val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      constructStreetAddressFrom(l, sd1, None).isDefined must beFalse
+      val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
+      constructStreetAddressFrom(l, sd2, None).isDefined must beFalse
+      val sd3 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("streetDescription"))
+      constructStreetAddressFrom(l, sd3, None).isDefined must beFalse
+    }
+
 
     "include pao number/suffix if included" in {
       val l = lpi("uprn", "usrn").copy(
@@ -372,7 +380,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "Some street")
-      constructStreetAddressFrom(l, sd).get must beEqualTo("3c-4d Some Street")
+      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3c-4d Some Street")
     }
 
     "include street description in sentence case" in {
@@ -390,7 +398,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd).get must beEqualTo("3c-4d Some Street")
+      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3c-4d Some Street")
     }
 
     "include only include pao numbers if no suffixes" in {
@@ -408,7 +416,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd).get must beEqualTo("3-4 Some Street")
+      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3-4 Some Street")
     }
 
     "include only include start pao numbers if no end" in {
@@ -426,7 +434,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd).get must beEqualTo("3 Some Street")
+      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3 Some Street")
     }
 
     "include only include end pao numbers if no start" in {
@@ -444,7 +452,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd).get must beEqualTo("4 Some Street")
+      constructStreetAddressFrom(l, sd, None).get must beEqualTo("4 Some Street")
     }
 
     "include not include pao suffixes if no numbers" in {
@@ -462,7 +470,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd).get must beEqualTo("Some Street")
+      constructStreetAddressFrom(l, sd, None).get must beEqualTo("Some Street")
     }
   }
 
@@ -718,6 +726,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
     }
   }
 
+  // TODO TEST ME
   "presentation" should {
     "set up complete set of values, all in sentence case" in {
       val l = lpi("uprn", "usrn").copy(
@@ -736,9 +745,36 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val sd = StreetDescriptor("usrn", "high street", Some("locality"), Some("my town"), "admin area")
       val s = streetWithDescription("filename", sd, street("usrn"))
 
-      val p = presentation(b, l, s)
+      val p = presentation(b, l, s, None)
       p.property.get must beEqualTo("Sao Text 1a-2b Pao Text")
       p.street.get must beEqualTo("3c-4d High Street")
+      p.locality.get must beEqualTo("Locality")
+      p.town.get must beEqualTo("My Town")
+      p.postcode must beEqualTo("MY1 1MY")
+      p.area.get must beEqualTo("Admin Area")
+    }
+
+    "set up complete set of values, all in sentence case, street derived from delivery point" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = Some("1"),
+        saoStartSuffix = Some("a"),
+        saoEndNumber = Some("2"),
+        saoEndSuffix = Some("b"),
+        paoStartNumber = Some("3"),
+        paoStartSuffix = Some("c"),
+        paoEndNumber = Some("4"),
+        paoEndSuffix = Some("d"),
+        saoText = Some("sao text"),
+        paoText = Some("pao text")
+      )
+      val b = blpu("uprn").copy(receivesPost = "Y", postcode = "MY1 1MY")
+      val sd = StreetDescriptor("usrn", "high street", Some("locality"), Some("my town"), "admin area")
+      val s = streetWithDescription("filename", sd, street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      val dp = deliveryPoint("uprn").copy(buildingNumber = Some("123"), thoroughfareName = Some("street"))
+
+      val p = presentation(b, l, s, Some(dp))
+      p.property.get must beEqualTo("Sao Text 1a-2b Pao Text")
+      p.street.get must beEqualTo("3c-4d Street")
       p.locality.get must beEqualTo("Locality")
       p.town.get must beEqualTo("My Town")
       p.postcode must beEqualTo("MY1 1MY")
@@ -763,7 +799,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val sd = StreetDescriptor("usrn", "high street", None, None, "admin area")
       val s = streetWithDescription("filename", sd, street("usrn"))
 
-      val p = presentation(b, l, s)
+      val p = presentation(b, l, s, None)
       p.property.isDefined must beFalse
       p.street.get must beEqualTo("High Street")
       p.locality.isDefined must beFalse
@@ -779,10 +815,16 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val sd = StreetDescriptor("usrn", "high street", None, Some("thing"), "thing")
       val s = streetWithDescription("filename", sd, street("usrn"))
 
-      val p = presentation(b, l, s)
+      val p = presentation(b, l, s, None)
       p.town.isDefined must beTrue
       p.town.get must beEqualTo("Thing")
       p.area.isDefined must beFalse
+    }
+  }
+
+  "this" should {
+    "fail if no street and no property found?" in {
+      1 must beEqualTo(2)
     }
   }
 }
