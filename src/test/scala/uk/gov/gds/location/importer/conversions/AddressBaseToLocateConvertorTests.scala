@@ -18,25 +18,25 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
   "Address conversions" should {
 
     "not create an address if no street available for the usrn" in {
-      val addressWrapper = AddressBaseWrapper(blpu("blpu"), lpi("uprn", "usrn"), classification("uprn"), None)
+      val addressWrapper = AddressBaseWrapper(blpu("blpu"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       toLocateAddress(addressWrapper, "filename") must beEqualTo(None)
     }
 
     "not create an address if street available for the usrn but no authority for custodian code" in {
       AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
-      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(localCustodianCode = "doesn't exist"), lpi("uprn", "usrn"), classification("uprn"), None)
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(localCustodianCode = "doesn't exist"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       toLocateAddress(addressWrapper, "filename") must beEqualTo(None)
     }
 
     "create an address if street and custodian code available for the address" in {
       AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
-      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None)
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       toLocateAddress(addressWrapper, "filename").isDefined must beTrue
     }
 
     "create an address with correct root fields derived from custodian code and blpu" in {
       AllTheStreets.add(List(streetWithDescription("filename", streetDescriptor("usrn"), street("usrn"))))
-      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "SW11 2DR", uprn = "123456", localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None)
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "SW11 2DR", uprn = "123456", localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       toLocateAddress(addressWrapper, "filename").get.postcode must beEqualTo("sw112dr")
       toLocateAddress(addressWrapper, "filename").get.uprn must beEqualTo("123456")
       toLocateAddress(addressWrapper, "filename").get.gssCode must beEqualTo("S12000033")
@@ -72,7 +72,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = Some("saotext"),
         paoText = Some("paotext")
       )
-      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None))
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None))
       o.saoStartNumber.get must beEqualTo(1)
       o.saoStartSuffix.get must beEqualTo("a")
       o.saoEndNumber.get must beEqualTo(2)
@@ -98,7 +98,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = None,
         paoText = None
       )
-      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None))
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None))
       o.saoStartNumber must beEqualTo(None)
       o.saoStartSuffix must beEqualTo(None)
       o.saoEndNumber must beEqualTo(None)
@@ -120,7 +120,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = None,
         paoText = None
       )
-      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None))
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None))
       o.saoStartNumber must beEqualTo(None)
       o.saoEndNumber must beEqualTo(None)
       o.paoStartNumber must beEqualTo(None)
@@ -138,7 +138,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = Some("CAPITALS AND WHITE SPACE"),
         paoText = Some("CAPITALS AND WHITE SPACE")
       )
-      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None))
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None))
       o.saoStartNumber must beEqualTo(None)
       o.saoEndNumber must beEqualTo(None)
       o.paoStartNumber must beEqualTo(None)
@@ -602,7 +602,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val c = classification("uprn").copy(classificationCode = "RD04", primaryUse = "Residential", secondaryUse = Some("Dwelling"))
       val o = organisation("uprn").copy(organistation = "THE ORG")
 
-      val wrapper = AddressBaseWrapper(b, l, c, Some(o))
+      val wrapper = AddressBaseWrapper(b, l, c, Some(o), None)
       val d = details(wrapper, "filename")
       d.file must beEqualTo("filename")
       d.blpuCreatedAt must beEqualTo(b.startDate)
@@ -628,7 +628,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val c = classification("uprn").copy(classificationCode = "CE01", primaryUse = "Education", secondaryUse = Some("College"))
       val o = organisation("uprn").copy(organistation = "THE ORG")
 
-      val wrapper = AddressBaseWrapper(b, l, c, Some(o))
+      val wrapper = AddressBaseWrapper(b, l, c, Some(o), None)
       val d = details(wrapper, "filename")
       d.file must beEqualTo("filename")
       d.blpuCreatedAt must beEqualTo(b.startDate)
@@ -654,7 +654,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val c = classification("uprn").copy(classificationCode = "CE01", primaryUse = "Education", secondaryUse = Some("College"))
       val o = organisation("uprn").copy(organistation = "THE ORG")
 
-      val wrapper = AddressBaseWrapper(b, l, c, Some(o))
+      val wrapper = AddressBaseWrapper(b, l, c, Some(o), None)
       val d = details(wrapper, "filename")
       d.file must beEqualTo("filename")
       d.blpuCreatedAt must beEqualTo(b.startDate)
@@ -679,7 +679,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val b = blpu("uprn").copy(receivesPost = "Y", blpuState = None, logicalState = None)
       val c = classification("uprn").copy(classificationCode = "RD04", primaryUse = "Residential", secondaryUse = None)
 
-      val wrapper = AddressBaseWrapper(b, l, c, None)
+      val wrapper = AddressBaseWrapper(b, l, c, None, None)
       val d = details(wrapper, "filename")
       d.file must beEqualTo("filename")
       d.classification must beEqualTo(c.classificationCode)
@@ -700,7 +700,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val b = blpu("uprn").copy(receivesPost = "Y")
       val c = classification("uprn")
 
-      val wrapper = AddressBaseWrapper(b, l, c, None)
+      val wrapper = AddressBaseWrapper(b, l, c, None, None)
       val d = details(wrapper, "filename")
       d.isPostalAddress must beTrue
 
@@ -711,7 +711,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val b = blpu("uprn").copy(receivesPost = "N")
       val c = classification("uprn")
 
-      val wrapper = AddressBaseWrapper(b, l, c, None)
+      val wrapper = AddressBaseWrapper(b, l, c, None, None)
       val d = details(wrapper, "filename")
       d.isPostalAddress must beFalse
 

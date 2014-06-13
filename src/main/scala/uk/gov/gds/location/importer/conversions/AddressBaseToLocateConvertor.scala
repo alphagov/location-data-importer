@@ -61,7 +61,7 @@ object AddressBaseToLocateConvertor extends Logging {
       country = Countries.countryForGssCode(localAuthority.gssCode),
       uprn = addressWrapper.blpu.uprn,
       postcode = lowercase(stripAllWhitespace(addressWrapper.blpu.postcode)),
-      presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street),
+      presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street, addressWrapper.deliveryPoint),
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
       ordering = Some(ordering(addressWrapper))
@@ -107,10 +107,10 @@ object AddressBaseToLocateConvertor extends Logging {
 
   def location(blpu: BLPU) = Location(blpu.lat, blpu.long)
 
-  def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription) = {
+  def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint]) = {
     Presentation(
       property = toSentenceCase(constructPropertyFrom(lpi)),
-      street = toSentenceCase(constructStreetAddressFrom(lpi, street)),
+      street = toSentenceCase(constructStreetAddressFrom(lpi, street, deliveryPoint)),
       locality = toSentenceCase(street.localityName),
       town = toSentenceCase(street.townName),
       area = constructArea(street),
@@ -146,7 +146,7 @@ object AddressBaseToLocateConvertor extends Logging {
 /**
  * Various utilities for string / field conversions / creations
  */
-object formatters {
+object formatters extends Logging {
 
   def constructPropertyFrom(lpi: LPI) = {
     val formatted = (
@@ -159,16 +159,25 @@ object formatters {
     else Some(formatted)
   }
 
-  def constructStreetAddressFrom(lpi: LPI, street: StreetWithDescription) =
-    if (!street.recordType.isDefined)
-      None
-    else if (StreetRecordTypeCode.isUnofficialStreet(street.recordType.get))
-      None
-    else if (StreetRecordTypeCode.isDescription(street.recordType.get))
-      None
+  /**
+   * Build street address (ie 4 High Street).
+   * If Street Description is of classification unofficial or description then use delivery point fields
+   * @param lpi
+   * @param street
+   * @param deliveryPoint
+   * @return
+   */
+  def constructStreetAddressFrom(lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint]) = {
+
+    if (invalidStreetDescription(street)) {
+      logger.info("Using delivery point: street classification [%s] uprn [%s]".format(street.recordType, lpi.uprn))
+      Some(String.format("%s %s", deliveryPoint.get.buildingNumber, deliveryPoint.get.thoroughfareName))
+    }
     else
       Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street.streetDescription).get).trim)
+  }
 
+  def invalidStreetDescription(street: StreetWithDescription) = !street.recordType.isDefined || StreetRecordTypeCode.isUnofficialStreet(street.recordType.get) || StreetRecordTypeCode.isDescription(street.recordType.get)
 
   def constructStreetAddressPrefixFrom(lpi: LPI) = formatStartAndEndNumbersAndSuffixes(lpi.paoStartNumber, lpi.paoStartSuffix, lpi.paoEndNumber, lpi.paoEndSuffix)
 

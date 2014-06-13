@@ -391,7 +391,7 @@ class ModelTests extends Specification {
     }
 
     "be able to identify an educational property" in {
-      val school = """32,"I",94712,9059004789,"9059C000080071","CE1","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
+      val school = """32,"I",94712,9059004789,"9059C000080071","CE01","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
       Classification.fromCsvLine(parseCsvLine(school)).isEducational must beTrue
       Classification.fromCsvLine(parseCsvLine(school)).isCommercial must beFalse
       Classification.fromCsvLine(parseCsvLine(school)).isResidential must beFalse
@@ -466,18 +466,28 @@ class ModelTests extends Specification {
     }
 
     "be able to be constructed from a fully populated csv line" in {
-      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,2014-01-01,2010-09-14,2010-09-14"""
+      val line = """28,"I",262323,100021769440,,12077423,"","","sub building","building",46,"dependant thoroughfare","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,2014-01-01,2010-09-14,2010-09-14"""
       deliveryPoint(line).uprn must beEqualTo("100021769440")
       deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).subBuildingName.get must beEqualTo("sub building")
+      deliveryPoint(line).buildingName.get must beEqualTo("building")
+      deliveryPoint(line).buildingNumber.get must beEqualTo("46")
+      deliveryPoint(line).dependantThoroughfareName.get must beEqualTo("dependant thoroughfare")
+      deliveryPoint(line).thoroughfareName.get must beEqualTo("VINCENT ROAD")
       deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
       deliveryPoint(line).endDate.get must beEqualTo(new DateTime(2014, 1, 1, 0, 0))
       deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
     }
 
     "be able to be constructed from a mimum populated csv line" in {
-      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",,"","","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
       deliveryPoint(line).uprn must beEqualTo("100021769440")
       deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).subBuildingName must beEqualTo(None)
+      deliveryPoint(line).buildingName must beEqualTo(None)
+      deliveryPoint(line).buildingNumber must beEqualTo(None)
+      deliveryPoint(line).dependantThoroughfareName must beEqualTo(None)
+      deliveryPoint(line).thoroughfareName must beEqualTo(None)
       deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
       deliveryPoint(line).endDate.isDefined must beFalse
       deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
@@ -491,7 +501,7 @@ class ModelTests extends Specification {
   }
 
   private def deliveryPoint(line: String) = DeliveryPoint.fromCsvLine(parseCsvLine(line))
-  
+
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))
 
   private def lpi(line: String) = LPI.fromCsvLine(parseCsvLine(line))

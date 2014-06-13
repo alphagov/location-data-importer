@@ -43,6 +43,7 @@ class MongoConnection extends Logging {
   }
 
   def insertAddresses(things: List[DBObject]) = {
+    println("INSERTING "  + things.size)
     addresses.insert(things.toArray, WriteConcern.Normal)
   }
 

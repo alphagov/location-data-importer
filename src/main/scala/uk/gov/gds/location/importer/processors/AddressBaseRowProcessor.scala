@@ -270,7 +270,7 @@ object AddressBaseRowProcessor extends Logging {
       logger.error(String.format("BLPU has no classification UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else {
-      Some(AddressBaseWrapper(updateBlpuPostcodeIfRequired(fileName, blpu, deliveryPoint), lpi.get, classification.get, organisation))
+      Some(AddressBaseWrapper(updateBlpuPostcodeIfRequired(fileName, blpu, deliveryPoint), lpi.get, classification.get, organisation, deliveryPoint))
     }
   }
 

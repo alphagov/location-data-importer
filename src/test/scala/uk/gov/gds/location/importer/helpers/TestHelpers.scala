@@ -10,7 +10,19 @@ object TestHelpers {
   lazy val lastUpdatedDate = new DateTime().minusDays(50)
   lazy val endDate = new DateTime().minusDays(50)
 
-  def deliveryPoint(uprn: String) = DeliveryPoint(uprn, "POSTCODE", startDate, None, lastUpdatedDate)
+
+  def deliveryPoint(uprn: String) = DeliveryPoint(
+    uprn,
+    Some("subBuildingName"),
+    Some("buildingName"),
+    Some("buildingNumber"),
+    Some("dependantThoroughfareName"),
+    Some("thoroughfareName"),
+    "POSTCODE",
+    startDate,
+    None,
+    lastUpdatedDate
+  )
 
   def blpu(uprn: String) = BLPU(
     uprn,

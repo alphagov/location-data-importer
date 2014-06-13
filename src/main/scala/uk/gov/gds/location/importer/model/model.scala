@@ -53,7 +53,7 @@ object AllTheStreets {
 /**
  * Wrapper around the address base classes to associate a BLPU with dependant objects prior to translation to simple model
  */
-case class AddressBaseWrapper(blpu: BLPU, lpi: LPI, classification: Classification, organisation: Option[Organisation]) {
+case class AddressBaseWrapper(blpu: BLPU, lpi: LPI, classification: Classification, organisation: Option[Organisation], deliveryPoint: Option[DeliveryPoint]) {
   lazy val uprn = blpu.uprn
   lazy val usrn = lpi.usrn
 }
@@ -371,6 +371,11 @@ object Organisation extends AddressBaseHelpers[Organisation] {
 
 case class DeliveryPoint(
                           uprn: String,
+                          subBuildingName: Option[String],
+                          buildingName: Option[String],
+                          buildingNumber: Option[String],
+                          dependantThoroughfareName: Option[String],
+                          thoroughfareName: Option[String],
                           postcode: String,
                           startDate: DateTime,
                           endDate: Option[DateTime],
@@ -381,6 +386,11 @@ object DeliveryPoint extends AddressBaseHelpers[DeliveryPoint] {
   val requiredCsvColumns = 29
 
   private val uprnIndex = 3
+  private val subBuildingNameIndex = 8
+  private val buildingNameIndex = 9
+  private val buildingNumberIndex = 10
+  private val dependantThoroughfareNameIndex = 11
+  private val thoroughfareNameIndex = 12
   private val postcodeIndex = 16
   private val startDateIndex = 25
   private val endDateIndex = 26
@@ -390,6 +400,11 @@ object DeliveryPoint extends AddressBaseHelpers[DeliveryPoint] {
 
   def fromCsvLine(csvLine: List[String]) = DeliveryPoint(
     csvLine(uprnIndex),
+    csvLine(subBuildingNameIndex),
+    csvLine(buildingNameIndex),
+    csvLine(buildingNumberIndex),
+    csvLine(dependantThoroughfareNameIndex),
+    csvLine(thoroughfareNameIndex),
     csvLine(postcodeIndex),
     csvLine(startDateIndex),
     csvLine(endDateIndex),
