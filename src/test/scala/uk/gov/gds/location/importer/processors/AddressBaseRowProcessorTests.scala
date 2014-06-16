@@ -233,6 +233,34 @@ class AddressBaseRowProcessorTests extends Specification {
       val lpi3 = lpi("uprn", "usrn3").copy(lastUpdated = new DateTime().minusDays(3))
       mostRecentActiveLPIForUprn("uprn", Map("uprn" -> List(lpi3, lpi1, lpi2))).get must beEqualTo(lpi1)
     }
+
+    "return official LPI from a sorted list of active LPIs for a UPRN" in {
+      val lpi1 = lpi("uprn", "usrn1").copy(lastUpdated = new DateTime().minusDays(1), officialAddress = Some(false))
+      val lpi2 = lpi("uprn", "usrn2").copy(lastUpdated = new DateTime().minusDays(2), officialAddress = Some(false))
+      val lpi3 = lpi("uprn", "usrn3").copy(lastUpdated = new DateTime().minusDays(3), officialAddress = Some(true))
+      mostRecentActiveLPIForUprn("uprn", Map("uprn" -> List(lpi3, lpi1, lpi2))).get must beEqualTo(lpi3)
+    }
+
+    "return most recent official LPI from a sorted list of active LPIs for a UPRN" in {
+      val lpi1 = lpi("uprn", "usrn1").copy(lastUpdated = new DateTime().minusDays(1), officialAddress = Some(true))
+      val lpi2 = lpi("uprn", "usrn2").copy(lastUpdated = new DateTime().minusDays(2), officialAddress = Some(true))
+      val lpi3 = lpi("uprn", "usrn3").copy(lastUpdated = new DateTime().minusDays(3), officialAddress = Some(true))
+      mostRecentActiveLPIForUprn("uprn", Map("uprn" -> List(lpi3, lpi1, lpi2))).get must beEqualTo(lpi1)
+    }
+
+    "return most recently updated LPI from a list of active LPIs for a UPRN if all are unoffical" in {
+      val lpi1 = lpi("uprn", "usrn1").copy(lastUpdated = new DateTime().minusDays(1), officialAddress = Some(false))
+      val lpi2 = lpi("uprn", "usrn2").copy(lastUpdated = new DateTime().minusDays(2), officialAddress = Some(false))
+      val lpi3 = lpi("uprn", "usrn3").copy(lastUpdated = new DateTime().minusDays(3), officialAddress = Some(false))
+      mostRecentActiveLPIForUprn("uprn", Map("uprn" -> List(lpi3, lpi1, lpi2))).get must beEqualTo(lpi1)
+    }
+
+    "return most recently updated LPI from a list of active LPIs for a UPRN if no official flag set" in {
+      val lpi1 = lpi("uprn", "usrn1").copy(lastUpdated = new DateTime().minusDays(1), officialAddress = None)
+      val lpi2 = lpi("uprn", "usrn2").copy(lastUpdated = new DateTime().minusDays(2), officialAddress = None)
+      val lpi3 = lpi("uprn", "usrn3").copy(lastUpdated = new DateTime().minusDays(3), officialAddress = None)
+      mostRecentActiveLPIForUprn("uprn", Map("uprn" -> List(lpi3, lpi1, lpi2))).get must beEqualTo(lpi1)
+    }
   }
 
   "mostRecentActiveClassificationForUprn" should {

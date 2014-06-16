@@ -290,7 +290,7 @@ object AddressBaseRowProcessor extends Logging {
       case _ => blpu
     }
 
-  private def same(one: String, two: String) = one.replace(" ","").equalsIgnoreCase(two.replace(" ",""))
+  private def same(one: String, two: String) = one.replace(" ", "").equalsIgnoreCase(two.replace(" ", ""))
 
   /*
    BLPU checker - all BLPUs must NOT have an end date - indicates an active property
@@ -305,10 +305,10 @@ object AddressBaseRowProcessor extends Logging {
     val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
 
     if (streets.get(streetDescriptor.usrn).isEmpty) {
-      logger.error(String.format("No street found for USRN [%s]", streetDescriptor.usrn, fileName))
+      logger.error(String.format("No street found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
     } else if (!street.isDefined) {
-      logger.error(String.format("No active street found for USRN [%s]", streetDescriptor.usrn, fileName))
+      logger.error(String.format("No active street found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
     } else
       street.map(s => StreetWithDescription(
@@ -325,13 +325,27 @@ object AddressBaseRowProcessor extends Logging {
       ))
   }
 
-
   /*
      We want one LPI per BLPU, and there may be several so remove all with an end date, and get the most recently updated
+     If more than one use the most recent official one if possible
     */
   def mostRecentActiveLPIForUprn(uprn: String, lpis: Map[String, List[LPI]]): Option[LPI] =
     lpis.get(uprn) match {
-      case Some(lpi) => lpi.filter(l => !l.endDate.isDefined && l.officialAddress.getOrElse(true)).sortBy(l => l.lastUpdated).headOption
+      case Some(lpi) => {
+        // all active LPIs sorted by last updated
+        val lpis = lpi.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated)
+
+        // only one active LPI - return it as an option (none if nothing in list)
+        if (lpis.size <= 1) lpis.headOption
+        else {
+          // if we have official LPIs - return most recent
+          lpis.filter(l => l.officialAddress.getOrElse(false)) match {
+            case officalLpis if officalLpis.size > 0  => officalLpis.headOption
+            case _ => lpis.headOption
+          }
+        }
+      }
+      // No LPIs so None
       case _ => None
     }
 

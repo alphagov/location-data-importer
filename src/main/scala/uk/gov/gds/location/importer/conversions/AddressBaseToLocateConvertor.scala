@@ -56,7 +56,7 @@ object AddressBaseToLocateConvertor extends Logging {
       case _ =>
     }
 
-    Some(Address(
+    val address = Address(
       gssCode = localAuthority.gssCode,
       country = Countries.countryForGssCode(localAuthority.gssCode),
       uprn = addressWrapper.blpu.uprn,
@@ -65,7 +65,30 @@ object AddressBaseToLocateConvertor extends Logging {
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
       ordering = Some(ordering(addressWrapper))
-    ))
+    )
+
+    audit(address) match {
+      case true => Some(address)
+      case _ => {
+        logger.error(String.format("Audit failed: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
+        None
+      }
+    }
+  }
+
+  /**
+   * All addreses must have a number of key properties. Check and return false if any missing
+   * @param a: Address
+   */
+  def audit(a: Address) = {
+    def valid(s: String) = s != null && s.length > 0
+
+    valid(a.postcode) &&
+      valid(a.gssCode) &&
+      valid(a.uprn) &&
+      (valid(a.presentation.street.getOrElse("")) || valid(a.presentation.property.getOrElse(""))) &&
+      valid(a.presentation.postcode) &&
+      a.ordering.isDefined
   }
 
   /**
