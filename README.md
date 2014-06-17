@@ -14,6 +14,10 @@ This is backed by two Ordinance Survey products:
 
 Additionally we use the ONS Local Authority dataset, manually linked to the OS local custodian dataset to provide extra validation of the Address to Local Authority resolution.
 
+Updates timetable can be found:
+
+	http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html
+
 ### Basic usage
 
 The importer compiles to a jar:
