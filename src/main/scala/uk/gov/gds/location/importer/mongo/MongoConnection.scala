@@ -104,8 +104,7 @@ class MongoConnection extends Logging {
     addresses.ensureIndex(DBObject("uprn" -> 1), "uprn-unq-idx", true)
 
     logger.info("indexing postcode, electoral")
-    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isElectoral" -> 1))
-    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isPostalAddress" -> 1, "presentation.property" -> 1,"presentation.street" -> 1,"presentation.town" -> 1,"presentation.area" -> 1,"presentation.locality" -> 1,"presentation.postcode" -> 1,"uprn" -> 1,"gssCode" -> 1), DBObject("name" ->  "postcode_presentation_idx"))
+    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isElectoral" -> 1, "details.isPostalAddress" -> 1, "presentation.property" -> 1,"presentation.street" -> 1,"presentation.town" -> 1,"presentation.area" -> 1,"presentation.locality" -> 1,"presentation.postcode" -> 1,"uprn" -> 1,"gssCode" -> 1), DBObject("name" ->  "postcode_presentation_idx"))
 
     logger.info("indexing gssCode")
     addresses.ensureIndex(DBObject("gssCode" -> 1))
