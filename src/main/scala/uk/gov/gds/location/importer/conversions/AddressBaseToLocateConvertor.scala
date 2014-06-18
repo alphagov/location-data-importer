@@ -70,7 +70,7 @@ object AddressBaseToLocateConvertor extends Logging {
     audit(address) match {
       case true => Some(address)
       case _ => {
-        logger.error(String.format("Audit failed: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
+        logger.error("Audit failed: " +  address)
         None
       }
     }
@@ -191,14 +191,14 @@ object formatters extends Logging {
    * @return
    */
   def constructStreetAddressFrom(lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint]) = {
-    if (invalidStreetDescription(street)) {
-      logger.info("Using delivery point: street classification [%s] uprn [%s] description [%s] delivery point [%s]".format(street.recordType, lpi.uprn, street.streetDescription, deliveryPoint))
-      deliveryPointStreet(deliveryPoint) match {
-        case Some(street) => Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street).get).trim)
-        case _ => None
-      }
-    }
-    else
+//    if (invalidStreetDescription(street)) {
+    //      logger.info("Using delivery point: street classification [%s] uprn [%s] description [%s] delivery point [%s]".format(street.recordType, lpi.uprn, street.streetDescription, deliveryPoint))
+    //      deliveryPointStreet(deliveryPoint) match {
+    //        case Some(street) => Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street).get).trim)
+    //        case _ => None
+    //      }
+    //    }
+    //    else
       Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street.streetDescription).get).trim)
   }
 

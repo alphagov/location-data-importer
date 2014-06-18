@@ -13,7 +13,7 @@ class MongoConnection extends Logging {
 
   private val mongoClient = MongoClient()
 
-  private val db = mongoClient("locate-andover")
+  private val db = mongoClient("locate")
 
   private val addresses = db.getCollection("addresses")
   private val streets = db.getCollection("streets")
@@ -43,7 +43,6 @@ class MongoConnection extends Logging {
   }
 
   def insertAddresses(things: List[DBObject]) = {
-    println("INSERTING "  + things.size)
     addresses.insert(things.toArray, WriteConcern.Normal)
   }
 
@@ -102,7 +101,7 @@ class MongoConnection extends Logging {
     addresses.ensureIndex(DBObject("postcode" -> 1))
 
     logger.info("indexing uprn")
-    addresses.ensureIndex(DBObject("uprn" -> 1))
+    addresses.ensureIndex(DBObject("uprn" -> 1), "uprn-unq-idx", true)
 
     logger.info("indexing postcode, electoral")
     addresses.ensureIndex(DBObject("postcode" -> 1, "details.isElectoral" -> 1))

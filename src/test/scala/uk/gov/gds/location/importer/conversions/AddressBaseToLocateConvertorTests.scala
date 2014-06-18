@@ -873,20 +873,20 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       audit(a) must beFalse
     }
 
-    "fail if no street or property found" in {
+    "fail if no street and property found" in {
 
       val p = Presentation(property = None, street = None, postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = None, presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
 
       audit(a) must beFalse
     }
 
-    "fail if no postcode found in presentatrion" in {
+    "fail if no postcode found in presentation" in {
 
       val p = Presentation(property = Some("property"), street = Some("street"), postcode = "")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = None, presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
 
       audit(a) must beFalse
     }
@@ -895,18 +895,18 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = None, postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = None, presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
 
-      audit(a) must beFalse
+      audit(a) must beTrue
     }
 
     "pass if street but has no property found" in {
 
       val p = Presentation(property = None, street = Some("street"), postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = None, presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
 
-      audit(a) must beFalse
+      audit(a) must beTrue
     }
   }
 

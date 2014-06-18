@@ -9,7 +9,7 @@ Issued under an MIT license, see LICENSE file.
 
 This is backed by two Ordinance Survey products:
 
-    - Address Base Premium: This provides all the details of actual addresses.
+    - Address Base Premium: This provides all the details of actual addresses. (https://www.ordnancesurvey.co.uk/psma/index.html)
     - Code Point: Provides a mapping between postcode and a number of ONS statistical codes, these codes are used to identify Local Authorities, countries and electoral wards.
 
 Additionally we use the ONS Local Authority dataset, manually linked to the OS local custodian dataset to provide extra validation of the Address to Local Authority resolution.
@@ -224,6 +224,46 @@ Data sets currently used are: district_borough_unitary_region
 The docs directory contains a geojson file containing the data which can be imported into mongo with the following command:
 
     mongoimport --db locate --collection authorityBoundaries district-quarter.geojson
+
+### Validation
+
+Pre/Post import it's worth checking the state of the nation:
+
+(1) Get full count:
+
+    db.addresses.count()
+
+(2) Count per Local Authority, stores results in the collection local_authority_test:
+
+    db.addresses.mapReduce(
+    	function() {emit(this.gssCode, 1);},
+    	function(key, values) {return Array.sum(values);},
+    	{
+    		out: "local_authority_test"
+    	}
+    )
+
+(2) Count per postcode, stores results in the collection postcode_test:
+
+    db.addresses.mapReduce(
+    	function() {emit(this.postcode, 1);},
+    	function(key, values) {return Array.sum(values);},
+    	{
+    		out: "postcode_test"
+    	}
+    )
+
+(3) Extract the data into CSV files.
+
+    mongoexport -d locate -c local_authority_test --csv  --fields _id,value -o local_authority_test.csv
+
+    mongoexport -d locate -c postcode_test --csv  --fields _id,value -o postcode_test.csv
+
+
+
+
+
+
 
 
 
