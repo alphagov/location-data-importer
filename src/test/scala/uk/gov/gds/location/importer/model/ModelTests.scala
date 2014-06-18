@@ -391,7 +391,7 @@ class ModelTests extends Specification {
     }
 
     "be able to identify an educational property" in {
-      val school = """32,"I",94712,9059004789,"9059C000080071","CE1","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
+      val school = """32,"I",94712,9059004789,"9059C000080071","CE01","AddressBase Premium Classification Scheme",1.0,2010-04-21,2012-01-01,2011-04-13,2010-04-21"""
       Classification.fromCsvLine(parseCsvLine(school)).isEducational must beTrue
       Classification.fromCsvLine(parseCsvLine(school)).isCommercial must beFalse
       Classification.fromCsvLine(parseCsvLine(school)).isResidential must beFalse
