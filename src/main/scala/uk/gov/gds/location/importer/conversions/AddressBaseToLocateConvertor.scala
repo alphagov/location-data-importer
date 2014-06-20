@@ -10,7 +10,16 @@ import uk.gov.gds.location.importer.model.OrderingHelpers
 import uk.gov.gds.location.importer.model.StreetWithDescription
 import uk.gov.gds.location.importer.model.Address
 import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode
-import LocalAuthorities._
+import uk.gov.gds.location.importer.model.LocalAuthorities._
+import uk.gov.gds.location.importer.model.Location
+import uk.gov.gds.location.importer.model.LocalAuthority
+import scala.Some
+import uk.gov.gds.location.importer.model.Details
+import uk.gov.gds.location.importer.model.OrderingHelpers
+import uk.gov.gds.location.importer.model.StreetWithDescription
+import uk.gov.gds.location.importer.model.AddressBaseWrapper
+import uk.gov.gds.location.importer.model.Presentation
+import uk.gov.gds.location.importer.model.Address
 
 /**
  * Object to take lists of address base types and convert to our address / street model
@@ -32,36 +41,44 @@ object AddressBaseToLocateConvertor extends Logging {
 
     streetDescriptor match {
       case Some(street) => {
-        localAuthoritiesByCustodianCode.get(addressWrapper.blpu.localCustodianCode) match {
-          case Some(localAuthority) => address(addressWrapper, localAuthority, street, fileName)
+        findGssCodeFrom(addressWrapper) match {
+          case Some(gssCode) => address(addressWrapper, gssCode, street, fileName)
           case _ =>
-            logger.error(String.format("No localAuthority found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s] custodian code [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName, addressWrapper.blpu.localCustodianCode))
+            logger.error(String.format("FAILED [No local authority found for address]: BLPU [%s] POSTCODE [%s] FILENAME [%s] custodian code [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName, addressWrapper.blpu.localCustodianCode))
             None
         }
       }
       case _ =>
-        logger.error(String.format("No street found for address: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
+        logger.error(String.format("FAILED [No street found for address]: BLPU [%s] POSTCODE [%s] FILENAME [%s]", addressWrapper.uprn, addressWrapper.blpu.postcode, fileName))
         None
     }
   }
 
-  def address(addressWrapper: AddressBaseWrapper, localAuthority: LocalAuthority, street: StreetWithDescription, fileName: String) = {
-
-    /**
-     * Check custodian code derived gssCode against code point if code point resolves to postcode
-     * Don't use this for persitance- simple a matter of logging
-     */
-    AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", "")) match {
-      case Some(codePoint) => checkGssCodeWithCustodianCode(addressWrapper.blpu, codePoint._1, fileName)
-      case _ =>
+  /**
+   * Establish gss code.
+   * Firstly use custodian code to look in LocalAuthorities Class.
+   * If no authority found use postcode to look in code points collections
+   * If no gss code return Optional of None
+   * @param addressWrapper
+   * @return Option[String] gssCode
+   */
+  def findGssCodeFrom(addressWrapper: AddressBaseWrapper) = {
+    localAuthoritiesByCustodianCode.get(addressWrapper.blpu.localCustodianCode) match {
+      case Some(la) => Some(la.gssCode)
+      case _ => AllTheCodePoints.codePoints.get(addressWrapper.blpu.postcode.toLowerCase.replaceAll(" ", "")) match {
+        case Some(codePoint) => Some(codePoint._1)
+        case _ => None
+      }
     }
+  }
 
+  def address(addressWrapper: AddressBaseWrapper, gssCode: String, street: StreetWithDescription, fileName: String) = {
     val address = Address(
-      gssCode = localAuthority.gssCode,
-      country = Countries.countryForGssCode(localAuthority.gssCode),
+      gssCode = gssCode,
+      country = Countries.countryForGssCode(gssCode),
       uprn = addressWrapper.blpu.uprn,
       postcode = lowercase(stripAllWhitespace(addressWrapper.blpu.postcode)),
-      presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street, addressWrapper.deliveryPoint),
+      presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street, addressWrapper.deliveryPoint, fileName),
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
       ordering = Some(ordering(addressWrapper))
@@ -70,7 +87,7 @@ object AddressBaseToLocateConvertor extends Logging {
     audit(address) match {
       case true => Some(address)
       case _ => {
-        logger.error("Audit failed: " +  address)
+        logger.error("FAILED [Audit]: " + address)
         None
       }
     }
@@ -104,7 +121,7 @@ object AddressBaseToLocateConvertor extends Logging {
     localAuthoritiesByCustodianCode.get(blpu.localCustodianCode) match {
       case Some(la) if la.gssCode.equalsIgnoreCase(gssCode) => gssCode
       case Some(la) if !la.gssCode.equalsIgnoreCase(gssCode) => {
-        logger.info("GSSCode and Custodian code mismatch: file [%s] uprn [%s] custodian code[%s], la.gssCode [%s] codepoint.gssCode [%s]".format(fileName, blpu.uprn, blpu.localCustodianCode, la.gssCode, gssCode))
+        logger.info("UPDATED [GSSCode and Custodian code mismatch]: file [%s] uprn [%s] custodian code[%s], la.gssCode [%s] codepoint.gssCode [%s]".format(fileName, blpu.uprn, blpu.localCustodianCode, la.gssCode, gssCode))
         la.gssCode
       }
       case _ => gssCode
@@ -130,10 +147,10 @@ object AddressBaseToLocateConvertor extends Logging {
 
   def location(blpu: BLPU) = Location(blpu.lat, blpu.long)
 
-  def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint]) = {
+  def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint], fileName: String) = {
     Presentation(
       property = toSentenceCase(constructPropertyFrom(lpi)),
-      street = toSentenceCase(constructStreetAddressFrom(lpi, street, deliveryPoint)),
+      street = toSentenceCase(constructStreetAddressFrom(lpi, street, deliveryPoint, fileName)),
       locality = toSentenceCase(street.localityName),
       town = toSentenceCase(street.townName),
       area = constructArea(street),
@@ -190,15 +207,15 @@ object formatters extends Logging {
    * @param deliveryPoint
    * @return
    */
-  def constructStreetAddressFrom(lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint]) = {
-//    if (invalidStreetDescription(street)) {
-    //      logger.info("Using delivery point: street classification [%s] uprn [%s] description [%s] delivery point [%s]".format(street.recordType, lpi.uprn, street.streetDescription, deliveryPoint))
-    //      deliveryPointStreet(deliveryPoint) match {
-    //        case Some(street) => Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street).get).trim)
-    //        case _ => None
-    //      }
-    //    }
-    //    else
+  def constructStreetAddressFrom(lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint], file: String) = {
+    if (invalidStreetDescription(street)) {
+      logger.info("UPDATED [Using delivery point for street]: street classification [%s] uprn [%s] description [%s] delivery point [%s] file [%s]".format(street.recordType, lpi.uprn, street.streetDescription, deliveryPoint, file))
+      deliveryPointStreet(deliveryPoint) match {
+        case Some(street) => Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street).get).trim)
+        case _ => None
+      }
+    }
+    else
       Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street.streetDescription).get).trim)
   }
 

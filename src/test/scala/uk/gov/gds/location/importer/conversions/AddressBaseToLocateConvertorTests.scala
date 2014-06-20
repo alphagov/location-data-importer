@@ -49,6 +49,36 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
     }
   }
 
+  "GssCode finder" should {
+    "be able to return the gsscode for the custodian code" in {
+      val codePoint = CodePoint("postcode that fails to match", "country", "S12000012", "name")
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "postcode", localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None, None)
+      AllTheCodePoints.add(List(codePoint))
+      findGssCodeFrom(addressWrapper).get must beEqualTo("S12000033")
+    }
+
+    "be able to return the gsscode for the custodian code overriding the codepoint which matches the postcode " in {
+      val codePoint = CodePoint("postcode", "country", "S12000031", "name")
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "postcode", localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None, None)
+      AllTheCodePoints.add(List(codePoint))
+      findGssCodeFrom(addressWrapper).get must beEqualTo("S12000033")
+    }
+
+    "be able to return the gsscode for the postcode from codepoint if no la for custodian code" in {
+      val codePoint = CodePoint("postcode", "country", "S12000031", "name")
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "postcode", localCustodianCode = "does not exist"), lpi("uprn", "usrn"), classification("uprn"), None, None)
+      AllTheCodePoints.add(List(codePoint))
+      findGssCodeFrom(addressWrapper).get must beEqualTo("S12000031")
+    }
+
+    "be able to return None if cannot resolve the gss code" in {
+      val codePoint = CodePoint("postcode", "country", "S12000031", "name")
+      val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "no postcode", localCustodianCode = "does not exist"), lpi("uprn", "usrn"), classification("uprn"), None, None)
+      AllTheCodePoints.add(List(codePoint))
+      findGssCodeFrom(addressWrapper) must beNone
+    }
+  }
+
   "GssCode comparison" should {
     "be able to compare a custodian code derived gsscode with one from code point" in {
       checkGssCodeWithCustodianCode(blpu("uprn").copy(localCustodianCode = "9052"), "S12000034", "filename") must beEqualTo("S12000034")
@@ -317,9 +347,9 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
       val dp = deliveryPoint("uprn")
       val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("officiallyDesignated"))
-      constructStreetAddressFrom(l, sd1, Some(dp)).isDefined must beTrue
+      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").isDefined must beTrue
       val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("numberedStreet"))
-      constructStreetAddressFrom(l, sd2, Some(dp)).isDefined must beTrue
+      constructStreetAddressFrom(l, sd2, Some(dp), "fileName").isDefined must beTrue
     }
 
     "be populated from delivery point if not officially designated or numbered street" in {
@@ -337,14 +367,14 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
       val dp = deliveryPoint("uprn")
       val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
-      constructStreetAddressFrom(l, sd1, Some(dp)).isDefined must beTrue
-      constructStreetAddressFrom(l, sd1, Some(dp)).get must beEqualTo("3c-4d Thoroughfarename")
+      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").isDefined must beTrue
+      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("3c-4d Thoroughfarename")
       val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
-      constructStreetAddressFrom(l, sd2, Some(dp)).isDefined must beTrue
-      constructStreetAddressFrom(l, sd2, Some(dp)).get must beEqualTo("3c-4d Thoroughfarename")
+      constructStreetAddressFrom(l, sd2, Some(dp), "fileName").isDefined must beTrue
+      constructStreetAddressFrom(l, sd2, Some(dp), "fileName").get must beEqualTo("3c-4d Thoroughfarename")
       val sd3 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("streetDescription"))
-      constructStreetAddressFrom(l, sd3, Some(dp)).isDefined must beTrue
-      constructStreetAddressFrom(l, sd3, Some(dp)).get must beEqualTo("3c-4d Thoroughfarename")
+      constructStreetAddressFrom(l, sd3, Some(dp), "fileName").isDefined must beTrue
+      constructStreetAddressFrom(l, sd3, Some(dp), "fileName").get must beEqualTo("3c-4d Thoroughfarename")
     }
 
     "be none if not officially designated or numbered street and no delivery point entry" in {
@@ -362,11 +392,11 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
       val dp = deliveryPoint("uprn")
       val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
-      constructStreetAddressFrom(l, sd1, None).isDefined must beFalse
+      constructStreetAddressFrom(l, sd1, None, "fileName").isDefined must beFalse
       val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
-      constructStreetAddressFrom(l, sd2, None).isDefined must beFalse
+      constructStreetAddressFrom(l, sd2, None, "fileName").isDefined must beFalse
       val sd3 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("streetDescription"))
-      constructStreetAddressFrom(l, sd3, None).isDefined must beFalse
+      constructStreetAddressFrom(l, sd3, None, "fileName").isDefined must beFalse
     }
 
 
@@ -385,7 +415,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "Some street")
-      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3c-4d Some Street")
+      constructStreetAddressFrom(l, sd, None, "fileName").get must beEqualTo("3c-4d Some Street")
     }
 
     "include street description in sentence case" in {
@@ -403,7 +433,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3c-4d Some Street")
+      constructStreetAddressFrom(l, sd, None, "fileName").get must beEqualTo("3c-4d Some Street")
     }
 
     "include only include pao numbers if no suffixes" in {
@@ -421,7 +451,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3-4 Some Street")
+      constructStreetAddressFrom(l, sd, None, "fileName").get must beEqualTo("3-4 Some Street")
     }
 
     "include only include start pao numbers if no end" in {
@@ -439,7 +469,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd, None).get must beEqualTo("3 Some Street")
+      constructStreetAddressFrom(l, sd, None, "fileName").get must beEqualTo("3 Some Street")
     }
 
     "include only include end pao numbers if no start" in {
@@ -457,7 +487,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd, None).get must beEqualTo("4 Some Street")
+      constructStreetAddressFrom(l, sd, None, "fileName").get must beEqualTo("4 Some Street")
     }
 
     "include not include pao suffixes if no numbers" in {
@@ -475,7 +505,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       )
 
       val sd = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(streetDescription = "SOME STREET")
-      constructStreetAddressFrom(l, sd, None).get must beEqualTo("Some Street")
+      constructStreetAddressFrom(l, sd, None, "fileName").get must beEqualTo("Some Street")
     }
   }
 
@@ -750,7 +780,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val sd = StreetDescriptor("usrn", "high street", Some("locality"), Some("my town"), "admin area")
       val s = streetWithDescription("filename", sd, street("usrn"))
 
-      val p = presentation(b, l, s, None)
+      val p = presentation(b, l, s, None, "fileName")
       p.property.get must beEqualTo("Sao Text 1a-2b Pao Text")
       p.street.get must beEqualTo("3c-4d High Street")
       p.locality.get must beEqualTo("Locality")
@@ -777,7 +807,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val s = streetWithDescription("filename", sd, street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
       val dp = deliveryPoint("uprn").copy(buildingNumber = Some("123"), thoroughfareName = Some("street"))
 
-      val p = presentation(b, l, s, Some(dp))
+      val p = presentation(b, l, s, Some(dp), "fileName")
       p.property.get must beEqualTo("Sao Text 1a-2b Pao Text")
       p.street.get must beEqualTo("3c-4d Street")
       p.locality.get must beEqualTo("Locality")
@@ -804,7 +834,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val sd = StreetDescriptor("usrn", "high street", None, None, "admin area")
       val s = streetWithDescription("filename", sd, street("usrn"))
 
-      val p = presentation(b, l, s, None)
+      val p = presentation(b, l, s, None, "fileName")
       p.property.isDefined must beFalse
       p.street.get must beEqualTo("High Street")
       p.locality.isDefined must beFalse
@@ -820,7 +850,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       val sd = StreetDescriptor("usrn", "high street", None, Some("thing"), "thing")
       val s = streetWithDescription("filename", sd, street("usrn"))
 
-      val p = presentation(b, l, s, None)
+      val p = presentation(b, l, s, None, "fileName")
       p.town.isDefined must beTrue
       p.town.get must beEqualTo("Thing")
       p.area.isDefined must beFalse

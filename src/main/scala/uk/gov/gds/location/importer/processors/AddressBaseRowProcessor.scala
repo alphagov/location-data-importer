@@ -105,7 +105,7 @@ object AddressBaseRowProcessor extends Logging {
    */
   private def extractRow[T <: AddressBase](fileName: String, parsedCsvLine: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsedCsvLine)) {
-      logger.error(String.format("Invalid row TYPE [%s] FILENAME [%s] DATA [%s]", fileName, addressBase.getClass.getName, parsedCsvLine.mkString("|")))
+      logger.error(String.format("FAILED Invalid row TYPE [%s] FILENAME [%s] DATA [%s]", fileName, addressBase.getClass.getName, parsedCsvLine.mkString("|")))
       throw new Exception("Unable to parse row " + Some(parsedCsvLine.mkString("|")))
     }
     else Some(addressBase.fromCsvLine(parsedCsvLine))
@@ -258,16 +258,16 @@ object AddressBaseRowProcessor extends Logging {
     val deliveryPoint = mostRecentActiveDeliveryPointForUprn(blpu.uprn, deliveryPoints)
 
     if (!blpuIsActive(blpu)) {
-      logger.error(String.format("BLPU is inactive BLPU [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU is inactive] BLPU [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
-      logger.error(String.format("BLPU has no matching LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU has no matching LPI] [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (!lpi.isDefined) {
-      logger.error(String.format("BLPU has no matching active LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU has no matching active LPI] [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (!classification.isDefined) {
-      logger.error(String.format("BLPU has no classification UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU has no classification] UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else {
       Some(AddressBaseWrapper(updateBlpuPostcodeIfRequired(fileName, blpu, deliveryPoint), lpi.get, classification.get, organisation, deliveryPoint))
@@ -284,7 +284,7 @@ object AddressBaseRowProcessor extends Logging {
   private def updateBlpuPostcodeIfRequired(fileName: String, blpu: BLPU, deliveryPoint: Option[DeliveryPoint]) =
     deliveryPoint match {
       case Some(dp) if !same(blpu.postcode, dp.postcode) => {
-        logger.info("using DeliveryPoint postcode filename [%s] UPRN [%s] BLPU postcode [%s] DeliveryPoint postcode [%s]".format(fileName, blpu.uprn, blpu.postcode, dp.postcode))
+        logger.info("UPDATE [Using DeliveryPoint postcode] filename [%s] UPRN [%s] BLPU postcode [%s] DeliveryPoint postcode [%s]".format(fileName, blpu.uprn, blpu.postcode, dp.postcode))
         blpu.copy(postcode = dp.postcode)
       }
       case _ => blpu
@@ -305,10 +305,10 @@ object AddressBaseRowProcessor extends Logging {
     val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
 
     if (streets.get(streetDescriptor.usrn).isEmpty) {
-      logger.error(String.format("No street found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
+      logger.error(String.format("FAILED [No street found] for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
     } else if (!street.isDefined) {
-      logger.error(String.format("No active street found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
+      logger.error(String.format("FAILED [No active street] found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
     } else
       street.map(s => StreetWithDescription(

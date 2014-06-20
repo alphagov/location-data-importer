@@ -87,7 +87,7 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
       true
     } catch {
       case e: Exception => {
-        logger.error(String.format("Failed to process [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
+        logger.error(String.format("FAILED [Invalid file] [%s] in [%s]", file.getName, (new DateTime().getMillis - start.getMillis).toString), e)
         false
       }
     }
