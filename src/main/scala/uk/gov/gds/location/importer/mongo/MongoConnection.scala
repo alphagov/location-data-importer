@@ -25,33 +25,33 @@ class MongoConnection extends Logging {
   }
 
   def dropAll() {
-//    dropAddresses()
-//    dropStreets()
-//    dropCodePoint()
+    dropAddresses()
+    dropStreets()
+    dropCodePoint()
   }
 
   def dropAddresses() {
-   // addresses.drop()
+    addresses.drop()
   }
 
   def dropCodePoint() {
-  //  streets.drop()
+    streets.drop()
   }
 
   def dropStreets() {
-   // postcodeToAuthority.drop()
+    postcodeToAuthority.drop()
   }
 
   def insertAddresses(things: List[DBObject]) = {
-   // addresses.insert(things.toArray, WriteConcern.Normal)
+    addresses.insert(things.toArray, WriteConcern.Normal)
   }
 
   def insertStreets(things: List[DBObject]) = {
-  //  streets.insert(things.toArray, WriteConcern.Normal)
+    streets.insert(things.toArray, WriteConcern.Normal)
   }
 
   def insertCodePoints(things: List[DBObject]) = {
-  //  postcodeToAuthority.insert(things.toArray, WriteConcern.Normal)
+    postcodeToAuthority.insert(things.toArray, WriteConcern.Normal)
   }
 
   def boundaryLineForGssCode(gssCode: String, x: Double, y: Double) = {
@@ -94,30 +94,30 @@ class MongoConnection extends Logging {
   }
 
   def addAddressIndexes() {
-//    logger.info("indexing geo lookups - needs mongo 2.6")
-//    //authorityBoundaries.ensureIndex(DBObject("properties.CODE" -> 1))
-//
-//    logger.info("indexing postcode")
-//    addresses.ensureIndex(DBObject("postcode" -> 1))
-//
-//    logger.info("indexing uprn")
-//    addresses.ensureIndex(DBObject("uprn" -> 1), "uprn-unq-idx", true)
-//
-//    logger.info("indexing postcode, electoral")
-//    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isElectoral" -> 1, "details.isPostalAddress" -> 1, "presentation.property" -> 1,"presentation.street" -> 1,"presentation.town" -> 1,"presentation.area" -> 1,"presentation.locality" -> 1,"presentation.postcode" -> 1,"uprn" -> 1,"gssCode" -> 1), DBObject("name" ->  "postcode_presentation_idx"))
-//
-//    logger.info("indexing gssCode")
-//    addresses.ensureIndex(DBObject("gssCode" -> 1))
+    logger.info("indexing geo lookups - needs mongo 2.6")
+    //authorityBoundaries.ensureIndex(DBObject("properties.CODE" -> 1))
+
+    logger.info("indexing postcode")
+    addresses.ensureIndex(DBObject("postcode" -> 1))
+
+    logger.info("indexing uprn")
+    addresses.ensureIndex(DBObject("uprn" -> 1), "uprn-unq-idx", true)
+
+    logger.info("indexing postcode, electoral")
+    addresses.ensureIndex(DBObject("postcode" -> 1, "details.isElectoral" -> 1, "details.isPostalAddress" -> 1, "presentation.property" -> 1, "presentation.street" -> 1, "presentation.town" -> 1, "presentation.area" -> 1, "presentation.locality" -> 1, "presentation.postcode" -> 1, "uprn" -> 1, "gssCode" -> 1), DBObject("name" -> "postcode_presentation_idx"))
+
+    logger.info("indexing gssCode")
+    addresses.ensureIndex(DBObject("gssCode" -> 1))
   }
 
   def addStreetIndexes() {
-//    logger.info("indexing usrn on street")
-//    streets.ensureIndex(DBObject("usrn" -> 1))
+    logger.info("indexing usrn on street")
+    streets.ensureIndex(DBObject("usrn" -> 1))
   }
 
   def addCodePointIndexes() {
-//    logger.info("indexing postcode on codepoint")
-//    postcodeToAuthority.ensureIndex(DBObject("postcode" -> 1))
-//    postcodeToAuthority.ensureIndex(DBObject("gssCode" -> 1))
+    logger.info("indexing postcode on codepoint")
+    postcodeToAuthority.ensureIndex(DBObject("postcode" -> 1))
+    postcodeToAuthority.ensureIndex(DBObject("gssCode" -> 1))
   }
 }

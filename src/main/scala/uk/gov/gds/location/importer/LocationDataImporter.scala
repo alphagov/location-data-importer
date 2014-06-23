@@ -7,6 +7,7 @@ import uk.gov.gds.location.importer.io.FileUtilities._
 import uk.gov.gds.location.importer.mongo.MongoConnection
 import uk.gov.gds.location.importer.logging.Logging
 import uk.gov.gds.location.importer.processors.AddressBaseFileProcessor
+import uk.gov.gds.location.importer.postgres.PostgresConnection
 
 /**
  * Main class for data conversions from Ordinance Survey types into Locate style objects
@@ -74,7 +75,7 @@ object LocationDataImporter extends Logging {
 
         /*
           Only process streets and code points if required.
-          */
+                   */
         if (!config.addressOnly) {
           processCodePoint(config, addressBaseProcessor, mongoConnection)
           processStreets(config, addressBaseProcessor, mongoConnection)

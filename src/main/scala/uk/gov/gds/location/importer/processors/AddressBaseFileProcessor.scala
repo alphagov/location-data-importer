@@ -11,6 +11,7 @@ import uk.gov.gds.location.importer.model._
 import uk.gov.gds.location.importer.io.FileUtilities._
 import uk.gov.gds.location.importer.model.AddressBaseWrapper
 import uk.gov.gds.location.importer.model.StreetWithDescription
+import uk.gov.gds.location.importer.postgres.PostgresConnection
 
 /**
  * Methods in this class take a file, and pass a line iterator into the row processors
@@ -118,8 +119,10 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
    * Persists the address wrappers into mongo
    * @param addressBaseWrappers List of addressBaseWrappers objects to bulk insert
    */
-  private def persistAddresses(addressBaseWrappers: List[AddressBaseWrapper], filename: String) =
+  private def persistAddresses(addressBaseWrappers: List[AddressBaseWrapper], filename: String) = {
+    PostgresConnection.insertAddresses(addressBaseWrappers.flatMap(toLocateAddress(_, filename)).toList)
     mongoConnection.insertAddresses(addressBaseWrappers.flatMap(toLocateAddress(_, filename)).par.map(_.serialize).toList)
+  }
 
 }
 
