@@ -14,6 +14,8 @@ import org.joda.time.DateTime
  */
 object AddressBaseRowProcessor extends Logging {
 
+  val english = "ENG"
+
   import AddressBaseToLocateConvertor._
 
   /**
@@ -146,7 +148,7 @@ object AddressBaseRowProcessor extends Logging {
    */
   def extractLpisByUprn(raw: List[AddressBase]) =
     raw flatMap {
-      case a: LPI => Some(a)
+      case a: LPI if a.language.equalsIgnoreCase(english) => Some(a)
       case _ => None
     } groupBy (_.uprn)
 
@@ -178,13 +180,13 @@ object AddressBaseRowProcessor extends Logging {
 
   /**
    * Extract a list of only the StreetDescriptors from generic list of Address Base types
-   *
+   * Note - we want only english language descriptions
    * @param raw List[AddressBase]
    * @return List[StreetDescriptor]
    */
   def extractStreetDescriptors(raw: List[AddressBase]) =
     raw flatMap {
-      case a: StreetDescriptor => Some(a)
+      case a: StreetDescriptor if a.language.equalsIgnoreCase(english) => Some(a)
       case _ => None
     }
 
@@ -301,6 +303,13 @@ object AddressBaseRowProcessor extends Logging {
     def compare(a: DateTime, b: DateTime) = b compareTo a
   }
 
+  /**
+   * Take the streets we have and match the active ones to their street descriptions
+   * @param fileName
+   * @param streets
+   * @param streetDescriptor
+   * @return
+   */
   def toStreetWithDescription(fileName: String, streets: Map[String, List[Street]], streetDescriptor: StreetDescriptor) = {
     val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
 
@@ -310,8 +319,8 @@ object AddressBaseRowProcessor extends Logging {
     } else if (!street.isDefined) {
       logger.error(String.format("FAILED [No active street] found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
-    } else
-      street.map(s => StreetWithDescription(
+    } else {
+      val s = street.map(s => StreetWithDescription(
         streetDescriptor.usrn,
         streetDescriptor.streetDescription,
         streetDescriptor.localityName,
@@ -323,6 +332,11 @@ object AddressBaseRowProcessor extends Logging {
         s.classification.map(r => r.toString),
         fileName
       ))
+      if (s.isDefined && s.get.recordType.getOrElse("").equalsIgnoreCase("streetdescription")) {
+        println(fileName + "|" + streetDescriptor.usrn + "|" + s.get.streetDescription)
+      }
+      s
+    }
   }
 
   /*
@@ -340,7 +354,7 @@ object AddressBaseRowProcessor extends Logging {
         else {
           // if we have official LPIs - return most recent
           lpis.filter(l => l.officialAddress.getOrElse(false)) match {
-            case officalLpis if officalLpis.size > 0  => officalLpis.headOption
+            case officalLpis if officalLpis.size > 0 => officalLpis.headOption
             case _ => lpis.headOption
           }
         }

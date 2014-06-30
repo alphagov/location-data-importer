@@ -53,6 +53,9 @@ object LocationDataImporter extends Logging {
         logStartOfRun()
         val start = new DateTime
 
+        // TODO make optional
+        // PostgresConnection.create()
+
         val mongoConnection = new MongoConnection
 
         /*

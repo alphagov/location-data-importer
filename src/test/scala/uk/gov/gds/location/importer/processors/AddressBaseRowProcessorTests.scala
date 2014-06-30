@@ -151,6 +151,16 @@ class AddressBaseRowProcessorTests extends Specification {
       extractLpisByUprn(List(blpu("uprn"), lpi1, lpi2, classification("uprn"), organisation("uprn")))("uprn").size must beEqualTo(2)
       extractLpisByUprn(List(blpu("uprn"), lpi1, lpi2, classification("uprn"), organisation("uprn")))("uprn") must contain(lpi1, lpi2)
     }
+
+    "extract only the english language LPIs from the list" in {
+      "Should exclude any street descriptor not in english" in {
+        val lpiEnglish = lpi("uprn", "usrn").copy(language = "ENG")
+        val lpiWelsh = lpi("uprn", "usrn").copy(language = "CYM")
+        val lpiGaelic = lpi("uprn", "usrn").copy(language = "GAE")
+        val lpiOther = lpi("uprn", "usrn").copy(language = "BIL")
+        extractLpisByUprn(List(lpiEnglish, lpiWelsh, lpiGaelic, lpiOther))("uprn").size must beEqualTo(1)
+      }
+    }
   }
 
   "extractOrganisationsUprn" should {
@@ -176,6 +186,14 @@ class AddressBaseRowProcessorTests extends Specification {
       val streetDescriptor1 = streetDescriptor("usrn")
       extractStreetDescriptors(List(streetDescriptor1, blpu("uprn"), lpi("uprn", "usrn"), classification("uprn"), classification("uprn"), organisation("uprn"))).size must beEqualTo(1)
       extractStreetDescriptors(List(streetDescriptor1, blpu("uprn"), lpi("uprn", "usrn"), classification("uprn"), classification("uprn"), organisation("uprn"))) must contain(streetDescriptor1)
+    }
+
+    "Should exclude any street descriptor not in english" in {
+      val streetDescriptorEnglish = streetDescriptor("usrn").copy(language = "ENG")
+      val streetDescriptorWelsh = streetDescriptor("usrn").copy(language = "CYM")
+      val streetDescriptorGaelic = streetDescriptor("usrn").copy(language = "GAE")
+      val streetDescriptorOther = streetDescriptor("usrn").copy(language = "BIL")
+      extractStreetDescriptors(List(streetDescriptorEnglish, streetDescriptorWelsh, streetDescriptorGaelic, streetDescriptorOther)).size must beEqualTo(1)
     }
   }
 
@@ -409,7 +427,7 @@ class AddressBaseRowProcessorTests extends Specification {
 
     "create a street description object from a valid street and street description - with all optional fields as None" in {
 
-      val description = StreetDescriptor("usrn", "description", None, None, "area")
+      val description = StreetDescriptor("usrn", "description", None, None, "area", "ENG")
       val st = Street("usrn", None, None, None, None, startDate, None, lastUpdatedDate)
 
       val streets = Map("usrn" -> List(st))

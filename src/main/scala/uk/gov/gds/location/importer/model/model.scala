@@ -216,7 +216,8 @@ case class LPI(
                 saoEndSuffix: Option[String],
                 saoText: Option[String],
                 areaName: Option[String],
-                officialAddress: Option[Boolean]
+                officialAddress: Option[Boolean],
+                language: String
                 ) extends AddressBase
 
 object LPI extends AddressBaseHelpers[LPI] {
@@ -224,6 +225,7 @@ object LPI extends AddressBaseHelpers[LPI] {
   val requiredCsvColumns = 26
 
   private val uprnIndex = 3
+  private val languageIndex = 5
   private val logicalStateIndex = 6
   private val startDateIndex = 7
   private val endDateIndex = 8
@@ -262,10 +264,11 @@ object LPI extends AddressBaseHelpers[LPI] {
     csvLine(saoEndSuffix),
     csvLine(saoText),
     csvLine(areaNameIndex),
-    csvLine(officialFlagIndex)
+    csvLine(officialFlagIndex),
+    csvLine(languageIndex)
   )
 
-  val mandatoryCsvColumns = List(uprnIndex, usrnIndex, logicalStateIndex, startDateIndex, updatedDateIndex)
+  val mandatoryCsvColumns = List(uprnIndex, usrnIndex, languageIndex, logicalStateIndex, startDateIndex, updatedDateIndex)
 
 }
 
@@ -311,7 +314,8 @@ case class StreetDescriptor(
                              streetDescription: String,
                              localityName: Option[String],
                              townName: Option[String],
-                             administrativeArea: String
+                             administrativeArea: String,
+                             language: String
                              ) extends AddressBase {
 
   def serialize = grater[StreetDescriptor].asDBObject(this)
@@ -327,6 +331,7 @@ object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
   private val localityNameIndex = 5
   private val townNameIndex = 6
   private val administrativeAreaIndex = 7
+  private val languageIndex = 8
 
 
   def fromCsvLine(csvLine: List[String]) = StreetDescriptor(
@@ -334,10 +339,11 @@ object StreetDescriptor extends AddressBaseHelpers[StreetDescriptor] {
     csvLine(streetDescriptionIndex),
     csvLine(localityNameIndex),
     csvLine(townNameIndex),
-    csvLine(administrativeAreaIndex)
+    csvLine(administrativeAreaIndex),
+    csvLine(languageIndex)
   )
 
-  val mandatoryCsvColumns = List(usrnIndex, streetDescriptionIndex, administrativeAreaIndex)
+  val mandatoryCsvColumns = List(usrnIndex, streetDescriptionIndex, languageIndex, administrativeAreaIndex)
 }
 
 case class Organisation(
@@ -376,6 +382,8 @@ case class DeliveryPoint(
                           buildingNumber: Option[String],
                           dependantThoroughfareName: Option[String],
                           thoroughfareName: Option[String],
+                          doubleDependantLocality: Option[String],
+                          dependantLocality: Option[String],
                           postcode: String,
                           startDate: DateTime,
                           endDate: Option[DateTime],
@@ -391,6 +399,8 @@ object DeliveryPoint extends AddressBaseHelpers[DeliveryPoint] {
   private val buildingNumberIndex = 10
   private val dependantThoroughfareNameIndex = 11
   private val thoroughfareNameIndex = 12
+  private val doubleDependantLocality = 13
+  private val dependantLocality = 14
   private val postcodeIndex = 16
   private val startDateIndex = 25
   private val endDateIndex = 26
@@ -405,6 +415,8 @@ object DeliveryPoint extends AddressBaseHelpers[DeliveryPoint] {
     csvLine(buildingNumberIndex),
     csvLine(dependantThoroughfareNameIndex),
     csvLine(thoroughfareNameIndex),
+    csvLine(doubleDependantLocality),
+    csvLine(dependantLocality),
     csvLine(postcodeIndex),
     csvLine(startDateIndex),
     csvLine(endDateIndex),

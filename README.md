@@ -26,6 +26,10 @@ Release notes:
 
     [http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html](http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html)
 
+NLPG Data entry conventions:
+
+    [http://www.iahub.net/docs/1398672866952.pdf](http://www.iahub.net/docs/1398672866952.pdf)
+
 ### Basic usage
 
 The importer compiles to a jar:
@@ -280,7 +284,7 @@ Pre/Post import it's worth checking the state of the nation:
 
     * BLPU is inactive - This BLPU is inactive, so skipped
 
-    * BLPU has no matching LPI - No LPI available for this UPRN
+        * BLPU has no matching LPI - No LPI available for this UPRN
 
     * BLPU has no matching active LPI for this UPRN
 
