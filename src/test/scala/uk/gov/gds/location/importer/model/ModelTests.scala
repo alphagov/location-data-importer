@@ -150,6 +150,11 @@ class ModelTests extends Specification {
       LPI.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
     }
 
+    "be able to identify an invalid line due to missing mandatory language column" in {
+      val invalidLine = """24,"I",92423,,"9059L000069680","",1,2005-04-05,,2005-04-05,2005-04-05,,"",,"","UNIT 1",,"",,"","WEST PITKERRO",7803241,"1","","","Y""""
+      LPI.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
     "be able to identify an invalid line due to missing required PAO information" in {
       val missingBothPaoTextAndPaoStartNumber = """24,"I",1082431,100100077917,"6815L000701604","ENG",1,2001-05-10,,2001-05- 15,2001-05-10,,"",,"","",,"",,"","",5801201,1,"","","""""
       LPI.isValidCsvLine(parseCsvLine(missingBothPaoTextAndPaoStartNumber)) must beFalse
@@ -181,6 +186,7 @@ class ModelTests extends Specification {
       lpi(validLine).saoText.get must beEqualTo("Sao Text")
       lpi(validLine).areaName.get must beEqualTo("Area 51")
       lpi(validLine).officialAddress.get must beTrue
+      lpi(validLine).language must beEqualTo("ENG")
     }
 
     "be able to be constructed from a minimum populated csv line" in {
@@ -287,12 +293,18 @@ class ModelTests extends Specification {
       StreetDescriptor.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
     }
 
+    "be able to identify an invalid line due to missing mandatory language columns" in {
+      val invalidLine = """15,"I",1142,,"ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES","WESTHALL","KELLAS","ANGUS","""""
+      StreetDescriptor.isValidCsvLine(parseCsvLine(invalidLine)) must beFalse
+    }
+
     "be able to be constructed from a fully populated csv line" in {
       streetDescriptor(completeValidLine).usrn must beEqualTo("705576")
       streetDescriptor(completeValidLine).streetDescription must beEqualTo("ZU315 FROM B978 NORTH OF PITKERRO HOUSE TO ZC4 JUNCTION SOUTH OF WESTHALL FARM COTTAGES")
       streetDescriptor(completeValidLine).localityName.get must beEqualTo("WESTHALL")
       streetDescriptor(completeValidLine).townName.get must beEqualTo("KELLAS")
       streetDescriptor(completeValidLine).administrativeArea must beEqualTo("ANGUS")
+      streetDescriptor(completeValidLine).language must beEqualTo("ENG")
     }
 
     "be able to be constructed from a minimum populated csv line" in {
@@ -301,6 +313,7 @@ class ModelTests extends Specification {
       streetDescriptor(incompleteValidLine).localityName must beEqualTo(None)
       streetDescriptor(incompleteValidLine).townName must beEqualTo(None)
       streetDescriptor(incompleteValidLine).administrativeArea must beEqualTo("WESTHALL")
+      streetDescriptor(completeValidLine).language must beEqualTo("ENG")
     }
 
     "be able to be made into correct type" in {
@@ -466,18 +479,32 @@ class ModelTests extends Specification {
     }
 
     "be able to be constructed from a fully populated csv line" in {
-      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,2014-01-01,2010-09-14,2010-09-14"""
+      val line = """28,"I",262323,100021769440,,12077423,"","","sub building","building",46,"dependant thoroughfare","VINCENT ROAD","doubleDependantLocality","dependantLocality","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,2014-01-01,2010-09-14,2010-09-14"""
       deliveryPoint(line).uprn must beEqualTo("100021769440")
       deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).subBuildingName.get must beEqualTo("sub building")
+      deliveryPoint(line).buildingName.get must beEqualTo("building")
+      deliveryPoint(line).buildingNumber.get must beEqualTo("46")
+      deliveryPoint(line).dependantThoroughfareName.get must beEqualTo("dependant thoroughfare")
+      deliveryPoint(line).thoroughfareName.get must beEqualTo("VINCENT ROAD")
+      deliveryPoint(line).doubleDependantLocality.get must beEqualTo("doubleDependantLocality")
+      deliveryPoint(line).dependantLocality.get must beEqualTo("dependantLocality")
       deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
       deliveryPoint(line).endDate.get must beEqualTo(new DateTime(2014, 1, 1, 0, 0))
       deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
     }
 
     "be able to be constructed from a mimum populated csv line" in {
-      val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
+      val line = """28,"I",262323,100021769440,,12077423,"","","","",,"","","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
       deliveryPoint(line).uprn must beEqualTo("100021769440")
       deliveryPoint(line).postcode must beEqualTo("KT1 3HJ")
+      deliveryPoint(line).subBuildingName must beEqualTo(None)
+      deliveryPoint(line).buildingName must beEqualTo(None)
+      deliveryPoint(line).buildingNumber must beEqualTo(None)
+      deliveryPoint(line).dependantThoroughfareName must beEqualTo(None)
+      deliveryPoint(line).thoroughfareName must beEqualTo(None)
+      deliveryPoint(line).doubleDependantLocality must beEqualTo(None)
+      deliveryPoint(line).dependantLocality must beEqualTo(None)
       deliveryPoint(line).startDate must beEqualTo(new DateTime(2002, 12, 6, 0, 0))
       deliveryPoint(line).endDate.isDefined must beFalse
       deliveryPoint(line).lastUpdated must beEqualTo(new DateTime(2010, 9, 14, 0, 0))
@@ -491,7 +518,7 @@ class ModelTests extends Specification {
   }
 
   private def deliveryPoint(line: String) = DeliveryPoint.fromCsvLine(parseCsvLine(line))
-  
+
   private def blpu(line: String) = BLPU.fromCsvLine(parseCsvLine(line))
 
   private def lpi(line: String) = LPI.fromCsvLine(parseCsvLine(line))

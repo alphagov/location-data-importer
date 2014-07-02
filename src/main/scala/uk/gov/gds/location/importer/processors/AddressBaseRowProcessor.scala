@@ -14,6 +14,8 @@ import org.joda.time.DateTime
  */
 object AddressBaseRowProcessor extends Logging {
 
+  val english = "ENG"
+
   import AddressBaseToLocateConvertor._
 
   /**
@@ -105,7 +107,7 @@ object AddressBaseRowProcessor extends Logging {
    */
   private def extractRow[T <: AddressBase](fileName: String, parsedCsvLine: List[String], addressBase: AddressBaseHelpers[T]): Option[T] = {
     if (!addressBase.isValidCsvLine(parsedCsvLine)) {
-      logger.error(String.format("Invalid row TYPE [%s] FILENAME [%s] DATA [%s]", fileName, addressBase.getClass.getName, parsedCsvLine.mkString("|")))
+      logger.error(String.format("FAILED Invalid row TYPE [%s] FILENAME [%s] DATA [%s]", fileName, addressBase.getClass.getName, parsedCsvLine.mkString("|")))
       throw new Exception("Unable to parse row " + Some(parsedCsvLine.mkString("|")))
     }
     else Some(addressBase.fromCsvLine(parsedCsvLine))
@@ -146,7 +148,7 @@ object AddressBaseRowProcessor extends Logging {
    */
   def extractLpisByUprn(raw: List[AddressBase]) =
     raw flatMap {
-      case a: LPI => Some(a)
+      case a: LPI if a.language.equalsIgnoreCase(english) => Some(a)
       case _ => None
     } groupBy (_.uprn)
 
@@ -178,13 +180,13 @@ object AddressBaseRowProcessor extends Logging {
 
   /**
    * Extract a list of only the StreetDescriptors from generic list of Address Base types
-   *
+   * Note - we want only english language descriptions
    * @param raw List[AddressBase]
    * @return List[StreetDescriptor]
    */
   def extractStreetDescriptors(raw: List[AddressBase]) =
     raw flatMap {
-      case a: StreetDescriptor => Some(a)
+      case a: StreetDescriptor if a.language.equalsIgnoreCase(english) => Some(a)
       case _ => None
     }
 
@@ -258,19 +260,19 @@ object AddressBaseRowProcessor extends Logging {
     val deliveryPoint = mostRecentActiveDeliveryPointForUprn(blpu.uprn, deliveryPoints)
 
     if (!blpuIsActive(blpu)) {
-      logger.error(String.format("BLPU is inactive BLPU [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU is inactive] BLPU [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (lpis.getOrElse(blpu.uprn, List.empty).isEmpty) {
-      logger.error(String.format("BLPU has no matching LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU has no matching LPI] [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (!lpi.isDefined) {
-      logger.error(String.format("BLPU has no matching active LPI [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU has no matching active LPI] [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else if (!classification.isDefined) {
-      logger.error(String.format("BLPU has no classification UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
+      logger.error(String.format("FAILED [BLPU has no classification] UPRN [%s] POSTCODE [%s] FILENAME [%s]", blpu.uprn, blpu.postcode, fileName))
       None
     } else {
-      Some(AddressBaseWrapper(updateBlpuPostcodeIfRequired(fileName, blpu, deliveryPoint), lpi.get, classification.get, organisation))
+      Some(AddressBaseWrapper(updateBlpuPostcodeIfRequired(fileName, blpu, deliveryPoint), lpi.get, classification.get, organisation, deliveryPoint))
     }
   }
 
@@ -284,13 +286,13 @@ object AddressBaseRowProcessor extends Logging {
   private def updateBlpuPostcodeIfRequired(fileName: String, blpu: BLPU, deliveryPoint: Option[DeliveryPoint]) =
     deliveryPoint match {
       case Some(dp) if !same(blpu.postcode, dp.postcode) => {
-        logger.info("using DeliveryPoint postcode filename [%s] UPRN [%s] BLPU postcode [%s] DeliveryPoint postcode [%s]".format(fileName, blpu.uprn, blpu.postcode, dp.postcode))
+        logger.info("UPDATE [Using DeliveryPoint postcode] filename [%s] UPRN [%s] BLPU postcode [%s] DeliveryPoint postcode [%s]".format(fileName, blpu.uprn, blpu.postcode, dp.postcode))
         blpu.copy(postcode = dp.postcode)
       }
       case _ => blpu
     }
 
-  private def same(one: String, two: String) = one.replace(" ","").equalsIgnoreCase(two.replace(" ",""))
+  private def same(one: String, two: String) = one.replace(" ", "").equalsIgnoreCase(two.replace(" ", ""))
 
   /*
    BLPU checker - all BLPUs must NOT have an end date - indicates an active property
@@ -301,16 +303,23 @@ object AddressBaseRowProcessor extends Logging {
     def compare(a: DateTime, b: DateTime) = b compareTo a
   }
 
+  /**
+   * Take the streets we have and match the active ones to their street descriptions
+   * @param fileName
+   * @param streets
+   * @param streetDescriptor
+   * @return
+   */
   def toStreetWithDescription(fileName: String, streets: Map[String, List[Street]], streetDescriptor: StreetDescriptor) = {
     val street = mostRecentActiveStreetForUsrn(streetDescriptor.usrn, streets)
 
     if (streets.get(streetDescriptor.usrn).isEmpty) {
-      logger.error(String.format("No street found for USRN [%s]", streetDescriptor.usrn, fileName))
+      logger.error(String.format("FAILED [No street found] for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
     } else if (!street.isDefined) {
-      logger.error(String.format("No active street found for USRN [%s]", streetDescriptor.usrn, fileName))
+      logger.error(String.format("FAILED [No active street] found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
-    } else
+    } else {
       street.map(s => StreetWithDescription(
         streetDescriptor.usrn,
         streetDescriptor.streetDescription,
@@ -323,15 +332,30 @@ object AddressBaseRowProcessor extends Logging {
         s.classification.map(r => r.toString),
         fileName
       ))
+    }
   }
-
 
   /*
      We want one LPI per BLPU, and there may be several so remove all with an end date, and get the most recently updated
+     If more than one use the most recent official one if possible
     */
   def mostRecentActiveLPIForUprn(uprn: String, lpis: Map[String, List[LPI]]): Option[LPI] =
     lpis.get(uprn) match {
-      case Some(lpi) => lpi.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated).headOption
+      case Some(lpi) => {
+        // all active LPIs sorted by last updated
+        val lpis = lpi.filter(l => !l.endDate.isDefined).sortBy(l => l.lastUpdated)
+
+        // only one active LPI - return it as an option (none if nothing in list)
+        if (lpis.size <= 1) lpis.headOption
+        else {
+          // if we have official LPIs - return most recent
+          lpis.filter(l => l.officialAddress.getOrElse(false)) match {
+            case officalLpis if officalLpis.size > 0 => officalLpis.headOption
+            case _ => lpis.headOption
+          }
+        }
+      }
+      // No LPIs so None
       case _ => None
     }
 

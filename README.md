@@ -9,14 +9,26 @@ Issued under an MIT license, see LICENSE file.
 
 This is backed by two Ordinance Survey products:
 
-    - Address Base Premium: This provides all the details of actual addresses.
+    - Address Base Premium: This provides all the details of actual addresses. [https://www.ordnancesurvey.co.uk/psma/index.html](https://www.ordnancesurvey.co.uk/psma/index.html)
     - Code Point: Provides a mapping between postcode and a number of ONS statistical codes, these codes are used to identify Local Authorities, countries and electoral wards.
 
 Additionally we use the ONS Local Authority dataset, manually linked to the OS local custodian dataset to provide extra validation of the Address to Local Authority resolution.
 
+Download from:
+
+    [https://www.ordnancesurvey.co.uk/sso/login.shtml](https://www.ordnancesurvey.co.uk/sso/login.shtml)
+
 Updates timetable can be found:
 
-	http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html
+	[http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html](http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html)
+
+Release notes:
+
+    [http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html](http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html)
+
+NLPG Data entry conventions:
+
+    [http://www.iahub.net/docs/1398672866952.pdf](http://www.iahub.net/docs/1398672866952.pdf)
 
 ### Basic usage
 
@@ -228,6 +240,76 @@ Data sets currently used are: district_borough_unitary_region
 The docs directory contains a geojson file containing the data which can be imported into mongo with the following command:
 
     mongoimport --db locate --collection authorityBoundaries district-quarter.geojson
+
+### Validation
+
+Pre/Post import it's worth checking the state of the nation:
+
+(1) Get full count:
+
+    db.addresses.count()
+
+(2) Count per Local Authority, stores results in the collection local_authority_test:
+
+    db.addresses.mapReduce(
+    	function() {emit(this.gssCode, 1);},
+    	function(key, values) {return Array.sum(values);},
+    	{
+    		out: "local_authority_test"
+    	}
+    )
+
+(2) Count per postcode, stores results in the collection postcode_test:
+
+    db.addresses.mapReduce(
+    	function() {emit(this.postcode, 1);},
+    	function(key, values) {return Array.sum(values);},
+    	{
+    		out: "postcode_test"
+    	}
+    )
+
+(3) Extract the data into CSV files.
+
+    mongoexport -d locate -c local_authority_test --csv  --fields _id,value -o local_authority_test.csv
+
+    mongoexport -d locate -c postcode_test --csv  --fields _id,value -o postcode_test.csv
+
+
+(4) Errors - Instances where address or file is rejected
+
+    * Invalid file - File has invalid rows - whole file skipped
+
+    * Invalid row - Row invalid in a file for the given type, provokes Invalid file error
+
+    * BLPU is inactive - This BLPU is inactive, so skipped
+
+        * BLPU has no matching LPI - No LPI available for this UPRN
+
+    * BLPU has no matching active LPI for this UPRN
+
+    * BLPU has no classification - BLPU has no classification entry
+
+    * No street found - No street description for street
+
+    * No active street - Street not active
+
+    * No local authority found for address - No LA found for this address either in Locate mapping or in Codepoint
+
+    * No street found for address - this Address cannot find a street
+
+    * Audit - address failed to pass audit
+
+(5) Updates - Instances where Address Base address is modified as per Locate requirements
+
+    * Using DeliveryPoint postcode - Delivery Point and BLPU differ on postcodes - using Delivery Point
+
+    * GSSCode and Custodian code mismatch - check code point related GSSCODE against one derived from Custodian code
+
+    * Using delivery point for street - street type for this address is of type "street description" use delivery point street instead.
+
+
+
 
 
 

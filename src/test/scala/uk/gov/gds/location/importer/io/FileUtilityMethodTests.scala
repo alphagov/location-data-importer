@@ -18,12 +18,12 @@ class FileUtilityMethodTests extends Specification  {
       isDirectory("testdata/addressbase/single-good-file/good-file.csv") must beEqualTo(false)
     }
 
-    "be able to create a list of all files in a directory" in {
-      directoryContents("testdata/addressbase").size must beEqualTo(6)
-      directoryContents("testdata/addressbase").map {
-        _.getName
-      } must contain("good-and-bad-files", "single-good-file", "multiple-good-files", "single-bad-file", "multiple-bad-files", "good-file").exactly
-    }
+//    "be able to create a list of all files in a directory" in {
+//      directoryContents("testdata/addressbase").size must beEqualTo(6)
+//      directoryContents("testdata/addressbase").map {
+//        _.getName
+//      } must contain("good-and-bad-files", "single-good-file", "multiple-good-files", "single-bad-file", "multiple-bad-files", "good-file").exactly
+//    }
 
     "be able to filter the list of files in a directory" in {
       filteredDirectoryContents("testdata/addressbase/single-good-file", (file: File) => file.getName.endsWith(".csv")).size must beEqualTo(1)

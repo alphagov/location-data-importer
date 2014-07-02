@@ -10,7 +10,21 @@ object TestHelpers {
   lazy val lastUpdatedDate = new DateTime().minusDays(50)
   lazy val endDate = new DateTime().minusDays(50)
 
-  def deliveryPoint(uprn: String) = DeliveryPoint(uprn, "POSTCODE", startDate, None, lastUpdatedDate)
+
+  def deliveryPoint(uprn: String) = DeliveryPoint(
+    uprn,
+    Some("subBuildingName"),
+    Some("buildingName"),
+    Some("buildingNumber"),
+    Some("dependantThoroughfareName"),
+    Some("thoroughfareName"),
+    Some("doubleDependantLocality"),
+    Some("dependantLocality"),
+    "POSTCODE",
+    startDate,
+    None,
+    lastUpdatedDate
+  )
 
   def blpu(uprn: String) = BLPU(
     uprn,
@@ -44,13 +58,14 @@ object TestHelpers {
     Some("d"),
     Some("sao text"),
     Some("area name"),
-    Some(true)
+    Some(true),
+    "ENG"
   )
 
 
   def street(usrn: String) = Street(usrn, Some(StreetRecordTypeCode.numberedStreet), Some(StreetStateCode.open), Some(StreetSurfaceCode.mixed), Some(StreetClassificationCode.allVehicles), startDate, None, lastUpdatedDate)
 
-  def streetDescriptor(usrn: String) = StreetDescriptor(usrn, "description", Some("locality"), Some("town"), "admin area")
+  def streetDescriptor(usrn: String) = StreetDescriptor(usrn, "description", Some("locality"), Some("town"), "admin area", "ENG")
 
   def classification(uprn: String) = Classification(uprn, "code", startDate, None, lastUpdatedDate, "primaryUse", Some("secondaryUse"))
 
