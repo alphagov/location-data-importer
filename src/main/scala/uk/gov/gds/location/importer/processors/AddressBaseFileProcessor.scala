@@ -120,7 +120,6 @@ class AddressBaseFileProcessor(mongoConnection: MongoConnection) extends Logging
    * @param addressBaseWrappers List of addressBaseWrappers objects to bulk insert
    */
   private def persistAddresses(addressBaseWrappers: List[AddressBaseWrapper], filename: String) = {
-   // PostgresConnection.insertAddresses(addressBaseWrappers.flatMap(toLocateAddress(_, filename)).toList)
     mongoConnection.insertAddresses(addressBaseWrappers.flatMap(toLocateAddress(_, filename)).par.map(_.serialize).toList)
   }
 
