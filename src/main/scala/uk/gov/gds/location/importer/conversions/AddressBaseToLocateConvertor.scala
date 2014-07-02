@@ -73,7 +73,7 @@ object AddressBaseToLocateConvertor extends Logging {
       presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street, addressWrapper.deliveryPoint, fileName),
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
-      ordering = Some(ordering(addressWrapper))
+      ordering = Some(ordering(addressWrapper, street, fileName))
     )
 
     audit(address) match {
@@ -124,7 +124,7 @@ object AddressBaseToLocateConvertor extends Logging {
     Model class builders
    */
 
-  def ordering(addressWrapper: AddressBaseWrapper) = OrderingHelpers(
+  def ordering(addressWrapper: AddressBaseWrapper, street: StreetWithDescription, file: String) = OrderingHelpers(
     paoStartNumber = addressWrapper.lpi.paoStartNumber.flatMap(n => n),
     paoStartSuffix = addressWrapper.lpi.paoStartSuffix.flatMap(n => n),
     paoEndNumber = addressWrapper.lpi.paoEndNumber.flatMap(n => n),
@@ -134,7 +134,8 @@ object AddressBaseToLocateConvertor extends Logging {
     saoEndNumber = addressWrapper.lpi.saoEndNumber.flatMap(n => n),
     saoEndSuffix = addressWrapper.lpi.saoEndSuffix.flatMap(n => n),
     paoText = addressWrapper.lpi.paoText, //.map(v => stripAllWhitespace(lowercase(v))),
-    saoText = addressWrapper.lpi.saoText //.map(v => stripAllWhitespace(lowercase(v)))
+    saoText = addressWrapper.lpi.saoText, //.map(v => stripAllWhitespace(lowercase(v)))
+    street = chooseStreetDescription(addressWrapper.lpi, street, addressWrapper.deliveryPoint, file).flatMap(n => n)
   )
 
   def location(blpu: BLPU) = Location(blpu.lat, blpu.long)
@@ -231,30 +232,28 @@ object formatters extends Logging {
 
     def makeStreet(lpi: LPI, street: String) = Some(String.format("%s %s", constructStreetAddressPrefixFrom(lpi).getOrElse(""), toSentenceCase(street).get).trim)
 
-    val streetOption = if (!invalidStreetDescription(street)) {
-      makeStreet(lpi, street.streetDescription)
-    }
-    else if (!constructPropertyFrom(lpi).isDefined && street.streetDescription.length <= 20) {
-      logger.info("UPDATED [Using street description for street as less than 20]: street classification [%s] uprn [%s] description [%s] file [%s]".format(street.recordType, lpi.uprn, street.streetDescription, file))
-      makeStreet(lpi, street.streetDescription)
-    } else if (!constructPropertyFrom(lpi).isDefined) {
-      logger.info("UPDATED [Using delivery point for street]: street classification [%s] uprn [%s] description [%s] delivery point [%s] file [%s]".format(street.recordType, lpi.uprn, street.streetDescription, deliveryPoint, file))
-      deliveryPointStreet(deliveryPoint) match {
-        case Some(dpStreet) => makeStreet(lpi, dpStreet)
-        case _ => None
-      }
-    } else {
-      logger.info("UPDATED [unable to make a street]: street classification [%s] uprn [%s] description [%s] file [%s]".format(street.recordType, lpi.uprn, street.streetDescription, file))
-      None
-    }
+    val streetOption = chooseStreetDescription(lpi, street, deliveryPoint, file)
 
-    if (streetOption.isDefined) streetOption
+    if (streetOption.isDefined) makeStreet(lpi, streetOption.get)
     else if (!constructPropertyFrom(lpi).isDefined) {
       // if we have a street number just return that
-      logger.info("UPDATED [no property using SAO fields]: street classification [%s] uprn [%s] description [%s] file [%s]".format(street.recordType, lpi.uprn, street.streetDescription, file))
+      logger.info("UPDATED [no property using PAO fields]: street classification [%s] uprn [%s] usrn [%s] description [%s] file [%s]".format(street.recordType, lpi.uprn, lpi.usrn, street.streetDescription, file))
       constructStreetAddressPrefixFrom(lpi)
     } else {
+      logger.info("UPDATED [no street]: street classification [%s] uprn [%s] usrn [%s] description [%s] file [%s]".format(street.recordType, lpi.uprn, lpi.usrn, street.streetDescription, file))
       None
+    }
+  }
+
+  def chooseStreetDescription(lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint], file: String) = {
+    if (!invalidStreetDescription(street)) {
+      Some(street.streetDescription)
+    } else {
+      logger.info("UPDATED [Using delivery point for street]: street classification [%s] uprn [%s] usrn [%s], description [%s] delivery point [%s] file [%s]".format(street.recordType, lpi.uprn, lpi.usrn, street.streetDescription, deliveryPoint, file))
+      deliveryPointStreet(deliveryPoint) match {
+        case Some(dpStreet) => Some(dpStreet)
+        case _ => None
+      }
     }
   }
 

@@ -516,7 +516,8 @@ case class OrderingHelpers(
                             paoEndNumber: Option[Int] = None,
                             paoEndSuffix: Option[String] = None,
                             paoText: Option[String] = None,
-                            saoText: Option[String] = None
+                            saoText: Option[String] = None,
+                            street: Option[String] = None
                             )
 
 case class Address(

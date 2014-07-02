@@ -320,7 +320,7 @@ object AddressBaseRowProcessor extends Logging {
       logger.error(String.format("FAILED [No active street] found for USRN [%s] file [%s]", streetDescriptor.usrn, fileName))
       None
     } else {
-      val s = street.map(s => StreetWithDescription(
+      street.map(s => StreetWithDescription(
         streetDescriptor.usrn,
         streetDescriptor.streetDescription,
         streetDescriptor.localityName,
@@ -332,10 +332,6 @@ object AddressBaseRowProcessor extends Logging {
         s.classification.map(r => r.toString),
         fileName
       ))
-      if (s.isDefined && s.get.recordType.getOrElse("").equalsIgnoreCase("streetdescription")) {
-        println(fileName + "|" + streetDescriptor.usrn + "|" + s.get.streetDescription)
-      }
-      s
     }
   }
 

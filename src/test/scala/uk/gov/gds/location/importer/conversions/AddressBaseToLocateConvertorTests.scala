@@ -109,7 +109,9 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = Some("saotext"),
         paoText = Some("paotext")
       )
-      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None))
+      val sd = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "Big Road"), street("usrn"))
+
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None), sd, "filename")
       o.saoStartNumber.get must beEqualTo(1)
       o.saoStartSuffix.get must beEqualTo("a")
       o.saoEndNumber.get must beEqualTo(2)
@@ -120,6 +122,68 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       o.paoEndSuffix.get must beEqualTo("y")
       o.saoText.get must beEqualTo("saotext")
       o.paoText.get must beEqualTo("paotext")
+      o.street.get must beEqualTo("Big Road")
+    }
+
+
+    "build full set of ordering information - with street from delivery point - from sao and pao fields in LPI" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = Some("1"),
+        saoStartSuffix = Some("a"),
+        saoEndNumber = Some("2"),
+        saoEndSuffix = Some("b"),
+        paoStartNumber = Some("3"),
+        paoStartSuffix = Some("x"),
+        paoEndNumber = Some("4"),
+        paoEndSuffix = Some("y"),
+        saoText = Some("saotext"),
+        paoText = Some("paotext")
+      )
+      val dp = deliveryPoint("uprn")
+      val sd = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "Big Road"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, Some(dp)), sd, "filename")
+      o.saoStartNumber.get must beEqualTo(1)
+      o.saoStartSuffix.get must beEqualTo("a")
+      o.saoEndNumber.get must beEqualTo(2)
+      o.saoEndSuffix.get must beEqualTo("b")
+      o.paoStartNumber.get must beEqualTo(3)
+      o.paoStartSuffix.get must beEqualTo("x")
+      o.paoEndNumber.get must beEqualTo(4)
+      o.paoEndSuffix.get must beEqualTo("y")
+      o.saoText.get must beEqualTo("saotext")
+      o.paoText.get must beEqualTo("paotext")
+      o.street.get must beEqualTo("thoroughfareName")
+    }
+
+
+    "exclude the street if of wrong type and no delivery point available" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = Some("1"),
+        saoStartSuffix = Some("a"),
+        saoEndNumber = Some("2"),
+        saoEndSuffix = Some("b"),
+        paoStartNumber = Some("3"),
+        paoStartSuffix = Some("x"),
+        paoEndNumber = Some("4"),
+        paoEndSuffix = Some("y"),
+        saoText = Some("saotext"),
+        paoText = Some("paotext")
+      )
+      val sd = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "Big Road"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None), sd, "filename")
+      o.saoStartNumber.get must beEqualTo(1)
+      o.saoStartSuffix.get must beEqualTo("a")
+      o.saoEndNumber.get must beEqualTo(2)
+      o.saoEndSuffix.get must beEqualTo("b")
+      o.paoStartNumber.get must beEqualTo(3)
+      o.paoStartSuffix.get must beEqualTo("x")
+      o.paoEndNumber.get must beEqualTo(4)
+      o.paoEndSuffix.get must beEqualTo("y")
+      o.saoText.get must beEqualTo("saotext")
+      o.paoText.get must beEqualTo("paotext")
+      o.street must beEqualTo(None)
     }
 
     "build empty set of ordering information from empty sao and pao fields in LPI" in {
@@ -135,7 +199,9 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = None,
         paoText = None
       )
-      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None))
+      val sd = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "Big Road"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None), sd, "file")
       o.saoStartNumber must beEqualTo(None)
       o.saoStartSuffix must beEqualTo(None)
       o.saoEndNumber must beEqualTo(None)
@@ -146,6 +212,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       o.paoEndSuffix must beEqualTo(None)
       o.saoText must beEqualTo(None)
       o.paoText must beEqualTo(None)
+      o.street must beEqualTo(None)
     }
 
     "build empty set of ordering numeric information from non-numeric strings in sao and pao number fields in LPI" in {
@@ -157,13 +224,16 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = None,
         paoText = None
       )
-      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None))
+      val sd = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "Big Road"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+
+      val o = ordering(AddressBaseWrapper(blpu("uprn"), l, classification("uprn"), None, None), sd, "file")
       o.saoStartNumber must beEqualTo(None)
       o.saoEndNumber must beEqualTo(None)
       o.paoStartNumber must beEqualTo(None)
       o.paoEndNumber must beEqualTo(None)
       o.saoText must beEqualTo(None)
       o.paoText must beEqualTo(None)
+      o.street must beEqualTo(None)
     }
   }
 
@@ -338,7 +408,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       constructStreetAddressFrom(l, sd2, Some(dp), "fileName").get must beEqualTo("3c-4d Big Road")
     }
 
-    "be left unpopulated if not officially designated or numbered street, and the street description is too long (20+) but can construct a property field" in {
+    "be populated from delivery point if not officially designated or numbered street" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = Some("1"),
         saoStartSuffix = Some("a"),
@@ -348,61 +418,17 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         paoStartSuffix = Some("c"),
         paoEndNumber = Some("4"),
         paoEndSuffix = Some("d"),
-        saoText = Some("saotext"),
-        paoText = Some("paotext")
-      )
-      val dp = deliveryPoint("uprn")
-      val sd1 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
-      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").isDefined must beFalse
-      val sd2 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
-      constructStreetAddressFrom(l, sd2, Some(dp), "fileName").isDefined must beFalse
-      val sd3 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("streetDescription"))
-      constructStreetAddressFrom(l, sd3, Some(dp), "fileName").isDefined must beFalse
-    }
-
-    "should populate street with street description if no property can be made and street is of type description and street name is 20 chars long or under" in {
-      val l = lpi("uprn", "usrn").copy(
-        saoStartNumber = None,
-        saoStartSuffix = None,
-        saoEndNumber = None,
-        saoEndSuffix = None,
-        paoStartNumber = Some("3"),
-        paoStartSuffix = Some("c"),
-        paoEndNumber = Some("4"),
-        paoEndSuffix = Some("d"),
         saoText = None,
         paoText = None
       )
       val dp = deliveryPoint("uprn")
-      val sd1 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "12345678901234567890"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
-      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("3c-4d 12345678901234567890")
-      val sd2 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "12345678901234567890"), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
-      constructStreetAddressFrom(l, sd2, Some(dp), "fileName").get must beEqualTo("3c-4d 12345678901234567890")
-      val sd3 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = "12345678901234567890"), street("usrn")).copy(recordType = Some("streetDescription"))
-      constructStreetAddressFrom(l, sd3, Some(dp), "fileName").get must beEqualTo("3c-4d 12345678901234567890")
-    }
-
-    "be populated from delivery point if not officially designated or numbered street and no property field" in {
-      val l = lpi("uprn", "usrn").copy(
-        saoStartNumber = None,
-        saoStartSuffix = None,
-        saoEndNumber = None,
-        saoEndSuffix = None,
-        paoStartNumber = Some("3"),
-        paoStartSuffix = Some("c"),
-        paoEndNumber = Some("4"),
-        paoEndSuffix = Some("d"),
-        saoText = None,
-        paoText = None
-      )
-      val dp = deliveryPoint("uprn")
-      val sd1 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
       constructStreetAddressFrom(l, sd1, Some(dp), "fileName").isDefined must beTrue
       constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("3c-4d Thoroughfarename")
-      val sd2 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
+      val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
       constructStreetAddressFrom(l, sd2, Some(dp), "fileName").isDefined must beTrue
       constructStreetAddressFrom(l, sd2, Some(dp), "fileName").get must beEqualTo("3c-4d Thoroughfarename")
-      val sd3 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("streetDescription"))
+      val sd3 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("streetDescription"))
       constructStreetAddressFrom(l, sd3, Some(dp), "fileName").isDefined must beTrue
       constructStreetAddressFrom(l, sd3, Some(dp), "fileName").get must beEqualTo("3c-4d Thoroughfarename")
     }
@@ -461,7 +487,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("3c-4d Doubledependantlocality")
     }
 
-    "be populated by PAO numbers only if not a valid street description, no property is present and can't derive street from delivery pount" in {
+    "be populated by PAO numbers only if not a valid street description, no property is present and can't derive street from delivery point" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = None,
         saoStartSuffix = None,
@@ -479,26 +505,26 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("3c-4d")
     }
 
-    "be populated by PAO numbers only if not a valid street description (too long), no property is present and can't derive street from delivery pount" in {
+    "be none if no PAO numbers and not a valid street description, no property is present and can't derive street from delivery point" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = None,
         saoStartSuffix = None,
         saoEndNumber = None,
         saoEndSuffix = None,
-        paoStartNumber = Some("3"),
-        paoStartSuffix = Some("c"),
-        paoEndNumber = Some("4"),
-        paoEndSuffix = Some("d"),
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
         saoText = None,
         paoText = None
       )
       val dp = deliveryPoint("uprn").copy(thoroughfareName = None, dependantThoroughfareName = None, doubleDependantLocality = None, dependantLocality = Some("dependantLocality"))
-      val sd1 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
-      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("3c-4d")
+      val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      constructStreetAddressFrom(l, sd1, Some(dp), "fileName") must beNone
     }
 
 
-    "be none if not officially designated or numbered street and no delivery point entry and street description is 21 chars or more and no PAO numbers" in {
+    "be none if not officially designated or numbered street and no delivery point entry and no PAO numbers" in {
       val l = lpi("uprn", "usrn").copy(
         saoStartNumber = Some("1"),
         saoStartSuffix = Some("a"),
@@ -511,14 +537,13 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
         saoText = Some("saotext"),
         paoText = Some("paotext")
       )
-      val sd1 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
       constructStreetAddressFrom(l, sd1, None, "fileName").isDefined must beFalse
-      val sd2 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
+      val sd2 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("descriptionForLLPG"))
       constructStreetAddressFrom(l, sd2, None, "fileName").isDefined must beFalse
-      val sd3 = streetWithDescription("filename", streetDescriptor("usrn").copy(streetDescription = tooLongStreetDescription), street("usrn")).copy(recordType = Some("streetDescription"))
+      val sd3 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("streetDescription"))
       constructStreetAddressFrom(l, sd3, None, "fileName").isDefined must beFalse
     }
-
 
     "include pao number/suffix if included" in {
       val l = lpi("uprn", "usrn").copy(
