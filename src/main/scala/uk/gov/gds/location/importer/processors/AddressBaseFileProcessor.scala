@@ -11,7 +11,6 @@ import uk.gov.gds.location.importer.model._
 import uk.gov.gds.location.importer.io.FileUtilities._
 import uk.gov.gds.location.importer.model.AddressBaseWrapper
 import uk.gov.gds.location.importer.model.StreetWithDescription
-import uk.gov.gds.location.importer.postgres.PostgresConnection
 
 /**
  * Methods in this class take a file, and pass a line iterator into the row processors

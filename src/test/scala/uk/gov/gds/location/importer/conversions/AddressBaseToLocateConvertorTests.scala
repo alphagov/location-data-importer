@@ -523,6 +523,59 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       constructStreetAddressFrom(l, sd1, Some(dp), "fileName") must beNone
     }
 
+    "be none if the value derived from delivery point is already contained in the property" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = None,
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = Some("123 My house"),
+        paoText = None
+      )
+      val dp = deliveryPoint("uprn").copy(thoroughfareName = Some("house"), dependantThoroughfareName = None, doubleDependantLocality = None, dependantLocality = Some("dependantLocality"))
+      val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      constructStreetAddressFrom(l, sd1, Some(dp), "fileName") must beNone
+    }
+
+    "be delivery point if the value derived from delivery point is not matched by property" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = None,
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = Some("this is not like delivery point"),
+        paoText = None
+      )
+      val dp = deliveryPoint("uprn").copy(thoroughfareName = Some("house"), dependantThoroughfareName = None, doubleDependantLocality = None, dependantLocality = Some("dependantLocality"))
+      val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("House")
+    }
+
+    "be delivery point if the value derived from delivery point and no property can be made" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = None,
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = None,
+        paoText = None
+      )
+      val dp = deliveryPoint("uprn").copy(thoroughfareName = Some("house"), dependantThoroughfareName = None, doubleDependantLocality = None, dependantLocality = Some("dependantLocality"))
+      val sd1 = streetWithDescription("filename", streetDescriptor("usrn"), street("usrn")).copy(recordType = Some("unofficialStreetDescription"))
+      constructStreetAddressFrom(l, sd1, Some(dp), "fileName").get must beEqualTo("House")
+    }
 
     "be none if not officially designated or numbered street and no delivery point entry and no PAO numbers" in {
       val l = lpi("uprn", "usrn").copy(

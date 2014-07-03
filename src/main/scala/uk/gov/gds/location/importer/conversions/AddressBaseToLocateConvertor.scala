@@ -142,6 +142,8 @@ object AddressBaseToLocateConvertor extends Logging {
 
   def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint], fileName: String) = {
 
+    // TODO - filter out locality town or area if street is identical - happens when we construct streest from delivery point
+
     Presentation(
       property = toSentenceCase(constructPropertyFrom(lpi)),
       street = toSentenceCase(constructStreetAddressFrom(lpi, street, deliveryPoint, fileName)),
@@ -246,12 +248,19 @@ object formatters extends Logging {
   }
 
   def chooseStreetDescription(lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint], file: String) = {
+
     if (!invalidStreetDescription(street)) {
       Some(street.streetDescription)
     } else {
       logger.info("UPDATED [Using delivery point for street]: street classification [%s] uprn [%s] usrn [%s], description [%s] delivery point [%s] file [%s]".format(street.recordType, lpi.uprn, lpi.usrn, street.streetDescription, deliveryPoint, file))
       deliveryPointStreet(deliveryPoint) match {
-        case Some(dpStreet) => Some(dpStreet)
+        case Some(dpStreet) => {
+          if (constructPropertyFrom(lpi).getOrElse("").toLowerCase.contains(dpStreet.toLowerCase)) {
+            logger.info("UPDATED [street matches property]: street classification [%s] uprn [%s] usrn [%s], description [%s] delivery point [%s] file [%s]".format(street.recordType, lpi.uprn, lpi.usrn, street.streetDescription, deliveryPoint, file))
+            None
+          }
+          else Some(dpStreet)
+        }
         case _ => None
       }
     }
