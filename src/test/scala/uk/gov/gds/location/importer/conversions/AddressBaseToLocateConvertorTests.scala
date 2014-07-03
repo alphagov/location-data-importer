@@ -959,7 +959,6 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
     }
   }
 
-  // TODO TEST ME
   "presentation" should {
     "set up complete set of values, all in sentence case" in {
       val l = lpi("uprn", "usrn").copy(
@@ -1052,6 +1051,147 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
       p.town.isDefined must beTrue
       p.town.get must beEqualTo("Thing")
       p.area.isDefined must beFalse
+    }
+
+    "should set locality to none if street and locality are equal" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = None,
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = None,
+        paoText = None
+      )
+      val b = blpu("uprn").copy(receivesPost = "Y", postcode = "MY1 1MY")
+      val sd = StreetDescriptor("usrn", "locality", Some("locality"), Some("town"), "area", "ENG")
+      val s = streetWithDescription("filename", sd, street("usrn"))
+
+      val p = presentation(b, l, s, None, "fileName")
+      p.locality.isDefined must beFalse
+      p.town.get must beEqualTo("Town")
+      p.area.get must beEqualTo("Area")
+    }
+
+    "should set town to none if street and town are equal" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = None,
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = None,
+        paoText = None
+      )
+      val b = blpu("uprn").copy(receivesPost = "Y", postcode = "MY1 1MY")
+      val sd = StreetDescriptor("usrn", "town", Some("locality"), Some("town"), "area", "ENG")
+      val s = streetWithDescription("filename", sd, street("usrn"))
+
+      val p = presentation(b, l, s, None, "fileName")
+      p.town.isDefined must beFalse
+      p.locality.get must beEqualTo("Locality")
+      p.area.get must beEqualTo("Area")
+    }
+
+    "should set area to none if street and area are equal" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = None,
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = None,
+        paoText = None
+      )
+      val b = blpu("uprn").copy(receivesPost = "Y", postcode = "MY1 1MY")
+      val sd = StreetDescriptor("usrn", "area", Some("locality"), Some("town"), "area", "ENG")
+      val s = streetWithDescription("filename", sd, street("usrn"))
+
+      val p = presentation(b, l, s, None, "fileName")
+      p.locality.get must beEqualTo("Locality")
+      p.town.get must beEqualTo("Town")
+      p.area.isDefined must beFalse
+    }
+
+    "should set street to none if street and area are equal and we have a property" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = Some("1"),
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = None,
+        paoText = None
+      )
+      val b = blpu("uprn").copy(receivesPost = "Y", postcode = "MY1 1MY")
+      val sd = StreetDescriptor("usrn", "area", Some("locality"), Some("town"), "area", "ENG")
+      val s = streetWithDescription("filename", sd, street("usrn"))
+
+      val p = presentation(b, l, s, None, "fileName")
+      p.locality.get must beEqualTo("Locality")
+      p.town.get must beEqualTo("Town")
+      p.area.get must beEqualTo("Area")
+      p.street.isDefined must beFalse
+    }
+
+    "should set street to none if street and town are equal and we have a property" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = Some("1"),
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = None,
+        paoText = None
+      )
+      val b = blpu("uprn").copy(receivesPost = "Y", postcode = "MY1 1MY")
+      val sd = StreetDescriptor("usrn", "town", Some("locality"), Some("town"), "area", "ENG")
+      val s = streetWithDescription("filename", sd, street("usrn"))
+
+      val p = presentation(b, l, s, None, "fileName")
+      p.locality.get must beEqualTo("Locality")
+      p.town.get must beEqualTo("Town")
+      p.area.get must beEqualTo("Area")
+      p.street.isDefined must beFalse
+    }
+
+    "should set street to none if street and locality are equal and we have a property" in {
+      val l = lpi("uprn", "usrn").copy(
+        saoStartNumber = Some("1"),
+        saoStartSuffix = None,
+        saoEndNumber = None,
+        saoEndSuffix = None,
+        paoStartNumber = None,
+        paoStartSuffix = None,
+        paoEndNumber = None,
+        paoEndSuffix = None,
+        saoText = None,
+        paoText = None
+      )
+      val b = blpu("uprn").copy(receivesPost = "Y", postcode = "MY1 1MY")
+      val sd = StreetDescriptor("usrn", "locality", Some("locality"), Some("town"), "area", "ENG")
+      val s = streetWithDescription("filename", sd, street("usrn"))
+
+      val p = presentation(b, l, s, None, "fileName")
+      p.locality.get must beEqualTo("Locality")
+      p.town.get must beEqualTo("Town")
+      p.area.get must beEqualTo("Area")
+      p.street.isDefined must beFalse
     }
   }
 

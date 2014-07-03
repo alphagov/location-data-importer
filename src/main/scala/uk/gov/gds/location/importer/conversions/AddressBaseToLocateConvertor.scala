@@ -140,20 +140,64 @@ object AddressBaseToLocateConvertor extends Logging {
 
   def location(blpu: BLPU) = Location(blpu.lat, blpu.long)
 
+  /**
+   * Construct the presentation object
+   * Note in some cases the street that is made for an address may exactly overlap with area/town/locality
+   * In this case go with the street and None the matching field
+   * Happens in relativly rare case where street derived from PAF fields.
+   * @param blpu
+   * @param lpi
+   * @param street
+   * @param deliveryPoint
+   * @param fileName
+   * @return
+   */
   def presentation(blpu: BLPU, lpi: LPI, street: StreetWithDescription, deliveryPoint: Option[DeliveryPoint], fileName: String) = {
 
-    // TODO - filter out locality town or area if street is identical - happens when we construct streest from delivery point
+    def streetMatchesAnyOfTownLocalityArea(streetName: String) =
+      street.localityName.getOrElse("").equalsIgnoreCase(streetName) || street.townName.getOrElse("").equalsIgnoreCase(streetName) || street.administrativeArea.equalsIgnoreCase(streetName)
+
+
+    val streetDescription = toSentenceCase(constructStreetAddressFrom(lpi, street, deliveryPoint, fileName)) match {
+      case Some(s) if constructPropertyFrom(lpi).isDefined && streetMatchesAnyOfTownLocalityArea(s) => None // if we have a property and street is the same as another field strip street
+      case Some(s) => Some(s) // Normal have street return it
+      case _ => None // No street
+    }
+
+    // If the street matches an individal field strip that field
+    val locality = streetDescription match {
+      case Some(sd) if !street.localityName.getOrElse("").equalsIgnoreCase(sd) => toSentenceCase(street.localityName)
+      case None => toSentenceCase(street.localityName)
+      case _ => None
+    }
+
+    val town = streetDescription match {
+      case Some(sd) if !street.townName.getOrElse("").equalsIgnoreCase(sd) => toSentenceCase(street.townName)
+      case None => toSentenceCase(street.townName)
+      case _ => None
+    }
+
+    val area = streetDescription match {
+      case Some(sd) if !constructArea(street).getOrElse("").equalsIgnoreCase(sd) => constructArea(street)
+      case None => constructArea(street)
+      case _ => None
+    }
 
     Presentation(
       property = toSentenceCase(constructPropertyFrom(lpi)),
-      street = toSentenceCase(constructStreetAddressFrom(lpi, street, deliveryPoint, fileName)),
-      locality = toSentenceCase(street.localityName),
-      town = toSentenceCase(street.townName),
-      area = constructArea(street),
+      street = streetDescription,
+      locality = locality,
+      town = town,
+      area = area,
       postcode = blpu.postcode
     )
   }
 
+  /**
+   * Compare area and town, returning something for area only if town and area are different
+   * @param street
+   * @return
+   */
   def constructArea(street: StreetWithDescription) =
     toSentenceCase(
       if (!street.townName.isDefined) street.administrativeArea
