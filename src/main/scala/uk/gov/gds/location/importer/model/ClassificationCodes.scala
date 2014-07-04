@@ -18,7 +18,8 @@ object ClassificationCodes {
     classification.toUpperCase.equals("R") || // Generic Residential
     classification.toUpperCase.startsWith("RD") || // Dwelling
       classification.toUpperCase.startsWith("RH") || // Multiple Occupance
-      classification.toUpperCase.startsWith("RI") // Institute (nursing home etc)
+      classification.toUpperCase.startsWith("RI") ||  // Institute (nursing home etc)
+      classification.toUpperCase.startsWith("X")
 
   def isCommercial(classification: String) = classification.toUpperCase.startsWith("C") && !classification.toUpperCase.startsWith("CE")
 

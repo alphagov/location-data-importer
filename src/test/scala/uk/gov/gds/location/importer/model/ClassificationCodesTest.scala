@@ -10,6 +10,8 @@ class ClassificationCodesTest extends Specification {
 
     "indicate if classification is residential" in {
       isResidential("R") must beTrue
+      isResidential("X") must beTrue
+      isResidential("XDHDHDH HD Anything after ignored") must beTrue
       isResidential("RD Anything after ignored") must beTrue
       isResidential("RH Anything after ignored") must beTrue
       isResidential("RI Anything after ignored") must beTrue
