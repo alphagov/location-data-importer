@@ -4,6 +4,7 @@ import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHe
 import scopt.OptionParser
 import org.joda.time.DateTime
 import uk.gov.gds.location.importer.io.FileUtilities._
+import uk.gov.gds.location.importer.model.TestAddress
 import uk.gov.gds.location.importer.mongo.MongoConnection
 import uk.gov.gds.location.importer.logging.Logging
 import uk.gov.gds.location.importer.processors.AddressBaseFileProcessor
@@ -97,6 +98,9 @@ object LocationDataImporter extends Logging {
   private def processAddresses(config: Config, processors: ProcessAddressBaseFiles, mongoConnection: MongoConnection) = {
 
     val resultForAddresses = processors.processAddressBaseFilesForAddresses(config.dir)
+
+    /* insert the test address */
+    mongoConnection.insertAddresses(List(TestAddress.testAddress.serialize))
 
     /*
       Add indexes to address rows
