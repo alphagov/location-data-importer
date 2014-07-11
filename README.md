@@ -16,19 +16,19 @@ Additionally we use the ONS Local Authority dataset, manually linked to the OS l
 
 Download from:
 
-    [https://www.ordnancesurvey.co.uk/sso/login.shtml](https://www.ordnancesurvey.co.uk/sso/login.shtml)
+[https://www.ordnancesurvey.co.uk/sso/login.shtml](https://www.ordnancesurvey.co.uk/sso/login.shtml)
 
 Updates timetable can be found:
 
-	[http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html](http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html)
+[http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html](http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-epoch-dates.html)
 
 Release notes:
 
-    [http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html](http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html)
+[http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html](http://www.ordnancesurvey.co.uk/business-and-government/help-and-support/products/addressbase-release-notes.html)
 
 NLPG Data entry conventions:
 
-    [http://www.iahub.net/docs/1398672866952.pdf](http://www.iahub.net/docs/1398672866952.pdf)
+[http://www.iahub.net/docs/1398672866952.pdf](http://www.iahub.net/docs/1398672866952.pdf)
 
 ### Basic usage
 
