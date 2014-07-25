@@ -12,6 +12,7 @@ import uk.gov.gds.location.importer.model.StreetWithDescription
 import uk.gov.gds.location.importer.model.AddressBaseWrapper
 import uk.gov.gds.location.importer.model.Presentation
 import uk.gov.gds.location.importer.model.Address
+import uk.gov.gds.location.importer.encryption.AesEncryptionService
 
 /**
  * Object to take lists of address base types and convert to our address / street model
@@ -65,19 +66,20 @@ object AddressBaseToLocateConvertor extends Logging {
   }
 
   def address(addressWrapper: AddressBaseWrapper, gssCode: String, street: StreetWithDescription, fileName: String) = {
+    val key = sys.props.get("key").get
+    val ivSpec = AesEncryptionService.generateInitializationVector
+
     val address = Address(
       gssCode = gssCode,
       country = Countries.countryForGssCode(gssCode),
       uprn = addressWrapper.blpu.uprn,
       postcode = lowercase(stripAllWhitespace(addressWrapper.blpu.postcode)),
-      presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street, addressWrapper.deliveryPoint, fileName),
+      presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street, addressWrapper.deliveryPoint, fileName).encrypted(key, ivSpec),
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
-      ordering = Some(ordering(addressWrapper, street, fileName)),
-      iv = "ivSpec"
+      ordering = Some(ordering(addressWrapper, street, fileName).encrypted(key, ivSpec)),
+      iv = AesEncryptionService.byteArrayAsBase64String(ivSpec.getIV)
     )
-
-
 
     audit(address) match {
       case true => Some(address)

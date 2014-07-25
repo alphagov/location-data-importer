@@ -53,6 +53,10 @@ object LocationDataImporter extends Logging {
         logStartOfRun()
         val start = new DateTime
 
+        if(!sys.props.get("key").isDefined) {
+          throw new Exception("no encryption key supplied")
+        }
+
         val mongoConnection = new MongoConnection
 
         /*

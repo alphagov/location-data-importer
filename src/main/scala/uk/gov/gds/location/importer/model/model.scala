@@ -20,6 +20,8 @@ import uk.gov.gds.location.importer.logging.Logging
 import Countries.countries
 
 import LocalAuthorities._
+import javax.crypto.spec.IvParameterSpec
+import uk.gov.gds.location.importer.encryption.AesEncryptionService
 
 /**
  * Keeps all code point objects in memory as an optimisation
@@ -504,7 +506,17 @@ case class Presentation(
                          town: Option[String] = None,
                          area: Option[String] = None,
                          postcode: String
-                         )
+                         ) {
+  def encrypted(key: String, ivSpec: IvParameterSpec) = {
+    this.copy(
+      property.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String),
+      street.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String),
+      locality.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String),
+      town.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String),
+      area.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String)
+    )
+  }
+}
 
 case class OrderingHelpers(
                             saoStartNumber: Option[Int] = None,
@@ -518,7 +530,15 @@ case class OrderingHelpers(
                             paoText: Option[String] = None,
                             saoText: Option[String] = None,
                             street: Option[String] = None
-                            )
+                            ) {
+  def encrypted(key: String, ivSpec: IvParameterSpec) = {
+    this.copy(
+      paoText = paoText.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String),
+      saoText = saoText.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String),
+      street = street.flatMap(p => AesEncryptionService.encrypt(p, key, ivSpec).encryptedAsBase64String)
+    )
+  }
+}
 
 case class Address(
                     postcode: String,

@@ -10,6 +10,8 @@ import uk.gov.gds.location.importer.model.CodeLists.StreetClassificationCode._
 import uk.gov.gds.location.importer.model.CodeLists.StreetRecordTypeCode._
 import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode._
 import uk.gov.gds.location.importer.model.CodeLists.StreetSurfaceCode._
+import uk.gov.gds.location.importer.encryption.AesEncryptionService
+import org.apache.commons.codec.binary.Base64
 
 class ModelTests extends Specification {
 
@@ -514,6 +516,49 @@ class ModelTests extends Specification {
       val line = """28,"I",262323,100021769440,,12077423,"","","","",46,"","VINCENT ROAD","","","KINGSTON UPON THAMES","KT1 3HJ","S","","","","","","",2013-09-27,2002-12-06,,2010-09-14,2010-09-14"""
       deliveryPoint(line).isInstanceOf[AddressBase] must beTrue
       deliveryPoint(line).isInstanceOf[DeliveryPoint] must beTrue
+    }
+
+    "Presentation" should {
+      val key = "QWVzS2B5QmVpbmdTb21lU3RyaW5nT2ZMZW5ndGgyNTY="
+      "be able to be encrypted" in {
+        val p = Presentation(Some("property"), Some("street"), Some("locality"), Some("town"), Some("area"), "postcode")
+        val ivSpec = AesEncryptionService.generateInitializationVector
+        val encrypted = p.encrypted(key, ivSpec)
+        encrypted.property.get must not(beEqualTo("property"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.property.get), key, ivSpec.getIV) must beEqualTo("property")
+        encrypted.street.get must not(beEqualTo("street"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.street.get), key, ivSpec.getIV) must beEqualTo("street")
+        encrypted.locality.get must not(beEqualTo("locality"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.locality.get), key, ivSpec.getIV) must beEqualTo("locality")
+        encrypted.town.get must not(beEqualTo("town"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.town.get), key, ivSpec.getIV) must beEqualTo("town")
+        encrypted.area.get must not(beEqualTo("area"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.area.get), key, ivSpec.getIV) must beEqualTo("area")
+        encrypted.postcode must beEqualTo("postcode")
+      }
+    }
+
+    "Ordering" should {
+      val key = "QWVzS2B5QmVpbmdTb21lU3RyaW5nT2ZMZW5ndGgyNTY="
+      "be able to be encrypted" in {
+        val p = OrderingHelpers(Some(1), Some("saoStartSuffix"), Some(2), Some("saoEndSuffix"), Some(3), Some("paoStartSuffix"), Some(4), Some("paoEndSuffix"), Some("paoText"), Some("saoText"), Some("street"))
+        val ivSpec = AesEncryptionService.generateInitializationVector
+        val encrypted = p.encrypted(key, ivSpec)
+        encrypted.saoStartNumber.get must beEqualTo(1)
+        encrypted.saoStartSuffix.get must beEqualTo("saoStartSuffix")
+        encrypted.saoEndNumber.get must beEqualTo(2)
+        encrypted.saoEndSuffix.get must beEqualTo("saoEndSuffix")
+        encrypted.paoStartNumber.get must beEqualTo(3)
+        encrypted.paoStartSuffix.get must beEqualTo("paoStartSuffix")
+        encrypted.paoEndNumber.get must beEqualTo(4)
+        encrypted.paoEndSuffix.get must beEqualTo("paoEndSuffix")
+        encrypted.paoText.get must not(beEqualTo("paoText"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.paoText.get), key, ivSpec.getIV) must beEqualTo("paoText")
+        encrypted.saoText.get must not(beEqualTo("saoText"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.saoText.get), key, ivSpec.getIV) must beEqualTo("saoText")
+        encrypted.street.get must not(beEqualTo("street"))
+        AesEncryptionService.decrypt(Base64.decodeBase64(encrypted.street.get), key, ivSpec.getIV) must beEqualTo("street")
+      }
     }
   }
 

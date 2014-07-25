@@ -14,9 +14,9 @@ case class AesEncryptionProduct(encryptedContent: Array[Byte], initializationVec
 
   def getInitializationVector: Array[Byte] = initializationVector
 
-  def encryptedAsBase64String = Base64.encodeBase64(encryptedContent)
+  def encryptedAsBase64String = Base64.encodeBase64String(encryptedContent)
 
-  def initializationVectorAsBase64String = Base64.encodeBase64(initializationVector)
+  def initializationVectorAsBase64String = Base64.encodeBase64String(initializationVector)
 }
 
 object AesEncryptionService {
@@ -26,6 +26,7 @@ object AesEncryptionService {
 
   private def aesKeyFromBase64EncodedString(key: String): SecretKeySpec = new SecretKeySpec(Base64.decodeBase64(key), "AES")
 
+  def byteArrayAsBase64String(bytes: Array[Byte]) = Base64.encodeBase64String(bytes)
 
   def encrypt(content: String, aesKey: String, ivSpec: IvParameterSpec): AesEncryptionProduct = {
     try {
