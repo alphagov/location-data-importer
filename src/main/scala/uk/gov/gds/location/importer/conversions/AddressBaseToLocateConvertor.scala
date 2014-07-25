@@ -73,8 +73,11 @@ object AddressBaseToLocateConvertor extends Logging {
       presentation = presentation(addressWrapper.blpu, addressWrapper.lpi, street, addressWrapper.deliveryPoint, fileName),
       location = location(addressWrapper.blpu),
       details = details(addressWrapper, fileName),
-      ordering = Some(ordering(addressWrapper, street, fileName))
+      ordering = Some(ordering(addressWrapper, street, fileName)),
+      iv = "ivSpec"
     )
+
+
 
     audit(address) match {
       case true => Some(address)

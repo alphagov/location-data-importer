@@ -53,7 +53,8 @@ object TestAddress {
       presentation = p,
       details = d,
       location = l,
-      ordering = Some(o)
+      ordering = Some(o),
+      iv = "ivSpec"
     )
   }
 }

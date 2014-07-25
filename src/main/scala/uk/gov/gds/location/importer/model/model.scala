@@ -529,7 +529,8 @@ case class Address(
                     presentation: Presentation,
                     location: Location,
                     details: Details,
-                    ordering: Option[OrderingHelpers] = None
+                    ordering: Option[OrderingHelpers] = None,
+                    iv: String
                     ) {
   def serialize = grater[Address].asDBObject(this)
 

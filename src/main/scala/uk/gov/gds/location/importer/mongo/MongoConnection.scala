@@ -13,7 +13,7 @@ class MongoConnection extends Logging {
 
   private val mongoClient = MongoClient()
 
-  private val db = mongoClient("locate")
+  private val db = mongoClient("locate-encrypted")
 
   private val addresses = db.getCollection("addresses")
   private val streets = db.getCollection("streets")

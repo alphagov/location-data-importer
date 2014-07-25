@@ -7,6 +7,7 @@ scalaVersion := "2.10.0"
 parallelExecution := false
 
 libraryDependencies ++= Seq(
+    "commons-codec" % "commons-codec" % "1.4",
     "org.geotools" % "gt-main" % "2.7.0.1",
     "org.geotools" % "gt-epsg-hsql" % "2.7.0.1",
     "org.geotools" % "gt-xml" % "2.7.0.1",

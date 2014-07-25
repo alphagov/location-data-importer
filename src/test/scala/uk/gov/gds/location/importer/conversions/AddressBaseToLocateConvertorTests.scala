@@ -1200,7 +1200,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = Some("street"), postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beTrue
     }
@@ -1209,7 +1209,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = Some("street"), postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beFalse
     }
@@ -1218,7 +1218,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = Some("street"), postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beFalse
     }
@@ -1227,7 +1227,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = Some("street"), postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beFalse
     }
@@ -1236,7 +1236,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = Some("street"), postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = None, presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = None, presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beFalse
     }
@@ -1245,7 +1245,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = None, street = None, postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beFalse
     }
@@ -1254,7 +1254,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = Some("street"), postcode = "")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beFalse
     }
@@ -1263,7 +1263,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = Some("property"), street = None, postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beTrue
     }
@@ -1272,7 +1272,7 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
       val p = Presentation(property = None, street = Some("street"), postcode = "postcode")
       val o = OrderingHelpers(paoStartNumber = Some(123))
-      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails)
+      val a = Address(gssCode = "gssCode", country = "country", uprn = "uprn", postcode = "postcode", ordering = Some(o), presentation = p, location = validLocation, details = validDetails, iv = "ivSpec")
 
       audit(a) must beTrue
     }
