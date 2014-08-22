@@ -20,18 +20,34 @@ class ModelTests extends Specification {
     }
 
     "be able to extract a code point from a valid CSV line" in {
-      val validLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","","S08000013","S12000047","S12000041","S13002509","S""""
+      val validLine = """"DD9 7UX",10,"N",9,9,9,0,0,9,0,359978,770874,"S92000003","S08000014","S08000013","S12000047","S12000041","S13002509","S""""
       CodePoint.fromCsvLine(parseCsvLine(validLine)).postcode must beEqualTo("dd97ux")
       CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("Scotland")
       CodePoint.fromCsvLine(parseCsvLine(validLine)).gssCode must beEqualTo("S12000041")
       CodePoint.fromCsvLine(parseCsvLine(validLine)).name must beEqualTo("Angus")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).nhsRegionalHealthAuthority.get must beEqualTo("S08000014")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).nhsHealthAuthority.get must beEqualTo("S08000013")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).county.get must beEqualTo("S12000047")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).ward.get must beEqualTo("S13002509")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).easting must beEqualTo(359978)
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).northing must beEqualTo(770874)
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).lat must beEqualTo(56.827614081674085)
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).long must beEqualTo(-2.6573977431257347)
     }
 
     "be able to extract a code point from a valid CSV line with minimum valid fields" in {
-      val validLine = """"DD9 7UX",,"",,,,,,,,,,"S92000003","","","","S12000041","S13002509","S""""
+      val validLine = """"DD9 7UX",,"",,,,,,,,359978,770874,"S92000003","","","","S12000041","","S""""
       CodePoint.fromCsvLine(parseCsvLine(validLine)).postcode must beEqualTo("dd97ux")
       CodePoint.fromCsvLine(parseCsvLine(validLine)).country must beEqualTo("Scotland")
       CodePoint.fromCsvLine(parseCsvLine(validLine)).gssCode must beEqualTo("S12000041")
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).nhsRegionalHealthAuthority must beNone
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).nhsHealthAuthority must beNone
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).county must beNone
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).ward must beNone
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).easting must beEqualTo(359978)
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).northing must beEqualTo(770874)
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).lat must beEqualTo(56.827614081674085)
+      CodePoint.fromCsvLine(parseCsvLine(validLine)).long must beEqualTo(-2.6573977431257347)
     }
 
     "be able to identify an invalid line with wrong number of columns" in {

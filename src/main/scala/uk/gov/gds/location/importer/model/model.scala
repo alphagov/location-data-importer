@@ -1,6 +1,7 @@
 package uk.gov.gds.location.importer.model
 
 import org.joda.time.DateTime
+import uk.gov.gds.location.importer.conversions.EastingNorthingToLatLongConvertor
 import uk.gov.gds.location.importer.model.CodeLists._
 import com.novus.salat._
 import com.novus.salat.global._
@@ -18,7 +19,7 @@ import uk.gov.gds.location.importer.model.CodeLists.StreetStateCode.StreetStateC
 import uk.gov.gds.location.importer.conversions.EastingNorthingToLatLongConvertor.gridReferenceToLatLong
 import uk.gov.gds.location.importer.logging.Logging
 import Countries.countries
-
+import EastingNorthingToLatLongConvertor._
 import LocalAuthorities._
 
 /**
@@ -81,7 +82,20 @@ trait AddressBaseHelpers[T <: AddressBase] {
 /**
  * Code point model
  */
-case class CodePoint(postcode: String, country: String, gssCode: String, name: String) extends AddressBase {
+case class CodePoint(
+                      postcode: String,
+                      country: String,
+                      gssCode: String,
+                      name: String,
+                      easting: Double,
+                      northing: Double,
+                      lat: Double,
+                      long: Double,
+                      nhsRegionalHealthAuthority: Option[String],
+                      nhsHealthAuthority: Option[String],
+                      ward: Option[String],
+                      county: Option[String]) extends AddressBase {
+
   def serialize = grater[CodePoint].asDBObject(this)
 }
 
@@ -89,13 +103,29 @@ object CodePoint extends AddressBaseHelpers[CodePoint] with Logging {
   private val postcodeIndex = 0
   private val countryIndex = 12
   private val gssCodeIndex = 16
+  private val easting = 10
+  private val northing = 11
+  private val nhsRegionalHealthAuthority = 13
+  private val nhsHealthAuthority = 14
+  private val ward = 17
+  private val county = 15
+
 
   def fromCsvLine(csvLine: List[String]) = {
+    val latLong = gridReferenceToLatLong(csvLine(easting), csvLine(northing));
     CodePoint(
       csvLine(postcodeIndex).toLowerCase.replaceAll(" ", ""),
       countries(csvLine(countryIndex)),
       csvLine(gssCodeIndex),
-      localAuthoritiesByGssCode(csvLine(gssCodeIndex)).onsName
+      localAuthoritiesByGssCode(csvLine(gssCodeIndex)).onsName,
+      csvLine(easting),
+      csvLine(northing),
+      latLong.lat,
+      latLong.long,
+      csvLine(nhsRegionalHealthAuthority),
+      csvLine(nhsHealthAuthority),
+      csvLine(ward),
+      csvLine(county)
     )
   }
 

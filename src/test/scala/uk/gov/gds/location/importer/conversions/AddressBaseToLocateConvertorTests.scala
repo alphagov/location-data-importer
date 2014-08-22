@@ -53,28 +53,28 @@ class AddressBaseToLocateConvertorTests extends Specification with Mockito {
 
   "GssCode finder" should {
     "be able to return the gsscode for the custodian code" in {
-      val codePoint = CodePoint("postcode that fails to match", "country", "S12000012", "name")
+      val codePoint = CodePoint("postcode that fails to match", "country", "S12000012", "name", 1.1, 2.2, 1.1, 2.2, "nhs-region", "nhs", "ward", "county")
       val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "postcode", localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       AllTheCodePoints.add(List(codePoint))
       findGssCodeFrom(addressWrapper).get must beEqualTo("S12000033")
     }
 
     "be able to return the gsscode for the custodian code overriding the codepoint which matches the postcode " in {
-      val codePoint = CodePoint("postcode", "country", "S12000031", "name")
+      val codePoint = CodePoint("postcode", "country", "S12000031", "name", 1.1, 2.2, 1.1, 2.2, "nhs-region", "nhs", "ward", "county")
       val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "postcode", localCustodianCode = "9051"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       AllTheCodePoints.add(List(codePoint))
       findGssCodeFrom(addressWrapper).get must beEqualTo("S12000033")
     }
 
     "be able to return the gsscode for the postcode from codepoint if no la for custodian code" in {
-      val codePoint = CodePoint("postcode", "country", "S12000031", "name")
+      val codePoint = CodePoint("postcode", "country", "S12000031", "name", 1.1, 2.2, 1.1, 2.2, "nhs-region", "nhs", "ward", "county")
       val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "postcode", localCustodianCode = "does not exist"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       AllTheCodePoints.add(List(codePoint))
       findGssCodeFrom(addressWrapper).get must beEqualTo("S12000031")
     }
 
     "be able to return None if cannot resolve the gss code" in {
-      val codePoint = CodePoint("postcode", "country", "S12000031", "name")
+      val codePoint = CodePoint("postcode", "country", "S12000031", "name", 1.1, 2.2, 1.1, 2.2, "nhs-region", "nhs", "ward", "county")
       val addressWrapper = AddressBaseWrapper(blpu("blpu").copy(postcode = "no postcode", localCustodianCode = "does not exist"), lpi("uprn", "usrn"), classification("uprn"), None, None)
       AllTheCodePoints.add(List(codePoint))
       findGssCodeFrom(addressWrapper) must beNone

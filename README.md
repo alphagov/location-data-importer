@@ -102,15 +102,43 @@ Mongo:
 
 (1) Code point files parsed and inserted into the Mongo DB. This is done upfront as we make a reference table to query address postcodes against to discover GSS codes.
 
-    - Example document:
+Fields:
 
-    {
-        "_id" : ObjectId("52b1e7c38de22313daeedc38"),
-        "postcode" : "ab101aa",
-        "country" : "Scotland",
-        "gssCode" : "S12000033",
-        "name" : "Grampian"
-    }
+*   country: Derived from ONS codes: 
+    England     Scotland    Wales       N Ireland
+    E92000001   S92000003   W92000004   N92000002
+    
+*   gssCode: Unitary Authority, Metropolitan and Non- Metropolitan District, London Borough or Scottish Council Area in which postcode falls.
+
+*   easting/northing/lat/long: location of CPLC. CPLC is the location indicator for this code point. This is a point within the postcode area that is nearest the mean position of
+ postal addresses. Not geographical central point.
+ 
+*   nhsRegionalHealthAuthority: English Pan Strategic Health Authority in which CPLC falls. [optional]
+
+*   nhsHealthAuthority: English Strategic Health Authority or Scottish Health Board in which CPLC falls. [optional]
+
+*   county: County in which CPLC falls. [optional]
+
+*   ward: Electoral Ward or Division in which CPLC falls. [optional]
+
+        
+        - Example document:
+    
+        {
+            "_id" : ObjectId("52b1e7c38de22313daeedc38"),
+            "postcode" : "ab101aa",
+            "country" : "Scotland",
+            "gssCode" : "S12000033",
+            "name" : "Grampian",
+            "easting" : 394251,
+            "northing" : 806376,
+            "lat" : 57.14823168960546,
+            "long" : -2.0966478399737416,
+            "nhsRegionalHealthAuthority" : "S08000005",
+            "nhsHealthAuthority" : "S08000006",
+            "county" : "S08000004"
+            "ward" : "S13002483"
+        }
 
 (2) Address base files are parsed for Street data and inserted into the Mongo DB.
 
