@@ -5,9 +5,9 @@ Location Data Importer is a scala application that imports Ordinance Survey data
 
 Issued under an MIT license, see LICENSE file.
 
-### Ordinance Survey
+### Ordnance Survey
 
-This is backed by two Ordinance Survey products:
+This is backed by two Ordnance Survey products:
 
     - Address Base Premium: This provides all the details of actual addresses. [https://www.ordnancesurvey.co.uk/psma/index.html](https://www.ordnancesurvey.co.uk/psma/index.html)
     - Code Point: Provides a mapping between postcode and a number of ONS statistical codes, these codes are used to identify Local Authorities, countries and electoral wards.
